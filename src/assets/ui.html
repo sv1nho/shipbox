@@ -158,9 +158,19 @@
       />
 
       <button type="submit" class="btn btn-success">Generate Label</button>
+      <button type="button" id="loadTestDataBtn" class="btn btn-secondary ms-2">
+        Load Test Data
+      </button>
     </form>
 
     <div id="output" class="mt-4"></div>
+    <button
+      id="downloadPdfBtn"
+      class="btn btn-primary mt-3"
+      style="display: none"
+    >
+      Download as PDF
+    </button>
 
     <script type="module" src="../renderer.js"></script>
   </body>

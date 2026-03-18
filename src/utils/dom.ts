@@ -193,6 +193,11 @@ export const showResult = (
     <p><strong>Number displayed under barcode:</strong> ${trackingShown}</p>
     <img src="${svgDataUrl}" style="max-width: 100%; border: 1px solid #ddd;" />
   `;
+
+  const downloadBtn = document.getElementById("downloadPdfBtn");
+  if (downloadBtn) {
+    downloadBtn.style.display = "inline-block";
+  }
 };
 
 export const showError = (output: HTMLDivElement, message: string): void => {
@@ -201,4 +206,59 @@ export const showError = (output: HTMLDivElement, message: string): void => {
       Processing failed: ${message}
     </div>
   `;
+};
+
+export const loadTestDataIntoForm = (
+  elements: FormElements,
+  testData: Record<string, string>,
+): void => {
+  elements.senderFirstname.value = testData["sender_firstname"] ?? "";
+  elements.senderLastname.value = testData["sender_lastname"] ?? "";
+  elements.senderCompany.value = testData["sender_company"] ?? "";
+  elements.recipientFirstname.value = testData["recipient_firstname"] ?? "";
+  elements.recipientLastname.value = testData["recipient_lastname"] ?? "";
+  elements.recipientCompany.value = testData["recipient_company"] ?? "";
+  elements.carrier.value = testData["carrier"] ?? "bpost";
+  elements.trackingNumber.value = testData["tracking_number"] ?? "";
+
+  const senderAddress = document.querySelector('input[name="sender_address"]');
+  if (senderAddress instanceof HTMLInputElement) {
+    senderAddress.value = testData["sender_address"] ?? "";
+  }
+
+  const senderPostal = document.querySelector('input[name="sender_postal"]');
+  if (senderPostal instanceof HTMLInputElement) {
+    senderPostal.value = testData["sender_postal"] ?? "";
+  }
+
+  const senderCity = document.querySelector('input[name="sender_city"]');
+  if (senderCity instanceof HTMLInputElement) {
+    senderCity.value = testData["sender_city"] ?? "";
+  }
+
+  const recipientAddress = document.querySelector(
+    'input[name="recipient_address"]',
+  );
+  if (recipientAddress instanceof HTMLInputElement) {
+    recipientAddress.value = testData["recipient_address"] ?? "";
+  }
+
+  const recipientPostal = document.querySelector(
+    'input[name="recipient_postal"]',
+  );
+  if (recipientPostal instanceof HTMLInputElement) {
+    recipientPostal.value = testData["recipient_postal"] ?? "";
+  }
+
+  const recipientCity = document.querySelector('input[name="recipient_city"]');
+  if (recipientCity instanceof HTMLInputElement) {
+    recipientCity.value = testData["recipient_city"] ?? "";
+  }
+
+  const labelLanguageSelect = document.querySelector(
+    'select[name="label_language"]',
+  );
+  if (labelLanguageSelect instanceof HTMLSelectElement) {
+    labelLanguageSelect.value = testData["label_language"] ?? "nl";
+  }
 };
