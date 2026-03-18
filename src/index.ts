@@ -1,10 +1,12 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from "node:path";
 import { registerIpcHandlers } from "./ipc-handlers.js";
 import { BASE_DIR } from "./path.js";
 
+let mainWindow: BrowserWindow | null = null;
+
 const createWindow = (): void => {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 700,
     height: 900,
     webPreferences: {
@@ -15,12 +17,17 @@ const createWindow = (): void => {
     },
   });
 
-  void win.loadFile(path.join(BASE_DIR(), "assets", "ui.html"));
+  // Pass test mode flag to renderer
+  void mainWindow.webContents.loadFile(
+    path.join(BASE_DIR(), "assets", "ui.html"),
+  );
 };
 
 void app.whenReady().then(() => {
   createWindow();
-  registerIpcHandlers(ipcMain);
+  if (mainWindow) {
+    registerIpcHandlers(ipcMain, dialog, mainWindow);
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -7,6 +7,7 @@ import {
   showLoading,
   showResult,
   showError,
+  loadTestDataIntoForm,
 } from "./utils/dom.js";
 
 const isGeneratedLabel = (value: unknown): value is GeneratedLabel => {
@@ -35,12 +36,35 @@ const getFormDataFromDom = (form: HTMLFormElement): LabelPayload => {
   return formData as LabelPayload;
 };
 
+let currentSvg = "";
+
 const initializeForm = (): void => {
   const elements = getFormElements();
 
   updateSenderFields(elements);
   updateRecipientFields(elements);
   updateTrackingValidation(elements);
+
+  // Auto-load test data if in test mode
+  void (async () => {
+    try {
+      const electronApi = (window as { electronAPI?: Window["electronAPI"] })
+        .electronAPI;
+      if (
+        electronApi &&
+        typeof electronApi.isTestMode === "function" &&
+        (await electronApi.isTestMode())
+      ) {
+        const testData = await electronApi.loadTestData();
+        loadTestDataIntoForm(elements, testData);
+      }
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Unexpected error.";
+      // eslint-disable-next-line no-console
+      console.error("Failed to load test data:", message);
+    }
+  })();
 
   elements.senderIsCompany.addEventListener("change", (): void => {
     updateSenderFields(elements);
@@ -67,6 +91,34 @@ const initializeForm = (): void => {
     elements.senderFirstname.value = firstname;
     elements.senderLastname.value = lastname;
   });
+
+  const loadTestDataBtn = document.getElementById("loadTestDataBtn");
+  if (loadTestDataBtn instanceof HTMLButtonElement) {
+    loadTestDataBtn.addEventListener("click", (): void => {
+      void (async (): Promise<void> => {
+        try {
+          const electronApi = (
+            window as { electronAPI?: Window["electronAPI"] }
+          ).electronAPI;
+          if (
+            electronApi === undefined ||
+            typeof electronApi.loadTestData !== "function"
+          ) {
+            throw new Error(
+              "Electron bridge unavailable. Close and restart the application with npm run start.",
+            );
+          }
+
+          const testData = await electronApi.loadTestData();
+          loadTestDataIntoForm(elements, testData);
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : "Unexpected error.";
+          showError(elements.output, message);
+        }
+      })();
+    });
+  }
 
   elements.form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -104,6 +156,7 @@ const initializeForm = (): void => {
           throw new Error("Invalid response for SVG generation.");
         }
 
+        currentSvg = maybeGenerated.svg;
         const svgDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(maybeGenerated.svg)}`;
         showResult(elements.output, svgDataUrl, maybeGenerated.trackingShown);
       } catch (error: unknown) {
@@ -115,6 +168,43 @@ const initializeForm = (): void => {
       }
     })();
   });
+
+  const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+  if (downloadPdfBtn instanceof HTMLButtonElement) {
+    downloadPdfBtn.addEventListener("click", (): void => {
+      void (async (): Promise<void> => {
+        if (!currentSvg) {
+          showError(elements.output, "No label generated yet.");
+          return;
+        }
+
+        downloadPdfBtn.disabled = true;
+        try {
+          const electronApi = (
+            window as { electronAPI?: Window["electronAPI"] }
+          ).electronAPI;
+          if (
+            electronApi === undefined ||
+            typeof electronApi.generateLabelPdf !== "function"
+          ) {
+            throw new Error(
+              "Electron bridge unavailable. Close and restart the application with npm run start.",
+            );
+          }
+
+          await electronApi.generateLabelPdf(currentSvg);
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error ? error.message : "Unexpected error.";
+          if (message !== "Save dialog was canceled.") {
+            showError(elements.output, message);
+          }
+        } finally {
+          downloadPdfBtn.disabled = false;
+        }
+      })();
+    });
+  }
 };
 
 if (document.readyState === "loading") {
