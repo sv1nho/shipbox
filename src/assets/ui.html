@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Label Generator</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="p-4">
+    <h2 class="mb-4">Enter Information</h2>
+
+    <form id="labelForm">
+      <!-- Sender -->
+      <h4>Sender</h4>
+
+      <div id="senderPersonFields">
+        <input
+          class="form-control mb-2"
+          placeholder="First name"
+          name="sender_firstname"
+          id="sender_firstname"
+          required
+        />
+        <input
+          class="form-control mb-2"
+          placeholder="Last name"
+          name="sender_lastname"
+          id="sender_lastname"
+          required
+        />
+        <button
+          type="button"
+          id="senderRandomNameBtn"
+          class="btn btn-sm btn-info mb-2"
+        >
+          Generate random name
+        </button>
+      </div>
+
+      <div id="senderCompanyFields" style="display: none">
+        <input
+          class="form-control mb-2"
+          placeholder="Company name"
+          name="sender_company"
+          id="sender_company"
+        />
+      </div>
+
+      <label class="mb-2 d-block">
+        <input type="checkbox" name="sender_isCompany" id="sender_isCompany" />
+        Company?
+      </label>
+
+      <input
+        class="form-control mb-2"
+        placeholder="Address"
+        name="sender_address"
+        required
+      />
+      <input
+        class="form-control mb-2"
+        placeholder="Postal code"
+        name="sender_postal"
+        required
+      />
+      <input
+        class="form-control mb-2"
+        placeholder="City"
+        name="sender_city"
+        required
+      />
+
+      <!-- Recipient -->
+      <h4 class="mt-4">Recipient</h4>
+
+      <div id="recipientPersonFields">
+        <input
+          class="form-control mb-2"
+          placeholder="First name"
+          name="recipient_firstname"
+          id="recipient_firstname"
+          required
+        />
+        <input
+          class="form-control mb-2"
+          placeholder="Last name"
+          name="recipient_lastname"
+          id="recipient_lastname"
+          required
+        />
+      </div>
+
+      <div id="recipientCompanyFields" style="display: none">
+        <input
+          class="form-control mb-2"
+          placeholder="Company name"
+          name="recipient_company"
+          id="recipient_company"
+        />
+      </div>
+
+      <label class="mb-2 d-block">
+        <input
+          type="checkbox"
+          name="recipient_isCompany"
+          id="recipient_isCompany"
+        />
+        Company?
+      </label>
+      <input
+        class="form-control mb-2"
+        placeholder="Address"
+        name="recipient_address"
+        required
+      />
+      <input
+        class="form-control mb-2"
+        placeholder="Postal code"
+        name="recipient_postal"
+        required
+      />
+      <input
+        class="form-control mb-2"
+        placeholder="City"
+        name="recipient_city"
+        required
+      />
+      <input
+        class="form-control mb-2"
+        placeholder="Recipient country"
+        name="recipient_country"
+        value="Belgium"
+        disabled
+      />
+
+      <h4 class="mt-4">Label Language</h4>
+      <select class="form-select mb-3" name="label_language" required>
+        <option value="fr" selected>French</option>
+        <option value="nl">Dutch</option>
+        <option value="en">English</option>
+      </select>
+
+      <h4 class="mt-4">Carrier</h4>
+      <select class="form-select mb-3" name="carrier" id="carrier" required>
+        <option value="bpost" selected>Bpost</option>
+        <option value="postnl">PostNL</option>
+      </select>
+
+      <h4 class="mt-4">Tracking Number</h4>
+      <input
+        class="form-control mb-3"
+        placeholder="24 digits for Bpost"
+        name="tracking_number"
+        id="tracking_number"
+        required
+      />
+
+      <button type="submit" class="btn btn-success">Generate Label</button>
+    </form>
+
+    <div id="output" class="mt-4"></div>
+
+    <script type="module" src="../renderer.js"></script>
+  </body>
+</html>
