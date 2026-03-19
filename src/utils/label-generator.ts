@@ -90,6 +90,36 @@ const escapeXml = (value: string): string =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
 
+const wrapText = (text: string, maxLength: number): string[] => {
+  if (text.length <= maxLength) {
+    return [text];
+  }
+
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (testLine.length <= maxLength) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      lines.push(word);
+      currentLine = "";
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+};
+
 const getRandomDigit = (except?: string): string => {
   let nextDigit = String(Math.floor(Math.random() * 10));
   while (except !== undefined && nextDigit === except) {
@@ -136,21 +166,26 @@ const randomizeTrackingFromIndex = (
   return chars.join("");
 };
 
-const senderNameLine = (payload: LabelPayload): string =>
-  `${payload["sender_firstname"] ?? ""} ${payload["sender_lastname"] ?? ""}`.trim();
+const senderNameLine = (payload: LabelPayload): string[] => {
+  const name =
+    `${payload["sender_firstname"] ?? ""} ${payload["sender_lastname"] ?? ""}`.trim();
+  return wrapText(name, 40);
+};
 
 const senderDetailLines = (
   payload: LabelPayload,
   withGap: boolean = true,
-): string[] =>
-  [
-    payload["sender_address"] ?? "",
-    postalCityWithGap(
-      payload["sender_postal"] ?? "",
-      payload["sender_city"] ?? "",
-      withGap ? 2 : 0,
-    ),
-  ].filter((line) => line.length > 0);
+): string[] => {
+  const address = payload["sender_address"] ?? "";
+  const postalCity = postalCityWithGap(
+    payload["sender_postal"] ?? "",
+    payload["sender_city"] ?? "",
+    withGap ? 2 : 0,
+  );
+  return [...wrapText(address, 45), ...wrapText(postalCity, 50)].filter(
+    (line) => line.length > 0,
+  );
+};
 
 const senderDetailLinesWithCountry = (
   payload: LabelPayload,
@@ -159,19 +194,24 @@ const senderDetailLinesWithCountry = (
 ): string[] => {
   const country =
     (payload["recipient_country"] ?? "").trim() || resolveCountry(payload);
+  const address = payload["sender_address"] ?? "";
+  const postalCity = postalCityWithGap(
+    payload["sender_postal"] ?? "",
+    payload["sender_city"] ?? "",
+    withGap ? 2 : 0,
+  );
   return [
-    payload["sender_address"] ?? "",
-    postalCityWithGap(
-      payload["sender_postal"] ?? "",
-      payload["sender_city"] ?? "",
-      withGap ? 2 : 0,
-    ),
-    uppercaseCountry ? country.toUpperCase() : country,
+    ...wrapText(address, 45),
+    ...wrapText(postalCity, 50),
+    ...wrapText(uppercaseCountry ? country.toUpperCase() : country, 45),
   ].filter((line) => line.length > 0);
 };
 
-const recipientNameLine = (payload: LabelPayload): string =>
-  `${payload["recipient_firstname"] ?? ""} ${payload["recipient_lastname"] ?? ""}`.trim();
+const recipientNameLine = (payload: LabelPayload): string[] => {
+  const name =
+    `${payload["recipient_firstname"] ?? ""} ${payload["recipient_lastname"] ?? ""}`.trim();
+  return wrapText(name, 35);
+};
 
 const recipientDetailLines = (
   payload: LabelPayload,
@@ -179,17 +219,20 @@ const recipientDetailLines = (
   withGap: boolean = true,
 ): string[] => {
   const apply = (value: string) => (uppercase ? value.toUpperCase() : value);
+  const address = apply(payload["recipient_address"] ?? "");
+  const postalCity = postalCityWithGap(
+    apply(payload["recipient_postal"] ?? ""),
+    apply(payload["recipient_city"] ?? ""),
+    withGap ? 5 : 0,
+  );
+  const country = apply(
+    (payload["recipient_country"] ?? "").trim() || resolveCountry(payload),
+  );
 
   return [
-    payload["recipient_address"] ?? "",
-    postalCityWithGap(
-      apply(payload["recipient_postal"] ?? ""),
-      apply(payload["recipient_city"] ?? ""),
-      withGap ? 5 : 0,
-    ),
-    apply(
-      (payload["recipient_country"] ?? "").trim() || resolveCountry(payload),
-    ),
+    ...wrapText(address, 35),
+    ...wrapText(postalCity, 35),
+    ...wrapText(country, 35),
   ].filter((line) => line.length > 0);
 };
 
@@ -206,6 +249,39 @@ const linesToTspans = (
       return `<tspan x="${xText}" y="${yText}">${safeText}</tspan>`;
     })
     .join("");
+
+const createRecipientBox = (
+  lines: string[],
+  options: {
+    x: number;
+    startY: number;
+    lineHeight: number;
+    fontSize: number;
+    strokeWidth: number;
+    padding?: number;
+  },
+): string => {
+  const padding = options.padding ?? 10;
+
+  if (lines.length === 0) {
+    return "";
+  }
+
+  // Estimer la largeur basée sur le texte le plus long
+  // Approximation: ~7px par caractère pour Arial à 22px
+  const maxCharCount = Math.max(...lines.map((line) => line.length));
+  const charWidth = (options.fontSize / 22) * 7; // Ajuster proportionnellement à la taille
+  const boxWidth = maxCharCount * charWidth + padding * 2;
+
+  // Calculer la hauteur basée sur le nombre de lignes
+  const boxHeight = lines.length * options.lineHeight + padding * 2;
+
+  // Position du rectangle (offset du padding)
+  const rectX = options.x - padding;
+  const rectY = options.startY - options.fontSize + padding;
+
+  return `<rect x="${String(rectX)}" y="${String(rectY)}" width="${String(boxWidth)}" height="${String(boxHeight)}" fill="none" stroke="black" stroke-width="${String(options.strokeWidth)}" rx="2" ry="2"/>`;
+};
 
 export const buildLabelSvg = async (
   payload: LabelPayload,
@@ -238,7 +314,7 @@ export const buildLabelSvg = async (
 
   if (carrier === "postnl") {
     trackingShown = randomizeTrackingFromIndex(originalTracking, 9);
-    const senderInfoLines = linesToTspans([senderNameLine(payload)], {
+    const senderInfoLines = linesToTspans(senderNameLine(payload), {
       x: 50,
       startY: 60,
       lineHeight: 10,
@@ -253,20 +329,38 @@ export const buildLabelSvg = async (
       },
     );
 
-    const recipientNameTspans = linesToTspans([recipientNameLine(payload)], {
+    const recipientNameLines = recipientNameLine(payload);
+    const recipientDetails = recipientDetailLines(payload, true, false);
+    const allRecipientLines = [...recipientNameLines, ...recipientDetails];
+
+    const addressLinesCount = wrapText(
+      payload["recipient_address"] ?? "",
+      35,
+    ).filter((l) => l.length > 0).length;
+
+    const recipientNameTspans = linesToTspans(recipientNameLines, {
       x: 60,
       startY: 365,
       lineHeight: 25,
     });
 
-    const recipientDetailsBoldLines = recipientDetailLines(payload, true, false)
+    const recipientDetailsBoldLines = recipientDetails
       .map((line, index) => {
         const y = 388 + index * 25;
-        const isAddress = index === 0;
-        const fontWeight = isAddress ? "400" : "700";
+        const isAddressLine = index < addressLinesCount;
+        const fontWeight = isAddressLine ? "400" : "700";
         return `<text x="60" y="${y}" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="${fontWeight}" fill="black" text-anchor="start" direction="ltr">${escapeXml(line)}</text>`;
       })
       .join("");
+
+    const recipientBox = createRecipientBox(allRecipientLines, {
+      x: 60,
+      startY: 365,
+      lineHeight: 25,
+      fontSize: 22,
+      strokeWidth: 2, // Bordure plus fine pour postnl
+      padding: 8,
+    });
 
     overlay = `
   <g id="dynamic-label-overlay">
@@ -274,6 +368,7 @@ export const buildLabelSvg = async (
     <text font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${senderInfoLines}</text>
     <text font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${senderDetailsUpperLines}</text>
     <text x="50" y="200" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" fill="black" text-anchor="start" direction="ltr">AD</text>
+    ${recipientBox}
     <text font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${recipientNameTspans}</text>
     ${recipientDetailsBoldLines}
     <image x="50" y="580" width="500" height="140" href="data:image/png;base64,${barcodeBase64}"/>
@@ -282,7 +377,7 @@ export const buildLabelSvg = async (
   } else {
     trackingShown = randomizeTrackingFromIndex(originalTracking, 8);
 
-    const senderNameText = linesToTspans([senderNameLine(payload)], {
+    const senderNameText = linesToTspans(senderNameLine(payload), {
       x: 280,
       startY: 84,
       lineHeight: 20,
@@ -294,16 +389,29 @@ export const buildLabelSvg = async (
       lineHeight: 22,
     });
 
-    const recipientNameText = linesToTspans([recipientNameLine(payload)], {
+    const recipientNameLines = recipientNameLine(payload);
+    const recipientDetailsLines = recipientDetailLines(payload);
+    const allRecipientLines = [...recipientNameLines, ...recipientDetailsLines];
+
+    const recipientNameText = linesToTspans(recipientNameLines, {
       x: 120,
       startY: 415,
       lineHeight: 20,
     });
 
-    const recipientDetailsText = linesToTspans(recipientDetailLines(payload), {
+    const recipientDetailsText = linesToTspans(recipientDetailsLines, {
       x: 120,
-      startY: 461,
+      startY: 415 + recipientNameLines.length * 20,
       lineHeight: 22,
+    });
+
+    const recipientBox = createRecipientBox(allRecipientLines, {
+      x: 120,
+      startY: 415,
+      lineHeight: recipientNameLines.length > 0 ? 20 : 22,
+      fontSize: 22,
+      strokeWidth: 4, // Bordure plus épaisse pour bpost
+      padding: 8,
     });
 
     overlay = `
@@ -311,6 +419,7 @@ export const buildLabelSvg = async (
     <text x="280" y="60" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="black" text-anchor="start" direction="ltr">Expéditeur/Afzender:</text>
     <text font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${senderNameText}</text>
     <text font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${senderDetailsText}</text>
+    ${recipientBox}
     <text font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${recipientNameText}</text>
     <text font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${recipientDetailsText}</text>
     <image x="146" y="245" width="320" height="90" href="data:image/png;base64,${barcodeBase64}"/>

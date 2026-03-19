@@ -15,7 +15,7 @@ export interface ElectronAPI {
   genBarcode: (tracking: string) => Promise<string>;
   generateLabelSvg: (payload: LabelPayload) => Promise<GeneratedLabel>;
   generateLabelPdf: (svg: string) => Promise<void>;
-  loadTestData: () => Promise<LabelPayload>;
+  loadTestData: (carrier?: string) => Promise<LabelPayload>;
   isTestMode: () => Promise<boolean>;
   generateRandomName: () => RandomName;
 }

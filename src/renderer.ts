@@ -37,6 +37,8 @@ const getFormDataFromDom = (form: HTMLFormElement): LabelPayload => {
 };
 
 let currentSvg = "";
+let isTestMode = false;
+let electronApiRef: Window["electronAPI"] | undefined;
 
 const initializeForm = (): void => {
   const elements = getFormElements();
@@ -45,26 +47,43 @@ const initializeForm = (): void => {
   updateRecipientFields(elements);
   updateTrackingValidation(elements);
 
-  // Auto-load test data if in test mode
-  void (async () => {
-    try {
-      const electronApi = (window as { electronAPI?: Window["electronAPI"] })
-        .electronAPI;
-      if (
-        electronApi &&
-        typeof electronApi.isTestMode === "function" &&
-        (await electronApi.isTestMode())
-      ) {
-        const testData = await electronApi.loadTestData();
-        loadTestDataIntoForm(elements, testData);
+  window.setTimeout(() => {
+    void (async () => {
+      try {
+        let electronApi = (window as { electronAPI?: Window["electronAPI"] })
+          .electronAPI;
+        let attempts = 0;
+        while (!electronApi && attempts < 10) {
+          await new Promise((resolve) => window.setTimeout(resolve, 100));
+          electronApi = (window as { electronAPI?: Window["electronAPI"] })
+            .electronAPI;
+          attempts += 1;
+        }
+
+        if (!electronApi) {
+          return;
+        }
+
+        if (typeof electronApi.isTestMode !== "function") {
+          return;
+        }
+
+        const isTest = await electronApi.isTestMode();
+        isTestMode = isTest;
+        electronApiRef = electronApi;
+
+        if (isTest) {
+          const carrier = elements.carrier.value || "bpost";
+          const testData = await electronApi.loadTestData(carrier);
+          loadTestDataIntoForm(elements, testData);
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unexpected error.";
+        showError(elements.output, message);
       }
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Unexpected error.";
-      // eslint-disable-next-line no-console
-      console.error("Failed to load test data:", message);
-    }
-  })();
+    })();
+  }, 100);
 
   elements.senderIsCompany.addEventListener("change", (): void => {
     updateSenderFields(elements);
@@ -76,6 +95,16 @@ const initializeForm = (): void => {
 
   elements.carrier.addEventListener("change", (): void => {
     updateTrackingValidation(elements);
+
+    if (isTestMode && electronApiRef) {
+      void (async () => {
+        const carrier = elements.carrier.value || "bpost";
+        const testData = await electronApiRef.loadTestData(
+          carrier as "bpost" | "postnl",
+        );
+        elements.trackingNumber.value = testData["tracking_number"] ?? "";
+      })();
+    }
   });
 
   elements.senderRandomNameBtn.addEventListener("click", (event): void => {
@@ -83,42 +112,12 @@ const initializeForm = (): void => {
     const electronAPI = (window as { electronAPI?: Window["electronAPI"] })
       .electronAPI;
     if (!electronAPI) {
-      // eslint-disable-next-line no-console
-      console.error("Electron API not available");
       return;
     }
     const { firstname, lastname } = electronAPI.generateRandomName();
     elements.senderFirstname.value = firstname;
     elements.senderLastname.value = lastname;
   });
-
-  const loadTestDataBtn = document.getElementById("loadTestDataBtn");
-  if (loadTestDataBtn instanceof HTMLButtonElement) {
-    loadTestDataBtn.addEventListener("click", (): void => {
-      void (async (): Promise<void> => {
-        try {
-          const electronApi = (
-            window as { electronAPI?: Window["electronAPI"] }
-          ).electronAPI;
-          if (
-            electronApi === undefined ||
-            typeof electronApi.loadTestData !== "function"
-          ) {
-            throw new Error(
-              "Electron bridge unavailable. Close and restart the application with npm run start.",
-            );
-          }
-
-          const testData = await electronApi.loadTestData();
-          loadTestDataIntoForm(elements, testData);
-        } catch (error: unknown) {
-          const message =
-            error instanceof Error ? error.message : "Unexpected error.";
-          showError(elements.output, message);
-        }
-      })();
-    });
-  }
 
   elements.form.addEventListener("submit", (event) => {
     event.preventDefault();

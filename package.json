@@ -10,7 +10,7 @@
     "copy-assets": "node -e \"const fs=require('fs'); const path=require('path'); fs.cpSync(path.join(__dirname,'src/assets'), path.join(__dirname,'dist/assets'), {recursive:true, force:true})\"",
     "start": "npm run build && electron .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "cross-env NODE_ENV=test npm run build && electron .",
+    "test": "npm run build && cross-env NODE_ENV=test electron .",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "clear": "rimraf node_modules dist"
