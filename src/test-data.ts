@@ -1,6 +1,6 @@
 import type { LabelPayload } from "./types/index.js";
 
-export const TEST_DATA: LabelPayload = {
+const TEST_DATA_BASE: LabelPayload = {
   sender_firstname: "Jean",
   sender_lastname: "Dupond",
   sender_address: "Rue de la Poste 12",
@@ -15,3 +15,16 @@ export const TEST_DATA: LabelPayload = {
   carrier: "bpost",
   tracking_number: "323211045445004288094050",
 };
+
+export const getTestData = (carrier?: "postnl" | "bpost"): LabelPayload => {
+  const safeCarrier = carrier ?? "bpost";
+  const testData: LabelPayload = { ...TEST_DATA_BASE, carrier: safeCarrier };
+
+  if (safeCarrier === "postnl") {
+    testData["tracking_number"] = "3SDDRL278573409";
+  }
+
+  return testData;
+};
+
+export const TEST_DATA = getTestData();

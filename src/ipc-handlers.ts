@@ -2,7 +2,7 @@ import bwipjs from "bwip-js";
 import type { BrowserWindow, Dialog, IpcMain } from "electron";
 import puppeteer from "puppeteer";
 import { buildLabelSvg } from "./utils/label-generator.js";
-import { TEST_DATA } from "./test-data.js";
+import { getTestData } from "./test-data.js";
 import type { LabelPayload } from "./types/index.js";
 
 const BARCODE_CONFIG = {
@@ -85,7 +85,11 @@ export const registerIpcHandlers = (
     },
   );
 
-  ipcMain.handle("load-test-data", (): LabelPayload => TEST_DATA);
+  ipcMain.handle(
+    "load-test-data",
+    (_event, carrier?: "postnl" | "bpost"): LabelPayload =>
+      getTestData(carrier ?? "bpost"),
+  );
 
   ipcMain.handle(
     "is-test-mode",

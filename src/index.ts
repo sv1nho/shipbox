@@ -16,12 +16,12 @@ const createWindow = (): void => {
       sandbox: false,
     },
   });
-
-  // Pass test mode flag to renderer
+  
   void mainWindow.webContents.loadFile(
     path.join(BASE_DIR(), "assets", "ui.html"),
   );
 };
+
 
 void app.whenReady().then(() => {
   createWindow();
