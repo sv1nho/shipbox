@@ -218,7 +218,7 @@ export const loadTestDataIntoForm = (
   elements.recipientFirstname.value = testData["recipient_firstname"] ?? "";
   elements.recipientLastname.value = testData["recipient_lastname"] ?? "";
   elements.recipientCompany.value = testData["recipient_company"] ?? "";
-  elements.carrier.value = testData["carrier"] ?? "bpost";
+  elements.carrier.value = testData["carrier"] as "postnl" | "bpost";
   elements.trackingNumber.value = testData["tracking_number"] ?? "";
 
   const senderAddress = document.querySelector('input[name="sender_address"]');

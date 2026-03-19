@@ -73,7 +73,7 @@ const initializeForm = (): void => {
         electronApiRef = electronApi;
 
         if (isTest) {
-          const carrier = elements.carrier.value || "bpost";
+          const carrier = elements.carrier.value as "postnl" | "bpost";
           const testData = await electronApi.loadTestData(carrier);
           loadTestDataIntoForm(elements, testData);
         }
@@ -98,9 +98,9 @@ const initializeForm = (): void => {
 
     if (isTestMode && electronApiRef) {
       void (async () => {
-        const carrier = elements.carrier.value || "bpost";
+        const carrier = elements.carrier.value as "postnl" | "bpost";
         const testData = await electronApiRef.loadTestData(
-          carrier as "bpost" | "postnl",
+          carrier
         );
         elements.trackingNumber.value = testData["tracking_number"] ?? "";
       })();

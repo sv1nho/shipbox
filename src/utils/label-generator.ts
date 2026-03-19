@@ -39,13 +39,31 @@ const POSTAL_ZONES = [
   { code: "C66L", min: 6600, max: 6999 },
 ];
 
+type Country = "BE" | "NL" | "DE";
+type Language = "en" | "fr" | "nl";
+
+const COUNTRY_NAMES: Record<Country, Record<Language, string>> = {
+  BE: {
+    en: "Belgium",
+    fr: "Belgique",
+    nl: "België",
+  },
+  NL: {
+    en: "The Netherlands",
+    fr: "Pays-Bas",
+    nl: "Nederland",
+  },
+  DE: {
+    en: "Germany",
+    fr: "Allemagne",
+    nl: "Duitsland",
+  },
+};
+
 const resolveCountry = (payload: LabelPayload): string => {
-  const language = (payload["label_language"] ?? "fr").toLowerCase();
-  return language === "nl"
-    ? "Belgie"
-    : language === "en"
-      ? "Belgium"
-      : "Belgique";
+  const language = payload["label_language"] as Language;
+  const country = payload["recipient_country"] as Country;
+  return COUNTRY_NAMES[country][language];
 };
 
 const postalCityWithGap = (
@@ -192,8 +210,7 @@ const senderDetailLinesWithCountry = (
   withGap: boolean = true,
   uppercaseCountry: boolean = false,
 ): string[] => {
-  const country =
-    (payload["recipient_country"] ?? "").trim() || resolveCountry(payload);
+  const country = resolveCountry(payload);
   const address = payload["sender_address"] ?? "";
   const postalCity = postalCityWithGap(
     payload["sender_postal"] ?? "",
@@ -225,9 +242,7 @@ const recipientDetailLines = (
     apply(payload["recipient_city"] ?? ""),
     withGap ? 5 : 0,
   );
-  const country = apply(
-    (payload["recipient_country"] ?? "").trim() || resolveCountry(payload),
-  );
+  const country = apply(resolveCountry(payload));
 
   return [
     ...wrapText(address, 35),
@@ -250,35 +265,62 @@ const linesToTspans = (
     })
     .join("");
 
-const createRecipientBox = (
+const wrapTextByPixelWidth = (
   lines: string[],
-  options: {
-    x: number;
-    startY: number;
-    lineHeight: number;
-    fontSize: number;
-    strokeWidth: number;
-    padding?: number;
-  },
-): string => {
-  const padding = options.padding ?? 10;
+  maxPixelWidth: number,
+  fontSize: number,
+): string[] => {
+  // Approximation: ~12px par caractère pour Arial à 22px
+  const charWidth = (fontSize / 22) * 12;
+  const maxCharCount = Math.floor(maxPixelWidth / charWidth);
 
-  if (lines.length === 0) {
-    return "";
+  const wrappedLines: string[] = [];
+
+  for (const line of lines) {
+    if (line.length <= maxCharCount) {
+      wrappedLines.push(line);
+    } else {
+      // Split par espaces et rewrap
+      const words = line.split(" ");
+      let currentLine = "";
+
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+
+        if (testLine.length <= maxCharCount) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) {
+            wrappedLines.push(currentLine);
+          }
+          currentLine = word;
+        }
+      }
+
+      if (currentLine) {
+        wrappedLines.push(currentLine);
+      }
+    }
   }
 
-  // Estimer la largeur basée sur le texte le plus long
-  // Approximation: ~7px par caractère pour Arial à 22px
-  const maxCharCount = Math.max(...lines.map((line) => line.length));
-  const charWidth = (options.fontSize / 22) * 7; // Ajuster proportionnellement à la taille
-  const boxWidth = maxCharCount * charWidth + padding * 2;
+  return wrappedLines;
+};
 
-  // Calculer la hauteur basée sur le nombre de lignes
-  const boxHeight = lines.length * options.lineHeight + padding * 2;
+const createRecipientBox = (options: {
+  x: number;
+  startY: number;
+  boxWidth?: number;
+  boxHeight?: number;
+  padding?: number;
+  strokeWidth: number;
+}): string => {
+  const padding = options.padding ?? 10;
+  const boxHeight = options.boxHeight ?? 180; // Hauteur fixe de la boîte
+  const boxWidth = options.boxWidth ?? 300; // Largeur fixe de la boîte
 
   // Position du rectangle (offset du padding)
   const rectX = options.x - padding;
-  const rectY = options.startY - options.fontSize + padding;
+  const rectY = options.startY - padding;
 
   return `<rect x="${String(rectX)}" y="${String(rectY)}" width="${String(boxWidth)}" height="${String(boxHeight)}" fill="none" stroke="black" stroke-width="${String(options.strokeWidth)}" rx="2" ry="2"/>`;
 };
@@ -331,20 +373,31 @@ export const buildLabelSvg = async (
 
     const recipientNameLines = recipientNameLine(payload);
     const recipientDetails = recipientDetailLines(payload, true, false);
-    const allRecipientLines = [...recipientNameLines, ...recipientDetails];
+
+    // Wrapper le texte pour qu'il rentre dans la largeur fixe de la boîte (510px)
+    const wrappedRecipientNameLines = wrapTextByPixelWidth(
+      recipientNameLines,
+      510,
+      22,
+    );
+    const wrappedRecipientDetails = wrapTextByPixelWidth(
+      recipientDetails,
+      510,
+      22,
+    );
 
     const addressLinesCount = wrapText(
       payload["recipient_address"] ?? "",
       35,
     ).filter((l) => l.length > 0).length;
 
-    const recipientNameTspans = linesToTspans(recipientNameLines, {
+    const recipientNameTspans = linesToTspans(wrappedRecipientNameLines, {
       x: 60,
       startY: 365,
       lineHeight: 25,
     });
 
-    const recipientDetailsBoldLines = recipientDetails
+    const recipientDetailsBoldLines = wrappedRecipientDetails
       .map((line, index) => {
         const y = 388 + index * 25;
         const isAddressLine = index < addressLinesCount;
@@ -353,13 +406,13 @@ export const buildLabelSvg = async (
       })
       .join("");
 
-    const recipientBox = createRecipientBox(allRecipientLines, {
+    const recipientBox = createRecipientBox({
       x: 60,
-      startY: 365,
-      lineHeight: 25,
-      fontSize: 22,
-      strokeWidth: 2, // Bordure plus fine pour postnl
+      startY: 350,
+      strokeWidth: 2,
       padding: 8,
+      boxHeight: 220,
+      boxWidth: 510,
     });
 
     overlay = `
@@ -371,8 +424,8 @@ export const buildLabelSvg = async (
     ${recipientBox}
     <text font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="black" text-anchor="start" direction="ltr" xml:space="preserve">${recipientNameTspans}</text>
     ${recipientDetailsBoldLines}
-    <image x="50" y="580" width="500" height="140" href="data:image/png;base64,${barcodeBase64}"/>
-    <text x="306" y="750" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="black">${escapeXml(trackingShown)}</text>
+    <image x="60" y="580" width="500" height="140" href="data:image/png;base64,${barcodeBase64}"/>
+    <text x="306" y="730" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="black">${escapeXml(trackingShown)}</text>
   </g>`;
   } else {
     trackingShown = randomizeTrackingFromIndex(originalTracking, 8);
@@ -391,27 +444,38 @@ export const buildLabelSvg = async (
 
     const recipientNameLines = recipientNameLine(payload);
     const recipientDetailsLines = recipientDetailLines(payload);
-    const allRecipientLines = [...recipientNameLines, ...recipientDetailsLines];
 
-    const recipientNameText = linesToTspans(recipientNameLines, {
+    // Wrapper le texte pour qu'il rentre dans la largeur fixe de la boîte (300px)
+    const wrappedRecipientNameLines = wrapTextByPixelWidth(
+      recipientNameLines,
+      380,
+      22,
+    );
+    const wrappedRecipientDetailsLines = wrapTextByPixelWidth(
+      recipientDetailsLines,
+      380,
+      22,
+    );
+
+    const recipientNameText = linesToTspans(wrappedRecipientNameLines, {
       x: 120,
-      startY: 415,
+      startY: 400,
       lineHeight: 20,
     });
 
-    const recipientDetailsText = linesToTspans(recipientDetailsLines, {
+    const recipientDetailsText = linesToTspans(wrappedRecipientDetailsLines, {
       x: 120,
-      startY: 415 + recipientNameLines.length * 20,
-      lineHeight: 22,
+      startY: 400 + wrappedRecipientNameLines.length * 25,
+      lineHeight: 27,
     });
 
-    const recipientBox = createRecipientBox(allRecipientLines, {
+    const recipientBox = createRecipientBox({
       x: 120,
-      startY: 415,
-      lineHeight: recipientNameLines.length > 0 ? 20 : 22,
-      fontSize: 22,
-      strokeWidth: 4, // Bordure plus épaisse pour bpost
+      startY: 380,
+      strokeWidth: 4,
       padding: 8,
+      boxHeight: 170,
+      boxWidth: 380,
     });
 
     overlay = `
