@@ -1,30 +1,22 @@
 import type { LabelPayload } from "./types/index.js";
 
-const TEST_DATA_BASE: LabelPayload = {
-  sender_firstname: "Jean",
-  sender_lastname: "Dupond",
-  sender_address: "Rue de la Poste 12",
-  sender_postal: "1000",
-  sender_city: "Bruxelles",
-  recipient_firstname: "Marie",
-  recipient_lastname: "Martin",
-  recipient_address: "Avenue Centrale 45",
-  recipient_postal: "4000",
-  recipient_city: "Liège",
-  label_language: "nl",
-  carrier: "bpost",
-  tracking_number: "323211045445004288094050",
-};
-
-export const getTestData = (carrier?: "postnl" | "bpost"): LabelPayload => {
-  const safeCarrier = carrier ?? "bpost";
-  const testData: LabelPayload = { ...TEST_DATA_BASE, carrier: safeCarrier };
-
-  if (safeCarrier === "postnl") {
-    testData["tracking_number"] = "3SDDRL278573409";
-  }
+export const getTestData = (carrier: "postnl" | "bpost"): LabelPayload => {
+  const testData: LabelPayload = {
+    sender_firstname: "Jean",
+    sender_lastname: "Dupond",
+    sender_address: "Rue de la Poste 12",
+    sender_postal: "1000",
+    sender_city: "Bruxelles",
+    recipient_firstname: "Marie",
+    recipient_lastname: "Martin",
+    recipient_address: "Avenue Centrale 45",
+    recipient_postal: "4000",
+    recipient_city: "Liège",
+    label_language: "nl",
+    carrier,
+    tracking_number:
+      carrier === "postnl" ? "3SDDRL278573409" : "323211045445004288094050",
+  };
 
   return testData;
 };
-
-export const TEST_DATA = getTestData();

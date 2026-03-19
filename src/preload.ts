@@ -25,7 +25,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke("generate-label-svg", payload),
   generateLabelPdf: (svg: string): Promise<void> =>
     ipcRenderer.invoke("generate-label-pdf", svg) as Promise<void>,
-  loadTestData: (carrier?: string): Promise<LabelPayload> =>
+  loadTestData: (carrier: "postnl" | "bpost"): Promise<LabelPayload> =>
     ipcRenderer.invoke("load-test-data", carrier) as Promise<LabelPayload>,
   isTestMode: (): Promise<boolean> =>
     ipcRenderer.invoke("is-test-mode") as Promise<boolean>,

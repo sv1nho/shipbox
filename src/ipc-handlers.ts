@@ -87,8 +87,8 @@ export const registerIpcHandlers = (
 
   ipcMain.handle(
     "load-test-data",
-    (_event, carrier?: "postnl" | "bpost"): LabelPayload =>
-      getTestData(carrier ?? "bpost"),
+    (_event, carrier: "postnl" | "bpost"): LabelPayload =>
+      getTestData(carrier),
   );
 
   ipcMain.handle(

@@ -127,13 +127,13 @@
         name="recipient_city"
         required
       />
-      <input
-        class="form-control mb-2"
-        placeholder="Recipient country"
-        name="recipient_country"
-        value="Belgium"
-        disabled
-      />
+
+      <h4 class="mt-4">Recipient Country</h4>
+      <select class="form-select mb-3" name="recipient_country" required>
+        <option value="BE" selected>Belgium</option>
+        <option value="NL">The Netherlands</option>
+        <option value="DE">Germany</option>
+      </select>
 
       <h4 class="mt-4">Label Language</h4>
       <select class="form-select mb-3" name="label_language" required>
