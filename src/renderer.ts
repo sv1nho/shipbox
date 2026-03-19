@@ -1,4 +1,4 @@
-import type { GeneratedLabel, LabelPayload } from "./types/index.js";
+import type { Carrier, GeneratedLabel, LabelPayload } from "./types/index.js";
 import {
   getFormElements,
   updateSenderFields,
@@ -8,6 +8,7 @@ import {
   showResult,
   showError,
   loadTestDataIntoForm,
+  validateFormAndShowErrors,
 } from "./utils/dom.js";
 
 const isGeneratedLabel = (value: unknown): value is GeneratedLabel => {
@@ -33,7 +34,7 @@ const getFormDataFromDom = (form: HTMLFormElement): LabelPayload => {
     }
   });
 
-  return formData as LabelPayload;
+  return formData as unknown as LabelPayload;
 };
 
 let currentSvg = "";
@@ -73,7 +74,7 @@ const initializeForm = (): void => {
         electronApiRef = electronApi;
 
         if (isTest) {
-          const carrier = elements.carrier.value as "postnl" | "bpost";
+          const carrier = elements.carrier.value as Carrier;
           const testData = await electronApi.loadTestData(carrier);
           loadTestDataIntoForm(elements, testData);
         }
@@ -98,10 +99,8 @@ const initializeForm = (): void => {
 
     if (isTestMode && electronApiRef) {
       void (async () => {
-        const carrier = elements.carrier.value as "postnl" | "bpost";
-        const testData = await electronApiRef.loadTestData(
-          carrier
-        );
+        const carrier = elements.carrier.value as Carrier;
+        const testData = await electronApiRef.loadTestData(carrier);
         elements.trackingNumber.value = testData["tracking_number"] ?? "";
       })();
     }
@@ -124,19 +123,26 @@ const initializeForm = (): void => {
 
     void (async () => {
       elements.submitButton.disabled = true;
+
+      // Validate form inputs
+      if (!validateFormAndShowErrors(elements)) {
+        elements.submitButton.disabled = false;
+        return;
+      }
+
       showLoading(elements.output);
 
       try {
         const formData = getFormDataFromDom(elements.form);
 
         if (elements.senderIsCompany.checked) {
-          formData["sender_firstname"] = formData["sender_company"] ?? "";
-          formData["sender_lastname"] = "";
+          formData.sender_firstname = formData["sender_company"];
+          formData.sender_lastname = "";
         }
 
         if (elements.recipientIsCompany.checked) {
-          formData["recipient_firstname"] = formData["recipient_company"] ?? "";
-          formData["recipient_lastname"] = "";
+          formData.recipient_firstname = formData["recipient_company"];
+          formData.recipient_lastname = "";
         }
 
         const electronApi = (window as { electronAPI?: Window["electronAPI"] })

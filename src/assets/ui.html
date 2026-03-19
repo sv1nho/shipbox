@@ -12,22 +12,21 @@
     <h2 class="mb-4">Enter Information</h2>
 
     <form id="labelForm">
-      <!-- Sender -->
       <h4>Sender</h4>
 
       <div id="senderPersonFields">
         <input
           class="form-control mb-2"
           placeholder="First name"
-          name="sender_firstname"
           id="sender_firstname"
+          name="sender_firstname"
           required
         />
         <input
           class="form-control mb-2"
           placeholder="Last name"
-          name="sender_lastname"
           id="sender_lastname"
+          name="sender_lastname"
           required
         />
         <button
@@ -43,51 +42,63 @@
         <input
           class="form-control mb-2"
           placeholder="Company name"
-          name="sender_company"
           id="sender_company"
+          name="sender_company"
         />
       </div>
 
       <label class="mb-2 d-block">
-        <input type="checkbox" name="sender_isCompany" id="sender_isCompany" />
+        <input type="checkbox" id="sender_isCompany" />
         Company?
       </label>
 
       <input
         class="form-control mb-2"
         placeholder="Address"
+        id="sender_address"
         name="sender_address"
         required
       />
       <input
         class="form-control mb-2"
         placeholder="Postal code"
+        id="sender_postal"
         name="sender_postal"
         required
       />
       <input
         class="form-control mb-2"
         placeholder="City"
+        id="sender_city"
         name="sender_city"
         required
       />
+      <select
+        class="form-select mb-3"
+        id="sender_country"
+        name="sender_country"
+        required
+      >
+        <option value="BE" selected>Belgium</option>
+        <option value="NL">The Netherlands</option>
+        <option value="DE">Germany</option>
+      </select>
 
-      <!-- Recipient -->
       <h4 class="mt-4">Recipient</h4>
 
       <div id="recipientPersonFields">
         <input
           class="form-control mb-2"
           placeholder="First name"
-          name="recipient_firstname"
           id="recipient_firstname"
+          name="recipient_firstname"
           required
         />
         <input
           class="form-control mb-2"
           placeholder="Last name"
-          name="recipient_lastname"
           id="recipient_lastname"
+          name="recipient_lastname"
           required
         />
       </div>
@@ -96,54 +107,61 @@
         <input
           class="form-control mb-2"
           placeholder="Company name"
-          name="recipient_company"
           id="recipient_company"
+          name="recipient_company"
         />
       </div>
 
       <label class="mb-2 d-block">
-        <input
-          type="checkbox"
-          name="recipient_isCompany"
-          id="recipient_isCompany"
-        />
+        <input type="checkbox" id="recipient_isCompany" />
         Company?
       </label>
       <input
         class="form-control mb-2"
         placeholder="Address"
+        id="recipient_address"
         name="recipient_address"
         required
       />
       <input
         class="form-control mb-2"
         placeholder="Postal code"
+        id="recipient_postal"
         name="recipient_postal"
         required
       />
       <input
         class="form-control mb-2"
         placeholder="City"
+        id="recipient_city"
         name="recipient_city"
         required
       />
-
-      <h4 class="mt-4">Recipient Country</h4>
-      <select class="form-select mb-3" name="recipient_country" required>
+      <select
+        class="form-select mb-3"
+        id="recipient_country"
+        name="recipient_country"
+        required
+      >
         <option value="BE" selected>Belgium</option>
         <option value="NL">The Netherlands</option>
         <option value="DE">Germany</option>
       </select>
 
       <h4 class="mt-4">Label Language</h4>
-      <select class="form-select mb-3" name="label_language" required>
+      <select
+        class="form-select mb-3"
+        id="label_language"
+        name="label_language"
+        required
+      >
         <option value="fr" selected>French</option>
         <option value="nl">Dutch</option>
         <option value="en">English</option>
       </select>
 
       <h4 class="mt-4">Carrier</h4>
-      <select class="form-select mb-3" name="carrier" id="carrier" required>
+      <select class="form-select mb-3" id="carrier" name="carrier" required>
         <option value="bpost" selected>Bpost</option>
         <option value="postnl">PostNL</option>
       </select>
@@ -152,8 +170,8 @@
       <input
         class="form-control mb-3"
         placeholder="24 digits for Bpost"
-        name="tracking_number"
         id="tracking_number"
+        name="tracking_number"
         required
       />
 

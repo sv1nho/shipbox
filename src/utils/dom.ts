@@ -1,3 +1,5 @@
+import type { LabelPayload } from "../types/index.js";
+
 export interface FormElements {
   form: HTMLFormElement;
   output: HTMLDivElement;
@@ -5,18 +7,27 @@ export interface FormElements {
   senderFirstname: HTMLInputElement;
   senderLastname: HTMLInputElement;
   senderCompany: HTMLInputElement;
+  senderAddress: HTMLInputElement;
+  senderPostal: HTMLInputElement;
+  senderCity: HTMLInputElement;
   senderRandomNameBtn: HTMLButtonElement;
   senderIsCompany: HTMLInputElement;
   senderPersonFields: HTMLDivElement;
   senderCompanyFields: HTMLDivElement;
+  senderCountry: HTMLSelectElement;
   recipientFirstname: HTMLInputElement;
   recipientLastname: HTMLInputElement;
   recipientCompany: HTMLInputElement;
+  recipientAddress: HTMLInputElement;
+  recipientPostal: HTMLInputElement;
+  recipientCity: HTMLInputElement;
   recipientIsCompany: HTMLInputElement;
   recipientPersonFields: HTMLDivElement;
   recipientCompanyFields: HTMLDivElement;
   carrier: HTMLSelectElement;
   trackingNumber: HTMLInputElement;
+  labelLanguage: HTMLSelectElement;
+  recipientCountry: HTMLSelectElement;
 }
 
 export const getFormElements = (): FormElements => {
@@ -27,14 +38,21 @@ export const getFormElements = (): FormElements => {
   const senderFirstname = document.getElementById("sender_firstname");
   const senderLastname = document.getElementById("sender_lastname");
   const senderCompany = document.getElementById("sender_company");
+  const senderAddress = document.getElementById("sender_address");
+  const senderPostal = document.getElementById("sender_postal");
+  const senderCity = document.getElementById("sender_city");
   const senderRandomNameBtn = document.getElementById("senderRandomNameBtn");
   const senderIsCompany = document.getElementById("sender_isCompany");
   const senderPersonFields = document.getElementById("senderPersonFields");
   const senderCompanyFields = document.getElementById("senderCompanyFields");
+  const senderCountry = document.getElementById("sender_country");
 
   const recipientFirstname = document.getElementById("recipient_firstname");
   const recipientLastname = document.getElementById("recipient_lastname");
   const recipientCompany = document.getElementById("recipient_company");
+  const recipientAddress = document.getElementById("recipient_address");
+  const recipientPostal = document.getElementById("recipient_postal");
+  const recipientCity = document.getElementById("recipient_city");
   const recipientIsCompany = document.getElementById("recipient_isCompany");
   const recipientPersonFields = document.getElementById(
     "recipientPersonFields",
@@ -42,9 +60,11 @@ export const getFormElements = (): FormElements => {
   const recipientCompanyFields = document.getElementById(
     "recipientCompanyFields",
   );
+  const recipientCountry = document.getElementById("recipient_country");
 
   const carrier = document.getElementById("carrier");
   const trackingNumber = document.getElementById("tracking_number");
+  const labelLanguage = document.getElementById("label_language");
 
   if (!(form instanceof HTMLFormElement)) {
     throw new Error("Form #labelForm not found.");
@@ -63,6 +83,15 @@ export const getFormElements = (): FormElements => {
   }
   if (!(senderCompany instanceof HTMLInputElement)) {
     throw new Error("Sender company field not found.");
+  }
+  if (!(senderAddress instanceof HTMLInputElement)) {
+    throw new Error("Sender address field not found.");
+  }
+  if (!(senderPostal instanceof HTMLInputElement)) {
+    throw new Error("Sender postal field not found.");
+  }
+  if (!(senderCity instanceof HTMLInputElement)) {
+    throw new Error("Sender city field not found.");
   }
   if (!(senderRandomNameBtn instanceof HTMLButtonElement)) {
     throw new Error("Sender random name button not found.");
@@ -85,6 +114,15 @@ export const getFormElements = (): FormElements => {
   if (!(recipientCompany instanceof HTMLInputElement)) {
     throw new Error("Recipient company field not found.");
   }
+  if (!(recipientAddress instanceof HTMLInputElement)) {
+    throw new Error("Recipient address field not found.");
+  }
+  if (!(recipientPostal instanceof HTMLInputElement)) {
+    throw new Error("Recipient postal field not found.");
+  }
+  if (!(recipientCity instanceof HTMLInputElement)) {
+    throw new Error("Recipient city field not found.");
+  }
   if (!(recipientIsCompany instanceof HTMLInputElement)) {
     throw new Error("Recipient is company checkbox not found.");
   }
@@ -94,11 +132,21 @@ export const getFormElements = (): FormElements => {
   if (!(recipientCompanyFields instanceof HTMLDivElement)) {
     throw new Error("Recipient company fields container not found.");
   }
+  if (!(recipientCountry instanceof HTMLSelectElement)) {
+    throw new Error("Recipient country select not found.");
+  }
   if (!(carrier instanceof HTMLSelectElement)) {
     throw new Error("Carrier select not found.");
   }
   if (!(trackingNumber instanceof HTMLInputElement)) {
     throw new Error("Tracking number field not found.");
+  }
+  if (!(labelLanguage instanceof HTMLSelectElement)) {
+    throw new Error("Label language select not found.");
+  }
+
+  if (!(senderCountry instanceof HTMLSelectElement)) {
+    throw new Error("Sender country select not found.");
   }
 
   return {
@@ -108,6 +156,9 @@ export const getFormElements = (): FormElements => {
     senderFirstname,
     senderLastname,
     senderCompany,
+    senderAddress,
+    senderPostal,
+    senderCity,
     senderRandomNameBtn,
     senderIsCompany,
     senderPersonFields,
@@ -115,11 +166,17 @@ export const getFormElements = (): FormElements => {
     recipientFirstname,
     recipientLastname,
     recipientCompany,
+    recipientAddress,
+    recipientPostal,
+    recipientCity,
     recipientIsCompany,
     recipientPersonFields,
     recipientCompanyFields,
     carrier,
     trackingNumber,
+    labelLanguage,
+    senderCountry,
+    recipientCountry,
   };
 };
 
@@ -208,57 +265,106 @@ export const showError = (output: HTMLDivElement, message: string): void => {
   `;
 };
 
+export const validateFormAndShowErrors = (elements: FormElements): boolean => {
+  const errors: string[] = [];
+
+  // Validate sender fields
+  if (!elements.senderIsCompany.checked) {
+    if (elements.senderFirstname.value.trim() === "") {
+      errors.push("Sender first name is required");
+    }
+    if (elements.senderLastname.value.trim() === "") {
+      errors.push("Sender last name is required");
+    }
+  } else {
+    if (elements.senderCompany.value.trim() === "") {
+      errors.push("Sender company is required");
+    }
+  }
+
+  if (elements.senderAddress.value.trim() === "") {
+    errors.push("Sender address is required");
+  }
+  if (elements.senderPostal.value.trim() === "") {
+    errors.push("Sender postal is required");
+  }
+  if (elements.senderCity.value.trim() === "") {
+    errors.push("Sender city is required");
+  }
+  if (!elements.senderCountry.value) {
+    errors.push("Sender country is required");
+  }
+
+  // Validate recipient fields
+  if (!elements.recipientIsCompany.checked) {
+    if (elements.recipientFirstname.value.trim() === "") {
+      errors.push("Recipient first name is required");
+    }
+    if (elements.recipientLastname.value.trim() === "") {
+      errors.push("Recipient last name is required");
+    }
+  } else {
+    if (elements.recipientCompany.value.trim() === "") {
+      errors.push("Recipient company is required");
+    }
+  }
+
+  if (elements.recipientAddress.value.trim() === "") {
+    errors.push("Recipient address is required");
+  }
+  if (elements.recipientPostal.value.trim() === "") {
+    errors.push("Recipient postal is required");
+  }
+  if (elements.recipientCity.value.trim() === "") {
+    errors.push("Recipient city is required");
+  }
+  if (!elements.recipientCountry.value) {
+    errors.push("Recipient country is required");
+  }
+
+  // Validate tracking number
+  if (elements.trackingNumber.value.trim() === "") {
+    errors.push("Tracking number is required");
+  }
+
+  // Validate carrier
+  if (!elements.carrier.value) {
+    errors.push("Carrier is required");
+  }
+
+  // Validate label language
+  if (!elements.labelLanguage.value) {
+    errors.push("Label language is required");
+  }
+
+  // Display errors or return success
+  if (errors.length > 0) {
+    showError(elements.output, `Validation failed:\n${errors.join("\n")}`);
+    return false;
+  }
+
+  return true;
+};
+
 export const loadTestDataIntoForm = (
   elements: FormElements,
-  testData: Record<string, string>,
+  testData: LabelPayload,
 ): void => {
-  elements.senderFirstname.value = testData["sender_firstname"] ?? "";
-  elements.senderLastname.value = testData["sender_lastname"] ?? "";
-  elements.senderCompany.value = testData["sender_company"] ?? "";
-  elements.recipientFirstname.value = testData["recipient_firstname"] ?? "";
-  elements.recipientLastname.value = testData["recipient_lastname"] ?? "";
-  elements.recipientCompany.value = testData["recipient_company"] ?? "";
-  elements.carrier.value = testData["carrier"] as "postnl" | "bpost";
-  elements.trackingNumber.value = testData["tracking_number"] ?? "";
-
-  const senderAddress = document.querySelector('input[name="sender_address"]');
-  if (senderAddress instanceof HTMLInputElement) {
-    senderAddress.value = testData["sender_address"] ?? "";
-  }
-
-  const senderPostal = document.querySelector('input[name="sender_postal"]');
-  if (senderPostal instanceof HTMLInputElement) {
-    senderPostal.value = testData["sender_postal"] ?? "";
-  }
-
-  const senderCity = document.querySelector('input[name="sender_city"]');
-  if (senderCity instanceof HTMLInputElement) {
-    senderCity.value = testData["sender_city"] ?? "";
-  }
-
-  const recipientAddress = document.querySelector(
-    'input[name="recipient_address"]',
-  );
-  if (recipientAddress instanceof HTMLInputElement) {
-    recipientAddress.value = testData["recipient_address"] ?? "";
-  }
-
-  const recipientPostal = document.querySelector(
-    'input[name="recipient_postal"]',
-  );
-  if (recipientPostal instanceof HTMLInputElement) {
-    recipientPostal.value = testData["recipient_postal"] ?? "";
-  }
-
-  const recipientCity = document.querySelector('input[name="recipient_city"]');
-  if (recipientCity instanceof HTMLInputElement) {
-    recipientCity.value = testData["recipient_city"] ?? "";
-  }
-
-  const labelLanguageSelect = document.querySelector(
-    'select[name="label_language"]',
-  );
-  if (labelLanguageSelect instanceof HTMLSelectElement) {
-    labelLanguageSelect.value = testData["label_language"] ?? "nl";
-  }
+  elements.senderFirstname.value = testData.sender_firstname;
+  elements.senderLastname.value = testData.sender_lastname;
+  elements.senderCompany.value = testData.sender_company;
+  elements.senderAddress.value = testData.sender_address;
+  elements.senderPostal.value = testData.sender_postal;
+  elements.senderCity.value = testData.sender_city;
+  elements.senderCountry.value = testData.sender_country;
+  elements.recipientFirstname.value = testData.recipient_firstname;
+  elements.recipientLastname.value = testData.recipient_lastname;
+  elements.recipientCompany.value = testData.recipient_company;
+  elements.recipientAddress.value = testData.recipient_address;
+  elements.recipientPostal.value = testData.recipient_postal;
+  elements.recipientCity.value = testData.recipient_city;
+  elements.carrier.value = testData.carrier;
+  elements.trackingNumber.value = testData.tracking_number;
+  elements.labelLanguage.value = testData.label_language;
+  elements.recipientCountry.value = testData.recipient_country;
 };
