@@ -3,7 +3,7 @@ import type { BrowserWindow, Dialog, IpcMain } from "electron";
 import puppeteer from "puppeteer";
 import { buildLabelSvg } from "./utils/label-generator.js";
 import { getTestData } from "./test-data.js";
-import type { LabelPayload } from "./types/index.js";
+import type { BuildLabelResult, Carrier, LabelPayload } from "./types/index.js";
 
 const BARCODE_CONFIG = {
   bcid: "code128",
@@ -37,10 +37,7 @@ export const registerIpcHandlers = (
 
   ipcMain.handle(
     "generate-label-svg",
-    async (
-      _event,
-      payload: LabelPayload,
-    ): Promise<{ svg: string; trackingShown: string }> =>
+    async (_event, payload: LabelPayload): Promise<BuildLabelResult> =>
       buildLabelSvg(payload),
   );
 
@@ -87,8 +84,7 @@ export const registerIpcHandlers = (
 
   ipcMain.handle(
     "load-test-data",
-    (_event, carrier: "postnl" | "bpost"): LabelPayload =>
-      getTestData(carrier),
+    (_event, carrier: Carrier): LabelPayload => getTestData(carrier),
   );
 
   ipcMain.handle(

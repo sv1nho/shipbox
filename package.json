@@ -14,13 +14,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
-    "clear": "rimraf node_modules dist"
+    "clear": "rimraf node_modules dist package-lock.json"
   },
   "license": "ISC",
   "dependencies": {
     "@faker-js/faker": "10.3.0",
     "bwip-js": "4.3.0",
-    "i18n-iso-countries": "^7.14.0",
     "puppeteer": "24.15.0"
   },
   "devDependencies": {
