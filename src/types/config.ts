@@ -1,12 +1,9 @@
 export type CarrierConfig = {
   trackingRandomizeIndex: number;
   sender: {
-    nameX: number;
-    nameStartY: number;
-    nameLineHeight: number;
-    detailsX: number;
-    detailsStartY: number;
-    detailsLineHeight: number;
+    x: number;
+    startY: number;
+    lineHeight: number;
     fontSize: number;
   };
   recipient: {

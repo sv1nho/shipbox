@@ -259,79 +259,73 @@ const CARRIER_CONFIGS: Record<Carrier, CarrierConfig> = {
   postnl: {
     trackingRandomizeIndex: 9,
     sender: {
-      nameX: 50,
-      nameStartY: 60,
-      nameLineHeight: 10,
-      detailsX: 50,
-      detailsStartY: 78,
-      detailsLineHeight: 18,
-      fontSize: 14,
+      x: 25,
+      startY: 30,
+      lineHeight: 12,
+      fontSize: 10,
     },
     recipient: {
-      boxDimension: 510,
-      fontSize: 22,
-      boxStartY: 350,
-      boxStrokeWidth: 2,
-      boxPadding: 8,
-      boxHeight: 220,
-      nameStartY: 365,
-      nameLineHeight: 25,
-      detailsStartY: 388,
-      detailsLineHeight: 25,
-      nameX: 60,
-      detailsX: 60,
+      boxDimension: 255,
+      fontSize: 11,
+      boxStartY: 175,
+      boxStrokeWidth: 1,
+      boxPadding: 4,
+      boxHeight: 110,
+      nameStartY: 182.5,
+      nameLineHeight: 12.5,
+      detailsStartY: 194,
+      detailsLineHeight: 12.5,
+      nameX: 30,
+      detailsX: 30,
     },
     barcode: {
-      x: 60,
-      y: 580,
-      width: 500,
-      height: 140,
+      x: 30,
+      y: 280,
+      width: 250,
+      height: 70,
     },
     tracking: {
-      x: 306,
-      y: 730,
+      x: 100,
+      y: 355,
     },
     senderLabel: "Afzender:",
   },
   bpost: {
     trackingRandomizeIndex: 8,
     sender: {
-      nameX: 280,
-      nameStartY: 84,
-      nameLineHeight: 20,
-      detailsX: 280,
-      detailsStartY: 124,
-      detailsLineHeight: 22,
-      fontSize: 18,
+      x: 140,
+      startY: 42,
+      lineHeight: 12,
+      fontSize: 10,
     },
     recipient: {
-      boxDimension: 380,
-      fontSize: 22,
-      boxStartY: 380,
-      boxStrokeWidth: 4,
-      boxPadding: 8,
-      boxHeight: 170,
-      nameStartY: 400,
-      nameLineHeight: 20,
-      detailsStartY: 425,
-      detailsLineHeight: 27,
-      nameX: 120,
-      detailsX: 120,
+      boxDimension: 190,
+      fontSize: 11,
+      boxStartY: 190,
+      boxStrokeWidth: 2,
+      boxPadding: 4,
+      boxHeight: 85,
+      nameStartY: 200,
+      nameLineHeight: 10,
+      detailsStartY: 212.5,
+      detailsLineHeight: 13.5,
+      nameX: 60,
+      detailsX: 60,
     },
     barcode: {
-      x: 146,
-      y: 245,
-      width: 320,
-      height: 90,
+      x: 50,
+      y: 110,
+      width: 210,
+      height: 70,
     },
     tracking: {
-      x: 306,
-      y: 342,
+      x: 75,
+      y: 180,
     },
     zone: {
-      x: 301,
-      y: 600,
-      fontSize: 48,
+      x: 150.5,
+      y: 300,
+      fontSize: 24,
     },
     senderLabel: "Expéditeur/Afzender:",
   },
@@ -377,15 +371,12 @@ export const buildLabelSvg = async (
   // Sender info
   const senderNameLines = nameLine(payload, true);
   const senderDetailsLines = detailLines(payload, true);
-  const senderNameTspans = linesToTspans(senderNameLines, {
-    x: config.sender.nameX,
-    startY: config.sender.nameStartY,
-    lineHeight: config.sender.nameLineHeight,
-  });
-  const senderDetailsTspans = linesToTspans(senderDetailsLines, {
-    x: config.sender.detailsX,
-    startY: config.sender.detailsStartY,
-    lineHeight: config.sender.detailsLineHeight,
+  const senderAllLines = [...senderNameLines, ...senderDetailsLines];
+
+  const senderTspans = linesToTspans(senderAllLines, {
+    x: config.sender.x,
+    startY: config.sender.startY,
+    lineHeight: config.sender.lineHeight,
   });
 
   // Recipient info
@@ -435,15 +426,14 @@ export const buildLabelSvg = async (
 
   const overlay = `
   <g id="dynamic-label-overlay">
-    ${createTextElement(config.senderLabel, config.sender.nameX, 40, config.sender.fontSize)}
-    <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderNameTspans}</text>
-    <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderDetailsTspans}</text>
-    ${carrier === "postnl" ? `${createTextElement("AD", 50, 200, 72, "700")}` : ""}
+    ${createTextElement(config.senderLabel, config.sender.x, config.sender.startY - 14, config.sender.fontSize)}
+    <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderTspans}</text>
+    ${carrier === "postnl" ? `${createTextElement("AD", 25, 110, 36, "700")}` : ""}
     ${recipientBox}
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.recipient.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${recipientNameTspans}</text>
     ${recipientDetailsText}
     <image x="${config.barcode.x}" y="${config.barcode.y}" width="${config.barcode.width}" height="${config.barcode.height}" href="data:image/png;base64,${barcodeBase64}"/>
-    ${createTextElement(escapeXml(trackingShown), config.tracking.x, config.tracking.y, 20, "400", "middle")}
+    ${createTextElement(escapeXml(trackingShown), config.tracking.x, config.tracking.y, 12, "middle")}
     ${config.zone ? createTextElement(escapeXml(postalZone.toUpperCase()), config.zone.x, config.zone.y, config.zone.fontSize, "700", "middle") : ""}
   </g>`;
 
