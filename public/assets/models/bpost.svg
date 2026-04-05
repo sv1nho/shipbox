@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="a" data-name="Calque 1" xmlns="http://www.w3.org/2000/svg" width="105mm" height="148mm" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 297.64 419.53">
+  <g>
+    <text transform="translate(5.74 154.22)" font-family="Arial,Bold, Arial,Bold" font-size="35.13"><tspan x="0" y="0">P</tspan></text>
+    <rect x="-.21" y="110.01" width="297.62" height=".31" fill="#fff"/>
+    <rect x="-.21" y="110.01" width="297.62" height=".31" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width=".3"/>
+    <rect x="-.21" y="91.57" width="297.62" height=".31" fill="#fff"/>
+    <rect x="-.21" y="91.57" width="297.62" height=".31" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width=".3"/>
+    <text transform="translate(26.83 103.17)" font-family="Arial, Arial" font-size="8.78"><tspan x="0" y="0">Paquet - Pakket</tspan></text>
+    <rect x="32.57" y=".1" width=".35" height="91.45" fill="#fff"/>
+    <rect x="32.57" y=".1" width=".35" height="91.45" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width=".31"/>
+    <rect x="85.12" y=".1" width=".35" height="91.45" fill="#fff"/>
+    <rect x="85.12" y=".1" width=".35" height="91.45" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width=".31"/>
+    <rect x="134.17" y=".1" width=".35" height="109.96" fill="#fff"/>
+    <rect x="134.17" y=".1" width=".35" height="109.96" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width=".31"/>
+  </g>
+</svg>

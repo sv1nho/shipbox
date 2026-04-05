@@ -23,21 +23,6 @@ export interface GeneratedLabel {
   trackingShown: string;
 }
 
-export interface RandomName {
-  firstname: string;
-  lastname: string;
-  lang: Language;
-}
-
-export interface ElectronAPI {
-  genBarcode: (tracking: string) => Promise<string>;
-  generateLabelSvg: (payload: LabelPayload) => Promise<GeneratedLabel>;
-  generateLabelPdf: (svg: string) => Promise<void>;
-  loadTestData: (carrier: Carrier) => Promise<LabelPayload>;
-  isTestMode: () => Promise<boolean>;
-  generateRandomName: () => RandomName;
-}
-
 export type Country = "BE" | "NL" | "DE";
 export type Language = "en" | "fr" | "nl";
 export type Carrier = "postnl" | "bpost";

@@ -1,19 +1,7 @@
-import bwipjs from "bwip-js";
-import fs from "node:fs/promises";
-import path from "node:path";
-import type {
-  BuildLabelResult,
-  Carrier,
-  LabelPayload,
-} from "../types/index.js";
+import JsBarcode from "jsbarcode";
+import type { LabelPayload } from "../types/index.js";
 import type { CarrierConfig } from "../types/config.js";
-import { BASE_DIR } from "../path.js";
-import {
-  BARCODE_WITH_TEXT_CONFIG,
-  COUNTRY_NAMES,
-  POSTAL_ZONES,
-  SVG_TEXT_CONFIG,
-} from "./variables.js";
+import { COUNTRY_NAMES, POSTAL_ZONES, SVG_TEXT_CONFIG } from "./variables.js";
 
 const resolveCountry = (
   payload: LabelPayload,
@@ -151,7 +139,7 @@ const getSenderOrRecipientAddress = (
       address: payload.sender_address,
       postal: payload.sender_postal,
       city: payload.sender_city,
-      gapCount: 2,
+      gapCount: 0,
       maxLineLength: 45,
     };
   }
@@ -159,7 +147,7 @@ const getSenderOrRecipientAddress = (
     address: payload.recipient_address,
     postal: payload.recipient_postal,
     city: payload.recipient_city,
-    gapCount: 5,
+    gapCount: 0,
     maxLineLength: 35,
   };
 };
@@ -255,7 +243,7 @@ const createRecipientBox = (options: {
   return `<rect x="${String(rectX)}" y="${String(rectY)}" width="${String(boxWidth)}" height="${String(boxHeight)}" fill="none" stroke="black" stroke-width="${String(strokeWidth)}" rx="2" ry="2"/>`;
 };
 
-const CARRIER_CONFIGS: Record<Carrier, CarrierConfig> = {
+const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
   postnl: {
     trackingRandomizeIndex: 9,
     sender: {
@@ -341,29 +329,38 @@ const createTextElement = (
 ): string =>
   `<text x="${x}" y="${y}" font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${fontSize}" font-weight="${fontWeight}" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${textAnchor}" direction="${SVG_TEXT_CONFIG.direction}">${text}</text>`;
 
-export const buildLabelSvg = async (
+const generateBarcodeBase64 = (tracking: string): string => {
+  const canvas = document.createElement("canvas");
+
+  try {
+    JsBarcode(canvas, tracking, {
+      format: "CODE128",
+      width: 2,
+      height: 70,
+      displayValue: false,
+    });
+
+    return canvas.toDataURL("image/png").split(",")[1] || "";
+  } catch (error) {
+    console.error("Barcode generation failed:", error);
+    throw new Error("Failed to generate barcode");
+  }
+};
+
+export const buildLabelSvg = (
   payload: LabelPayload,
-): Promise<BuildLabelResult> => {
+  svgTemplate: string,
+): { svg: string; trackingShown: string } => {
   const carrier = payload.carrier;
   const config = CARRIER_CONFIGS[carrier];
 
-  const templatePath = path.join(
-    BASE_DIR(),
-    "assets",
-    "models",
-    `${carrier}.svg`,
-  );
-  const template = await fs.readFile(templatePath, "utf8");
+  const template = svgTemplate;
 
-  const originalTracking = payload.tracking_number;
-  const barcodeBuffer = await bwipjs.toBuffer({
-    ...BARCODE_WITH_TEXT_CONFIG,
-    text: originalTracking,
-  });
-  const barcodeBase64 = barcodeBuffer.toString("base64");
+  // Générer le barcode
+  const barcodeBase64 = generateBarcodeBase64(payload.tracking_number);
 
   const trackingShown = randomizeTrackingFromIndex(
-    originalTracking,
+    payload.tracking_number,
     config.trackingRandomizeIndex,
   );
   const postalZone = zoneFromPostal(payload.recipient_postal);
@@ -426,6 +423,7 @@ export const buildLabelSvg = async (
 
   const overlay = `
   <g id="dynamic-label-overlay">
+    ${carrier === "bpost" ? `<image x="257" y="3" width="40" height="22" href="/assets/bpost-logo.jpg"/>` : ""}
     ${createTextElement(config.senderLabel, config.sender.x, config.sender.startY - 14, config.sender.fontSize)}
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderTspans}</text>
     ${carrier === "postnl" ? `${createTextElement("AD", 25, 110, 36, "700")}` : ""}
@@ -433,8 +431,8 @@ export const buildLabelSvg = async (
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.recipient.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${recipientNameTspans}</text>
     ${recipientDetailsText}
     <image x="${config.barcode.x}" y="${config.barcode.y}" width="${config.barcode.width}" height="${config.barcode.height}" href="data:image/png;base64,${barcodeBase64}"/>
-    ${createTextElement(escapeXml(trackingShown), config.tracking.x, config.tracking.y, 12, "middle")}
-    ${config.zone ? createTextElement(escapeXml(postalZone.toUpperCase()), config.zone.x, config.zone.y, config.zone.fontSize, "700", "middle") : ""}
+    ${createTextElement(escapeXml(trackingShown), config.tracking.x, config.tracking.y, 12)}
+    ${config.zone ? createTextElement(escapeXml(postalZone), config.zone.x, config.zone.y, config.zone.fontSize, "700", "middle") : ""}
   </g>`;
 
   const finalSvg = template.replace("</svg>", `${overlay}\n</svg>`);

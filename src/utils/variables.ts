@@ -40,14 +40,6 @@ export const COUNTRY_NAMES: Record<Country, Record<Language, string>> = {
   },
 };
 
-export const BARCODE_WITH_TEXT_CONFIG = {
-  bcid: "code128",
-  scale: 3,
-  height: 12,
-  includetext: false,
-  textxalign: "center",
-} as const;
-
 export const SVG_TEXT_CONFIG = {
   fontFamily: "Arial, Helvetica, sans-serif",
   fill: "black",
