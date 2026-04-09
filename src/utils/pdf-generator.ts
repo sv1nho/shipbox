@@ -32,7 +32,6 @@ export const svgToPdf = async (svgString: string): Promise<Blob> => {
 
     return pdf.output("blob");
   } catch (error) {
-    console.error("Error converting SVG to PDF:", error);
     throw new Error(
       `Failed to generate PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
     );
