@@ -342,8 +342,7 @@ const generateBarcodeBase64 = (tracking: string): string => {
 
     return canvas.toDataURL("image/png").split(",")[1] || "";
   } catch (error) {
-    console.error("Barcode generation failed:", error);
-    throw new Error("Failed to generate barcode");
+    throw new Error(`Failed to generate barcode,  ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 };
 
