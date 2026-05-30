@@ -247,13 +247,13 @@ const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
   postnl: {
     trackingRandomizeIndex: 9,
     sender: {
-      x: 25,
+      x: 24,
       startY: 30,
       lineHeight: 12,
       fontSize: 10,
     },
     recipient: {
-      boxDimension: 255,
+      boxDimension: 243,
       fontSize: 11,
       boxStartY: 175,
       boxStrokeWidth: 1,
@@ -263,17 +263,17 @@ const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
       nameLineHeight: 12.5,
       detailsStartY: 194,
       detailsLineHeight: 12.5,
-      nameX: 30,
-      detailsX: 30,
+      nameX: 29,
+      detailsX: 29,
     },
     barcode: {
-      x: 30,
+      x: 29,
       y: 280,
-      width: 250,
+      width: 238,
       height: 70,
     },
     tracking: {
-      x: 100,
+      x: 95,
       y: 355,
     },
     senderLabel: "Afzender:",
@@ -424,7 +424,7 @@ export const buildLabelSvg = (
   <g id="dynamic-label-overlay">
     ${createTextElement(config.senderLabel, config.sender.x, config.sender.startY - 14, config.sender.fontSize)}
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderTspans}</text>
-    ${carrier === "postnl" ? `${createTextElement("AD", 25, 110, 36, "700")}` : ""}
+    ${carrier === "postnl" ? `${createTextElement("AD", 24, 110, 36, "700")}` : ""}
     ${recipientBox}
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.recipient.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${recipientNameTspans}</text>
     ${recipientDetailsText}
