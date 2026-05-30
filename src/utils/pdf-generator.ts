@@ -20,14 +20,14 @@ export const svgToPdf = async (svgString: string): Promise<Blob> => {
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
-      format: [105, 148],
+      format: [100, 150],
     });
-    
+
     await svg2pdf(svgElement, pdf, {
       x: 0,
       y: 0,
-      width: 105,
-      height: 148,
+      width: 100,
+      height: 150,
     });
 
     return pdf.output("blob");
