@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import type {
+  UseFormRegister,
+  UseFormSetValue,
+  FieldErrors,
+  Path,
+} from "react-hook-form";
+import type {
   LabelPayload,
   Carrier,
   Language,
@@ -33,6 +39,166 @@ interface FormData {
   tracking_number: string;
 }
 
+// ── Shared sub-components ────────────────────────────────────────────────────
+
+const SectionCard = ({
+  title,
+  right,
+  children,
+}: {
+  title: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}) => {
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h3 className="card-title">{title}</h3>
+        {right}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+};
+
+const Field = ({
+  error,
+  children,
+}: {
+  error?: string;
+  children: React.ReactNode;
+}) => {
+  return (
+    <div>
+      {children}
+      {error && <p className="field-error">{error}</p>}
+    </div>
+  );
+};
+
+// ── PartyFieldset ────────────────────────────────────────────────────────────
+
+interface PartyFieldsetProps {
+  prefix: "sender" | "recipient";
+  title: string;
+  isCompany: boolean;
+  register: UseFormRegister<FormData>;
+  errors: FieldErrors<FormData>;
+  setValue: UseFormSetValue<FormData>;
+}
+
+const PartyFieldset = ({
+  prefix,
+  title,
+  isCompany,
+  register,
+  errors,
+  setValue,
+}: PartyFieldsetProps) => {
+  const name = (field: string) => `${prefix}_${field}` as Path<FormData>;
+  const err = (field: string): string | undefined => {
+    const e = errors[name(field) as keyof FormData];
+    return e && typeof e === "object" && "message" in e
+      ? (e.message as string)
+      : undefined;
+  };
+
+  const toggle = (
+    <div className="flex rounded-full border border-zinc-200 overflow-hidden text-xs font-medium">
+      <button
+        type="button"
+        onClick={() =>
+          setValue(
+            name("isCompany") as "sender_isCompany" | "recipient_isCompany",
+            false,
+          )
+        }
+        className={`px-3 py-1 transition-colors ${!isCompany ? "bg-zinc-900 text-white" : "text-zinc-400 hover:text-zinc-700"}`}
+      >
+        Individual
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          setValue(
+            name("isCompany") as "sender_isCompany" | "recipient_isCompany",
+            true,
+          )
+        }
+        className={`px-3 py-1 transition-colors ${isCompany ? "bg-zinc-900 text-white" : "text-zinc-400 hover:text-zinc-700"}`}
+      >
+        Company
+      </button>
+    </div>
+  );
+
+  return (
+    <SectionCard title={title} right={toggle}>
+      {isCompany ? (
+        <input
+          {...register(name("company"))}
+          className="form-input"
+          placeholder="Company name"
+        />
+      ) : (
+        <>
+          <Field error={err("firstname")}>
+            <input
+              {...register(name("firstname"), {
+                required: "First name is required",
+              })}
+              className="form-input"
+              placeholder="First name"
+            />
+          </Field>
+          <Field error={err("lastname")}>
+            <input
+              {...register(name("lastname"), {
+                required: "Last name is required",
+              })}
+              className="form-input"
+              placeholder="Last name"
+            />
+          </Field>
+        </>
+      )}
+
+      <Field error={err("address")}>
+        <input
+          {...register(name("address"), { required: "Address is required" })}
+          className="form-input"
+          placeholder="Address"
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field error={err("postal")}>
+          <input
+            {...register(name("postal"), { required: "Required" })}
+            className="form-input"
+            placeholder="Postal code"
+          />
+        </Field>
+        <Field error={err("city")}>
+          <input
+            {...register(name("city"), { required: "Required" })}
+            className="form-input"
+            placeholder="City"
+          />
+        </Field>
+      </div>
+
+      <select {...register(name("country"))} className="form-select">
+        <option value="BE">Belgium</option>
+        <option value="NL">The Netherlands</option>
+        <option value="DE">Germany</option>
+      </select>
+    </SectionCard>
+  );
+};
+
+// ── Home ─────────────────────────────────────────────────────────────────────
+
 export function Home() {
   const {
     register,
@@ -59,39 +225,19 @@ export function Home() {
   const senderIsCompany = watch("sender_isCompany");
   const recipientIsCompany = watch("recipient_isCompany");
   const carrier = watch("carrier");
-  
+
   useEffect(() => {
     const isTestMode = import.meta.env.VITE_TEST_MODE === "true";
-    if (isTestMode) {
-      const testData = getTestData(carrier);
-
-      setValue("sender_firstname", testData.sender_firstname);
-      setValue("sender_lastname", testData.sender_lastname);
-      setValue("sender_company", testData.sender_company);
-      setValue("sender_address", testData.sender_address);
-      setValue("sender_postal", testData.sender_postal);
-      setValue("sender_city", testData.sender_city);
-      setValue("sender_country", testData.sender_country);
-
-      setValue("recipient_firstname", testData.recipient_firstname);
-      setValue("recipient_lastname", testData.recipient_lastname);
-      setValue("recipient_company", testData.recipient_company);
-      setValue("recipient_address", testData.recipient_address);
-      setValue("recipient_postal", testData.recipient_postal);
-      setValue("recipient_city", testData.recipient_city);
-      setValue("recipient_country", testData.recipient_country);
-
-      setValue("label_language", testData.label_language);
-      setValue("carrier", testData.carrier);
-      setValue("tracking_number", testData.tracking_number);
-    }
+    if (!isTestMode) return;
+    const testData = getTestData(carrier);
+    (Object.keys(testData) as (keyof typeof testData)[]).forEach((key) => {
+      setValue(key as Path<FormData>, testData[key] as never);
+    });
   }, [setValue, carrier]);
 
   const onSubmit = async (data: FormData) => {
     try {
       setError(null);
-
-      // Construire le LabelPayload
       const payload: LabelPayload = {
         sender_firstname: senderIsCompany ? "" : data.sender_firstname,
         sender_lastname: senderIsCompany ? "" : data.sender_lastname,
@@ -112,300 +258,174 @@ export function Home() {
         label_language: data.label_language,
       };
 
-      // Charger le template SVG
       const svgTemplate = await loadSvgTemplate(data.carrier);
-
-      // Générer le label SVG
       const { svg, trackingShown: shown } = buildLabelSvg(payload, svgTemplate);
-
       setTrackingShown(shown);
-
-      // Convertir en PDF
       const pdfBlob = await svgToPdf(svg);
-      const url = URL.createObjectURL(pdfBlob);
-      setPdfUrl(url);
+      setPdfUrl(URL.createObjectURL(pdfBlob));
       setIsDialogOpen(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Unknown error");
       console.error(err);
     }
   };
 
   const handleDownloadPdf = () => {
-    if (pdfUrl) {
-      const link = document.createElement("a");
-      link.href = pdfUrl;
-      link.download = "label.pdf";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    if (!pdfUrl) return;
+    const link = document.createElement("a");
+    link.href = pdfUrl;
+    link.download = "label.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <div className="container mt-5">
-      <h2 className="mb-4">Shipping Label Generator</h2>
+    <>
+      {error && <div className="alert-error mb-6">{error}</div>}
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <PartyFieldset
+            prefix="sender"
+            title="Sender"
+            isCompany={senderIsCompany}
+            register={register}
+            errors={errors}
+            setValue={setValue}
+          />
+          <PartyFieldset
+            prefix="recipient"
+            title="Recipient"
+            isCompany={recipientIsCompany}
+            register={register}
+            errors={errors}
+            setValue={setValue}
+          />
+        </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        {/* SENDER SECTION */}
-        <h4>Sender</h4>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <SectionCard title="Language">
+            <select {...register("label_language")} className="form-select">
+              <option value="fr">French</option>
+              <option value="nl">Dutch</option>
+              <option value="en">English</option>
+            </select>
+          </SectionCard>
 
-        {!senderIsCompany && (
-          <>
-            <input
-              {...register("sender_firstname", {
-                required: "First name is required",
-              })}
-              className="form-control mb-2"
-              placeholder="First name"
-            />
-            {errors.sender_firstname && (
-              <div className="text-danger mb-2">
-                {errors.sender_firstname.message}
-              </div>
-            )}
-            <input
-              {...register("sender_lastname", {
-                required: "Last name is required",
-              })}
-              className="form-control mb-2"
-              placeholder="Last name"
-            />
-            {errors.sender_lastname && (
-              <div className="text-danger mb-2">
-                {errors.sender_lastname.message}
-              </div>
-            )}
-          </>
-        )}
+          <SectionCard title="Carrier">
+            <select {...register("carrier")} className="form-select">
+              <option value="bpost">Bpost</option>
+              <option value="postnl">PostNL</option>
+            </select>
+          </SectionCard>
 
-        {senderIsCompany && (
-          <>
-            <input
-              {...register("sender_company")}
-              className="form-control mb-2"
-              placeholder="Company name"
-            />
-          </>
-        )}
+          <SectionCard title="Tracking Number">
+            <Field error={errors.tracking_number?.message}>
+              <input
+                {...register("tracking_number", { required: "Required" })}
+                className="form-input"
+                placeholder="24 digits for Bpost"
+              />
+            </Field>
+          </SectionCard>
+        </div>
 
-        <label className="mb-2 d-block">
-          <input type="checkbox" {...register("sender_isCompany")} /> Company?
-        </label>
-
-        <input
-          {...register("sender_address", { required: "Address is required" })}
-          className="form-control mb-2"
-          placeholder="Address"
-        />
-        {errors.sender_address && (
-          <div className="text-danger mb-2">
-            {errors.sender_address.message}
-          </div>
-        )}
-        <input
-          {...register("sender_postal", {
-            required: "Postal code is required",
-          })}
-          className="form-control mb-2"
-          placeholder="Postal code"
-        />
-        {errors.sender_postal && (
-          <div className="text-danger mb-2">{errors.sender_postal.message}</div>
-        )}
-        <input
-          {...register("sender_city", { required: "City is required" })}
-          className="form-control mb-2"
-          placeholder="City"
-        />
-        {errors.sender_city && (
-          <div className="text-danger mb-2">{errors.sender_city.message}</div>
-        )}
-        <select {...register("sender_country")} className="form-select mb-3">
-          <option value="BE">Belgium</option>
-          <option value="NL">The Netherlands</option>
-          <option value="DE">Germany</option>
-        </select>
-
-        {/* RECIPIENT SECTION */}
-        <h4 className="mt-4">Recipient</h4>
-
-        {!recipientIsCompany && (
-          <>
-            <input
-              {...register("recipient_firstname", {
-                required: "First name is required",
-              })}
-              className="form-control mb-2"
-              placeholder="First name"
-            />
-            {errors.recipient_firstname && (
-              <div className="text-danger mb-2">
-                {errors.recipient_firstname.message}
-              </div>
-            )}
-            <input
-              {...register("recipient_lastname", {
-                required: "Last name is required",
-              })}
-              className="form-control mb-2"
-              placeholder="Last name"
-            />
-            {errors.recipient_lastname && (
-              <div className="text-danger mb-2">
-                {errors.recipient_lastname.message}
-              </div>
-            )}
-          </>
-        )}
-
-        {recipientIsCompany && (
-          <>
-            <input
-              {...register("recipient_company")}
-              className="form-control mb-2"
-              placeholder="Company name"
-            />
-          </>
-        )}
-
-        <label className="mb-2 d-block">
-          <input type="checkbox" {...register("recipient_isCompany")} />{" "}
-          Company?
-        </label>
-        <input
-          {...register("recipient_address", {
-            required: "Address is required",
-          })}
-          className="form-control mb-2"
-          placeholder="Address"
-        />
-        {errors.recipient_address && (
-          <div className="text-danger mb-2">
-            {errors.recipient_address.message}
-          </div>
-        )}
-        <input
-          {...register("recipient_postal", {
-            required: "Postal code is required",
-          })}
-          className="form-control mb-2"
-          placeholder="Postal code"
-        />
-        {errors.recipient_postal && (
-          <div className="text-danger mb-2">
-            {errors.recipient_postal.message}
-          </div>
-        )}
-        <input
-          {...register("recipient_city", { required: "City is required" })}
-          className="form-control mb-2"
-          placeholder="City"
-        />
-        {errors.recipient_city && (
-          <div className="text-danger mb-2">
-            {errors.recipient_city.message}
-          </div>
-        )}
-        <select {...register("recipient_country")} className="form-select mb-3">
-          <option value="BE">Belgium</option>
-          <option value="NL">The Netherlands</option>
-          <option value="DE">Germany</option>
-        </select>
-
-        {/* LANGUAGE SECTION */}
-        <h4 className="mt-4">Label Language</h4>
-        <select {...register("label_language")} className="form-select mb-3">
-          <option value="fr">French</option>
-          <option value="nl">Dutch</option>
-          <option value="en">English</option>
-        </select>
-
-        {/* CARRIER SECTION */}
-        <h4 className="mt-4">Carrier</h4>
-        <select {...register("carrier")} className="form-select mb-3">
-          <option value="bpost">Bpost</option>
-          <option value="postnl">PostNL</option>
-        </select>
-
-        {/* TRACKING SECTION */}
-        <h4 className="mt-4">Tracking Number</h4>
-        <input
-          {...register("tracking_number", {
-            required: "Tracking number is required",
-          })}
-          className="form-control mb-3"
-          placeholder="24 digits for Bpost"
-        />
-        {errors.tracking_number && (
-          <div className="text-danger mb-2">
-            {errors.tracking_number.message}
-          </div>
-        )}
-
-        <div className="d-flex gap-2">
+        <div className="flex justify-end">
           <button
             type="submit"
-            className="btn btn-success"
             disabled={isSubmitting}
+            className="btn btn-primary shadow-sm"
           >
-            {isSubmitting ? "Generating..." : "Generate Label"}
+            {isSubmitting ? (
+              <>
+                <svg
+                  className="h-4 w-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+                Generating…
+              </>
+            ) : (
+              "Generate Label"
+            )}
           </button>
         </div>
       </form>
 
-      {/* PDF DIALOG */}
       {isDialogOpen && pdfUrl && (
         <div
-          className="modal"
-          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsDialogOpen(false);
+          }}
         >
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Label Preview</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setIsDialogOpen(false)}
-                />
-              </div>
-              <div className="modal-body">
-                <iframe
-                  src={pdfUrl}
-                  width="100%"
-                  height="500px"
-                  style={{ border: "none" }}
-                />
-                {trackingShown && (
-                  <p className="mt-2">
-                    <strong>Tracking Number (shown):</strong> {trackingShown}
-                  </p>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setIsDialogOpen(false)}
+          <div className="modal-box">
+            <div className="modal-header">
+              <h2 className="modal-title">Label Preview</h2>
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="btn btn-ghost"
+                style={{ padding: "0.375rem" }}
+                aria-label="Close"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleDownloadPdf}
-                >
-                  Download PDF
-                </button>
-              </div>
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <iframe
+                src={pdfUrl}
+                className="w-full rounded border border-zinc-200"
+                height="480"
+                style={{ border: "none" }}
+              />
+              {trackingShown && (
+                <p className="mt-3 text-sm text-zinc-500">
+                  <span className="font-medium text-zinc-700">Tracking:</span>{" "}
+                  {trackingShown}
+                </p>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="btn btn-ghost"
+              >
+                Close
+              </button>
+              <button onClick={handleDownloadPdf} className="btn btn-primary">
+                Download PDF
+              </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
