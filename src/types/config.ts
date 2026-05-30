@@ -1,5 +1,5 @@
 export type CarrierConfig = {
-  trackingRandomizeIndex: number;
+  trackingTailDigitCount: number;
   sender: {
     x: number;
     startY: number;
@@ -7,7 +7,7 @@ export type CarrierConfig = {
     fontSize: number;
   };
   recipient: {
-    boxDimension: number;
+    boxWidth: number;
     fontSize: number;
     boxStartY: number;
     boxStrokeWidth: number;

@@ -3,28 +3,16 @@ import type { LabelPayload } from "../types/index.js";
 import type { CarrierConfig } from "../types/config.js";
 import { COUNTRY_NAMES, POSTAL_ZONES, SVG_TEXT_CONFIG } from "./variables.js";
 
-const resolveCountry = (
-  payload: LabelPayload,
-  isSender: boolean = isForSender(payload),
-): string => {
-  const language = payload.label_language;
+const resolveCountry = (payload: LabelPayload, isSender: boolean): string => {
   const country = isSender ? payload.sender_country : payload.recipient_country;
-  return COUNTRY_NAMES[country][language].toUpperCase();
+  return COUNTRY_NAMES[country][payload.label_language].toUpperCase();
 };
 
 const zoneFromPostal = (postalRaw: string): string => {
   const digits = postalRaw.replace(/\D/g, "");
-
   const postal = Number.parseInt(digits.slice(0, 4), 10);
-  if (digits.length < 4 || Number.isNaN(postal)) {
-    return "";
-  }
-
-  const match = POSTAL_ZONES.find(
-    (zone) => postal >= zone.min && postal <= zone.max,
-  );
-
-  return match?.code ?? "";
+  if (digits.length < 4 || Number.isNaN(postal)) return "";
+  return POSTAL_ZONES.find((zone) => postal >= zone.min && postal <= zone.max)?.code ?? "";
 };
 
 const escapeXml = (value: string): string =>
@@ -36,9 +24,7 @@ const escapeXml = (value: string): string =>
     .replaceAll("'", "&apos;");
 
 const wrapText = (text: string, maxLength: number): string[] => {
-  if (text.length <= maxLength) {
-    return [text];
-  }
+  if (text.length <= maxLength) return [text];
 
   const words = text.split(" ");
   const lines: string[] = [];
@@ -46,52 +32,46 @@ const wrapText = (text: string, maxLength: number): string[] => {
 
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
-
     if (testLine.length <= maxLength) {
       currentLine = testLine;
     } else {
-      if (currentLine) {
-        lines.push(currentLine);
-      }
+      if (currentLine) lines.push(currentLine);
       lines.push(word);
       currentLine = "";
     }
   }
 
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
+  if (currentLine) lines.push(currentLine);
   return lines;
 };
 
-const getRandomDigit = (except?: string): string => {
-  let nextDigit = String(Math.floor(Math.random() * 10));
-  while (except !== undefined && nextDigit === except) {
-    nextDigit = String(Math.floor(Math.random() * 10));
-  }
-  return nextDigit;
+const wrapTextByPixelWidth = (
+  lines: string[],
+  maxPixelWidth: number,
+  fontSize: number,
+): string[] => {
+  const maxCharCount = Math.floor(maxPixelWidth / ((fontSize / 22) * 12));
+  return lines.flatMap((line) => wrapText(line, maxCharCount));
 };
 
-const randomizeTrackingFromIndex = (
-  tracking: string,
-  endIndexCount: number,
-): string => {
+const getRandomDigit = (except?: string): string => {
+  let digit = String(Math.floor(Math.random() * 10));
+  while (except !== undefined && digit === except) {
+    digit = String(Math.floor(Math.random() * 10));
+  }
+  return digit;
+};
+
+const obfuscateTracking = (tracking: string, tailDigitCount: number): string => {
   const chars = tracking.split("");
   const digitIndexes: number[] = [];
 
   for (let i = 0; i < chars.length; i += 1) {
-    if (/\d/.test(chars[i] ?? "")) {
-      digitIndexes.push(i);
-    }
+    if (/\d/.test(chars[i] ?? "")) digitIndexes.push(i);
   }
 
-  const startDigitIndex = Math.max(0, digitIndexes.length - endIndexCount);
-  const mutableIndexes = digitIndexes.slice(startDigitIndex);
-
-  if (mutableIndexes.length === 0) {
-    return tracking;
-  }
+  const mutableIndexes = digitIndexes.slice(Math.max(0, digitIndexes.length - tailDigitCount));
+  if (mutableIndexes.length === 0) return tracking;
 
   const targetChanges = Math.min(
     mutableIndexes.length,
@@ -101,77 +81,32 @@ const randomizeTrackingFromIndex = (
   for (let change = 0; change < targetChanges; change += 1) {
     const randomPoolIndex = Math.floor(Math.random() * mutableIndexes.length);
     const charIndex = mutableIndexes.splice(randomPoolIndex, 1)[0];
-    if (charIndex === undefined) {
-      continue;
-    }
-    const current = chars[charIndex] ?? "0";
-    chars[charIndex] = getRandomDigit(current);
+    if (charIndex === undefined) continue;
+    chars[charIndex] = getRandomDigit(chars[charIndex] ?? "0");
   }
 
   return chars.join("");
 };
 
-const isForSender = (payload: LabelPayload): boolean =>
-  payload.sender_firstname.length > 0 || payload.sender_lastname.length > 0;
-
-const getSenderOrRecipientName = (
-  payload: LabelPayload,
-  isSender: boolean,
-): string => {
-  if (isSender) {
-    return `${payload.sender_firstname} ${payload.sender_lastname}`;
-  }
-  return `${payload.recipient_firstname} ${payload.recipient_lastname}`;
+const nameLines = (payload: LabelPayload, isSender: boolean): string[] => {
+  const name = isSender
+    ? `${payload.sender_firstname} ${payload.sender_lastname}`
+    : `${payload.recipient_firstname} ${payload.recipient_lastname}`;
+  return wrapText(name, isSender ? 40 : 35);
 };
 
-const getSenderOrRecipientAddress = (
-  payload: LabelPayload,
-  isSender: boolean,
-): {
-  address: string;
-  postal: string;
-  city: string;
-  gapCount: number;
-  maxLineLength: number;
-} => {
-  if (isSender) {
-    return {
-      address: payload.sender_address,
-      postal: payload.sender_postal,
-      city: payload.sender_city,
-      gapCount: 0,
-      maxLineLength: 45,
-    };
-  }
-  return {
-    address: payload.recipient_address,
-    postal: payload.recipient_postal,
-    city: payload.recipient_city,
-    gapCount: 0,
-    maxLineLength: 35,
-  };
-};
-
-const nameLine = (
-  payload: LabelPayload,
-  isSender: boolean = isForSender(payload),
-): string[] =>
-  wrapText(getSenderOrRecipientName(payload, isSender), isSender ? 40 : 35);
-
-const detailLines = (
-  payload: LabelPayload,
-  isSender: boolean = isForSender(payload),
-): string[] => {
-  const addressData = getSenderOrRecipientAddress(payload, isSender);
+const addressLines = (payload: LabelPayload, isSender: boolean): string[] => {
+  const address = isSender ? payload.sender_address : payload.recipient_address;
+  const postal = isSender ? payload.sender_postal : payload.recipient_postal;
+  const city = isSender ? payload.sender_city : payload.recipient_city;
+  const maxLen = isSender ? 45 : 35;
+  const postalCity = `${postal} ${city.toUpperCase()}`;
   const country = resolveCountry(payload, isSender);
-  const gap =
-    addressData.gapCount > 0 ? "\u2003".repeat(addressData.gapCount) : " ";
-  const postalCity = `${addressData.postal}${gap}${addressData.city.toUpperCase()}`;
 
   return [
-    ...wrapText(addressData.address, addressData.maxLineLength),
-    ...wrapText(postalCity, addressData.maxLineLength),
-    ...wrapText(country, addressData.maxLineLength),
+    ...wrapText(address, maxLen),
+    ...wrapText(postalCity, maxLen),
+    ...wrapText(country, maxLen),
   ].filter((line) => line.length > 0);
 };
 
@@ -182,51 +117,9 @@ const linesToTspans = (
   lines
     .map((line, index) => {
       const y = options.startY + index * options.lineHeight;
-      const xText = String(options.x);
-      const yText = String(y);
-      const safeText = escapeXml(line);
-      return `<tspan x="${xText}" y="${yText}">${safeText}</tspan>`;
+      return `<tspan x="${options.x}" y="${y}">${escapeXml(line)}</tspan>`;
     })
     .join("");
-
-const wrapTextByPixelWidth = (
-  lines: string[],
-  maxPixelWidth: number,
-  fontSize: number,
-): string[] => {
-  const charWidth = (fontSize / 22) * 12;
-  const maxCharCount = Math.floor(maxPixelWidth / charWidth);
-
-  const wrappedLines: string[] = [];
-
-  for (const line of lines) {
-    if (line.length <= maxCharCount) {
-      wrappedLines.push(line);
-    } else {
-      const words = line.split(" ");
-      let currentLine = "";
-
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-
-        if (testLine.length <= maxCharCount) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) {
-            wrappedLines.push(currentLine);
-          }
-          currentLine = word;
-        }
-      }
-
-      if (currentLine) {
-        wrappedLines.push(currentLine);
-      }
-    }
-  }
-
-  return wrappedLines;
-};
 
 const createRecipientBox = (options: {
   x: number;
@@ -237,86 +130,7 @@ const createRecipientBox = (options: {
   strokeWidth: number;
 }): string => {
   const { x, startY, boxWidth, boxHeight, padding, strokeWidth } = options;
-  const rectX = x - padding;
-  const rectY = startY - padding;
-
-  return `<rect x="${String(rectX)}" y="${String(rectY)}" width="${String(boxWidth)}" height="${String(boxHeight)}" fill="none" stroke="black" stroke-width="${String(strokeWidth)}" rx="2" ry="2"/>`;
-};
-
-const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
-  postnl: {
-    trackingRandomizeIndex: 9,
-    sender: {
-      x: 24,
-      startY: 30,
-      lineHeight: 12,
-      fontSize: 10,
-    },
-    recipient: {
-      boxDimension: 243,
-      fontSize: 11,
-      boxStartY: 175,
-      boxStrokeWidth: 1,
-      boxPadding: 4,
-      boxHeight: 110,
-      nameStartY: 182.5,
-      nameLineHeight: 12.5,
-      detailsStartY: 194,
-      detailsLineHeight: 12.5,
-      nameX: 29,
-      detailsX: 29,
-    },
-    barcode: {
-      x: 29,
-      y: 280,
-      width: 238,
-      height: 70,
-    },
-    tracking: {
-      x: 95,
-      y: 355,
-    },
-    senderLabel: "Afzender:",
-  },
-  bpost: {
-    trackingRandomizeIndex: 8,
-    sender: {
-      x: 140,
-      startY: 42,
-      lineHeight: 12,
-      fontSize: 10,
-    },
-    recipient: {
-      boxDimension: 190,
-      fontSize: 11,
-      boxStartY: 190,
-      boxStrokeWidth: 2,
-      boxPadding: 4,
-      boxHeight: 85,
-      nameStartY: 200,
-      nameLineHeight: 10,
-      detailsStartY: 212.5,
-      detailsLineHeight: 13.5,
-      nameX: 60,
-      detailsX: 60,
-    },
-    barcode: {
-      x: 50,
-      y: 110,
-      width: 210,
-      height: 70,
-    },
-    tracking: {
-      x: 75,
-      y: 180,
-    },
-    zone: {
-      x: 150.5,
-      y: 300,
-      fontSize: 24,
-    },
-    senderLabel: "Expéditeur/Afzender:",
-  },
+  return `<rect x="${x - padding}" y="${startY - padding}" width="${boxWidth}" height="${boxHeight}" fill="none" stroke="black" stroke-width="${strokeWidth}" rx="2" ry="2"/>`;
 };
 
 const createTextElement = (
@@ -331,7 +145,6 @@ const createTextElement = (
 
 const generateBarcodeBase64 = (tracking: string): string => {
   const canvas = document.createElement("canvas");
-
   try {
     JsBarcode(canvas, tracking, {
       format: "CODE128",
@@ -339,59 +152,87 @@ const generateBarcodeBase64 = (tracking: string): string => {
       height: 70,
       displayValue: false,
     });
-
     return canvas.toDataURL("image/png").split(",")[1] || "";
   } catch (error) {
-    throw new Error(`Failed to generate barcode,  ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to generate barcode, ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
+};
+
+const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
+  postnl: {
+    trackingTailDigitCount: 9,
+    sender: { x: 24, startY: 30, lineHeight: 12, fontSize: 10 },
+    recipient: {
+      boxWidth: 243,
+      fontSize: 11,
+      boxStartY: 175,
+      boxStrokeWidth: 1,
+      boxPadding: 4,
+      boxHeight: 110,
+      nameStartY: 182.5,
+      nameLineHeight: 12.5,
+      detailsStartY: 194,
+      detailsLineHeight: 12.5,
+      nameX: 29,
+      detailsX: 29,
+    },
+    barcode: { x: 29, y: 280, width: 238, height: 70 },
+    tracking: { x: 95, y: 355 },
+    senderLabel: "Afzender:",
+  },
+  bpost: {
+    trackingTailDigitCount: 8,
+    sender: { x: 140, startY: 42, lineHeight: 12, fontSize: 10 },
+    recipient: {
+      boxWidth: 190,
+      fontSize: 11,
+      boxStartY: 190,
+      boxStrokeWidth: 2,
+      boxPadding: 4,
+      boxHeight: 85,
+      nameStartY: 200,
+      nameLineHeight: 10,
+      detailsStartY: 212.5,
+      detailsLineHeight: 13.5,
+      nameX: 60,
+      detailsX: 60,
+    },
+    barcode: { x: 50, y: 110, width: 210, height: 70 },
+    tracking: { x: 75, y: 180 },
+    zone: { x: 150.5, y: 300, fontSize: 24 },
+    senderLabel: "Expéditeur/Afzender:",
+  },
 };
 
 export const buildLabelSvg = (
   payload: LabelPayload,
   svgTemplate: string,
-): { svg: string; trackingShown: string } => {
-  const carrier = payload.carrier;
-  const config = CARRIER_CONFIGS[carrier];
+): { svg: string; maskedTracking: string } => {
+  const config = CARRIER_CONFIGS[payload.carrier];
 
-  const template = svgTemplate;
-
-  // Générer le barcode
   const barcodeBase64 = generateBarcodeBase64(payload.tracking_number);
-
-  const trackingShown = randomizeTrackingFromIndex(
-    payload.tracking_number,
-    config.trackingRandomizeIndex,
-  );
+  const maskedTracking = obfuscateTracking(payload.tracking_number, config.trackingTailDigitCount);
   const postalZone = zoneFromPostal(payload.recipient_postal);
 
-  // Sender info
-  const senderNameLines = nameLine(payload, true);
-  const senderDetailsLines = detailLines(payload, true);
-  const senderAllLines = [...senderNameLines, ...senderDetailsLines];
-
-  const senderTspans = linesToTspans(senderAllLines, {
-    x: config.sender.x,
-    startY: config.sender.startY,
-    lineHeight: config.sender.lineHeight,
-  });
-
-  // Recipient info
-  const recipientNameLines = nameLine(payload, false);
-  const recipientDetailsLines = detailLines(payload, false);
+  const senderTspans = linesToTspans(
+    [...nameLines(payload, true), ...addressLines(payload, true)],
+    { x: config.sender.x, startY: config.sender.startY, lineHeight: config.sender.lineHeight },
+  );
 
   const wrappedRecipientNameLines = wrapTextByPixelWidth(
-    recipientNameLines,
-    config.recipient.boxDimension,
+    nameLines(payload, false),
+    config.recipient.boxWidth,
     config.recipient.fontSize,
   );
   const wrappedRecipientDetailsLines = wrapTextByPixelWidth(
-    recipientDetailsLines,
-    config.recipient.boxDimension,
+    addressLines(payload, false),
+    config.recipient.boxWidth,
     config.recipient.fontSize,
   );
 
-  // Calculate address line count for styling
-  const addressLinesCount = wrapText(payload.recipient_address, 35).filter(
+  const addressLineCount = wrapText(payload.recipient_address, 35).filter(
     (l) => l.length > 0,
   ).length;
 
@@ -403,18 +244,22 @@ export const buildLabelSvg = (
 
   const recipientDetailsText = wrappedRecipientDetailsLines
     .map((line, index) => {
-      const y =
-        config.recipient.detailsStartY +
-        index * config.recipient.detailsLineHeight;
-      const fontWeight = index < addressLinesCount ? "400" : "700";
-      return `<text x="${config.recipient.detailsX}" y="${y}" font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.recipient.fontSize}" font-weight="${fontWeight}" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}">${escapeXml(line)}</text>`;
+      const y = config.recipient.detailsStartY + index * config.recipient.detailsLineHeight;
+      const fontWeight = index < addressLineCount ? "400" : "700";
+      return createTextElement(
+        escapeXml(line),
+        config.recipient.detailsX,
+        y,
+        config.recipient.fontSize,
+        fontWeight,
+      );
     })
     .join("");
 
   const recipientBox = createRecipientBox({
     x: config.recipient.nameX,
     startY: config.recipient.boxStartY,
-    boxWidth: config.recipient.boxDimension,
+    boxWidth: config.recipient.boxWidth,
     boxHeight: config.recipient.boxHeight,
     padding: config.recipient.boxPadding,
     strokeWidth: config.recipient.boxStrokeWidth,
@@ -424,15 +269,14 @@ export const buildLabelSvg = (
   <g id="dynamic-label-overlay">
     ${createTextElement(config.senderLabel, config.sender.x, config.sender.startY - 14, config.sender.fontSize)}
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderTspans}</text>
-    ${carrier === "postnl" ? `${createTextElement("AD", 24, 110, 36, "700")}` : ""}
+    ${payload.carrier === "postnl" ? createTextElement("AD", 24, 110, 36, "700") : ""}
     ${recipientBox}
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.recipient.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${recipientNameTspans}</text>
     ${recipientDetailsText}
     <image x="${config.barcode.x}" y="${config.barcode.y}" width="${config.barcode.width}" height="${config.barcode.height}" href="data:image/png;base64,${barcodeBase64}"/>
-    ${createTextElement(escapeXml(trackingShown), config.tracking.x, config.tracking.y, 12)}
+    ${createTextElement(escapeXml(maskedTracking), config.tracking.x, config.tracking.y, 12)}
     ${config.zone ? createTextElement(escapeXml(postalZone), config.zone.x, config.zone.y, config.zone.fontSize, "700", "middle") : ""}
   </g>`;
 
-  const finalSvg = template.replace("</svg>", `${overlay}\n</svg>`);
-  return { svg: finalSvg, trackingShown };
+  return { svg: svgTemplate.replace("</svg>", `${overlay}\n</svg>`), maskedTracking };
 };

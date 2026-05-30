@@ -18,11 +18,6 @@ export interface LabelPayload {
   label_language: Language;
 }
 
-export interface GeneratedLabel {
-  svg: string;
-  trackingShown: string;
-}
-
 export type Country = "BE" | "NL" | "DE";
 export type Language = "en" | "fr" | "nl";
 export type Carrier = "postnl" | "bpost";

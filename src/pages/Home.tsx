@@ -6,16 +6,13 @@ import type {
   FieldErrors,
   Path,
 } from "react-hook-form";
-import type {
-  LabelPayload,
-  Carrier,
-  Language,
-  Country,
-} from "../types/index.js";
+import type { LabelPayload, Carrier, Language, Country } from "../types/index.js";
 import { buildLabelSvg } from "../utils/label-generator.js";
 import { loadSvgTemplate } from "../utils/svg-loader.js";
-import { svgToPdf } from "../utils/pdf-generator.js";
+import { svgToPdf, downloadPdf } from "../utils/pdf-generator.js";
 import { getTestData } from "../test-data.js";
+import { Spinner } from "../components/Spinner.js";
+import { LabelPreviewModal } from "../components/LabelPreviewModal.js";
 
 interface FormData {
   sender_firstname: string;
@@ -49,17 +46,15 @@ const SectionCard = ({
   title: string;
   right?: React.ReactNode;
   children: React.ReactNode;
-}) => {
-  return (
-    <div className="card">
-      <div className="card-header">
-        <h3 className="card-title">{title}</h3>
-        {right}
-      </div>
-      <div className="space-y-3">{children}</div>
+}) => (
+  <div className="card">
+    <div className="card-header">
+      <h3 className="card-title">{title}</h3>
+      {right}
     </div>
-  );
-};
+    <div className="space-y-3">{children}</div>
+  </div>
+);
 
 const Field = ({
   error,
@@ -67,14 +62,12 @@ const Field = ({
 }: {
   error?: string;
   children: React.ReactNode;
-}) => {
-  return (
-    <div>
-      {children}
-      {error && <p className="field-error">{error}</p>}
-    </div>
-  );
-};
+}) => (
+  <div>
+    {children}
+    {error && <p className="field-error">{error}</p>}
+  </div>
+);
 
 // ── PartyFieldset ────────────────────────────────────────────────────────────
 
@@ -102,29 +95,20 @@ const PartyFieldset = ({
       ? (e.message as string)
       : undefined;
   };
+  const isCompanyKey = name("isCompany") as "sender_isCompany" | "recipient_isCompany";
 
   const toggle = (
     <div className="flex rounded-full border border-zinc-200 overflow-hidden text-xs font-medium">
       <button
         type="button"
-        onClick={() =>
-          setValue(
-            name("isCompany") as "sender_isCompany" | "recipient_isCompany",
-            false,
-          )
-        }
+        onClick={() => setValue(isCompanyKey, false)}
         className={`px-3 py-1 transition-colors ${!isCompany ? "bg-zinc-900 text-white" : "text-zinc-400 hover:text-zinc-700"}`}
       >
         Individual
       </button>
       <button
         type="button"
-        onClick={() =>
-          setValue(
-            name("isCompany") as "sender_isCompany" | "recipient_isCompany",
-            true,
-          )
-        }
+        onClick={() => setValue(isCompanyKey, true)}
         className={`px-3 py-1 transition-colors ${isCompany ? "bg-zinc-900 text-white" : "text-zinc-400 hover:text-zinc-700"}`}
       >
         Company
@@ -144,18 +128,14 @@ const PartyFieldset = ({
         <>
           <Field error={err("firstname")}>
             <input
-              {...register(name("firstname"), {
-                required: "First name is required",
-              })}
+              {...register(name("firstname"), { required: "First name is required" })}
               className="form-input"
               placeholder="First name"
             />
           </Field>
           <Field error={err("lastname")}>
             <input
-              {...register(name("lastname"), {
-                required: "Last name is required",
-              })}
+              {...register(name("lastname"), { required: "Last name is required" })}
               className="form-input"
               placeholder="Last name"
             />
@@ -217,18 +197,18 @@ export function Home() {
     },
   });
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [trackingShown, setTrackingShown] = useState<string | null>(null);
+  const [maskedTracking, setMaskedTracking] = useState<string | null>(null);
 
   const senderIsCompany = watch("sender_isCompany");
   const recipientIsCompany = watch("recipient_isCompany");
   const carrier = watch("carrier");
 
   useEffect(() => {
-    const isTestMode = import.meta.env.VITE_TEST_MODE === "true";
-    if (!isTestMode) return;
+    if (import.meta.env.VITE_TEST_MODE !== "true") return;
     const testData = getTestData(carrier);
     (Object.keys(testData) as (keyof typeof testData)[]).forEach((key) => {
       setValue(key as Path<FormData>, testData[key] as never);
@@ -259,25 +239,29 @@ export function Home() {
       };
 
       const svgTemplate = await loadSvgTemplate(data.carrier);
-      const { svg, trackingShown: shown } = buildLabelSvg(payload, svgTemplate);
-      setTrackingShown(shown);
-      const pdfBlob = await svgToPdf(svg);
-      setPdfUrl(URL.createObjectURL(pdfBlob));
-      setIsDialogOpen(true);
+      const { svg, maskedTracking: masked } = buildLabelSvg(payload, svgTemplate);
+      setMaskedTracking(masked);
+
+      const blob = await svgToPdf(svg);
+      setPdfBlob(blob);
+      setPdfUrl(URL.createObjectURL(blob));
+      setIsPreviewOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
       console.error(err);
     }
   };
 
-  const handleDownloadPdf = () => {
-    if (!pdfUrl) return;
-    const link = document.createElement("a");
-    link.href = pdfUrl;
-    link.download = "label.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleClose = () => {
+    setIsPreviewOpen(false);
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+    setPdfBlob(null);
+  };
+
+  const handleDownload = () => {
+    if (!pdfBlob) return;
+    downloadPdf(pdfBlob, "label.pdf");
   };
 
   return (
@@ -339,25 +323,7 @@ export function Home() {
           >
             {isSubmitting ? (
               <>
-                <svg
-                  className="h-4 w-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  />
-                </svg>
+                <Spinner />
                 Generating…
               </>
             ) : (
@@ -367,64 +333,13 @@ export function Home() {
         </div>
       </form>
 
-      {isDialogOpen && pdfUrl && (
-        <div
-          className="modal-backdrop"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsDialogOpen(false);
-          }}
-        >
-          <div className="modal-box">
-            <div className="modal-header">
-              <h2 className="modal-title">Label Preview</h2>
-              <button
-                onClick={() => setIsDialogOpen(false)}
-                className="btn btn-ghost"
-                style={{ padding: "0.375rem" }}
-                aria-label="Close"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <iframe
-                src={pdfUrl}
-                className="w-full rounded border border-zinc-200"
-                height="480"
-                style={{ border: "none" }}
-              />
-              {trackingShown && (
-                <p className="mt-3 text-sm text-zinc-500">
-                  <span className="font-medium text-zinc-700">Tracking:</span>{" "}
-                  {trackingShown}
-                </p>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button
-                onClick={() => setIsDialogOpen(false)}
-                className="btn btn-ghost"
-              >
-                Close
-              </button>
-              <button onClick={handleDownloadPdf} className="btn btn-primary">
-                Download PDF
-              </button>
-            </div>
-          </div>
-        </div>
+      {isPreviewOpen && pdfUrl && (
+        <LabelPreviewModal
+          pdfUrl={pdfUrl}
+          maskedTracking={maskedTracking}
+          onClose={handleClose}
+          onDownload={handleDownload}
+        />
       )}
     </>
   );
