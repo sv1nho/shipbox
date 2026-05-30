@@ -422,7 +422,6 @@ export const buildLabelSvg = (
 
   const overlay = `
   <g id="dynamic-label-overlay">
-    ${carrier === "bpost" ? `<image x="257" y="3" width="40" height="22" href="/assets/bpost-logo.jpg"/>` : ""}
     ${createTextElement(config.senderLabel, config.sender.x, config.sender.startY - 14, config.sender.fontSize)}
     <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderTspans}</text>
     ${carrier === "postnl" ? `${createTextElement("AD", 25, 110, 36, "700")}` : ""}
