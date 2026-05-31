@@ -8,14 +8,14 @@ const resolveCountry = (payload: LabelPayload, isSender: boolean): string => {
   return COUNTRY_NAMES[country][payload.label_language].toUpperCase();
 };
 
-const zoneFromPostal = (postalRaw: string): string => {
+export const zoneFromPostal = (postalRaw: string): string => {
   const digits = postalRaw.replace(/\D/g, "");
   const postal = Number.parseInt(digits.slice(0, 4), 10);
   if (digits.length < 4 || Number.isNaN(postal)) return "";
   return POSTAL_ZONES.find((zone) => postal >= zone.min && postal <= zone.max)?.code ?? "";
 };
 
-const escapeXml = (value: string): string =>
+export const escapeXml = (value: string): string =>
   value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -23,7 +23,7 @@ const escapeXml = (value: string): string =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&apos;");
 
-const wrapText = (text: string, maxLength: number): string[] => {
+export const wrapText = (text: string, maxLength: number): string[] => {
   if (text.length <= maxLength) return [text];
 
   const words = text.split(" ");
@@ -36,8 +36,7 @@ const wrapText = (text: string, maxLength: number): string[] => {
       currentLine = testLine;
     } else {
       if (currentLine) lines.push(currentLine);
-      lines.push(word);
-      currentLine = "";
+      currentLine = word;
     }
   }
 
@@ -62,7 +61,7 @@ const getRandomDigit = (except?: string): string => {
   return digit;
 };
 
-const obfuscateTracking = (tracking: string, tailDigitCount: number): string => {
+export const obfuscateTracking = (tracking: string, tailDigitCount: number): string => {
   const chars = tracking.split("");
   const digitIndexes: number[] = [];
 
