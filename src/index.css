@@ -18,19 +18,29 @@ body {
 @layer components {
   /* ── Layout ── */
   .navbar {
-    @apply sticky top-0 z-10 border-b border-zinc-200 bg-white shadow-sm;
+    @apply fixed top-3 left-1/2 z-50 w-full max-w-4xl -translate-x-1/2 px-4;
   }
   .navbar-inner {
-    @apply max-w-4xl mx-auto px-4 h-14 flex items-center justify-center;
+    @apply bg-white/90 backdrop-blur-md border border-zinc-200 rounded-xl h-12 px-4 flex items-center justify-between;
+    box-shadow: 0 4px 16px 0 rgb(0 0 0 / 0.10), 0 1px 4px -1px rgb(0 0 0 / 0.08);
   }
-  .navbar-title {
-    @apply text-xl tracking-tight text-zinc-800;
+  .page-content {
+    @apply max-w-4xl mx-auto px-4 py-8 pt-24;
+  }
+  .navbar-brand {
+    @apply flex items-center gap-2 font-semibold text-zinc-900 text-sm tracking-tight;
+  }
+  .navbar-links {
+    @apply flex items-center gap-1;
+  }
+  .navbar-link {
+    @apply px-3 py-1.5 rounded-md text-sm text-zinc-500 font-medium transition-colors hover:text-zinc-900 hover:bg-zinc-100;
+  }
+  .navbar-link-active {
+    @apply text-zinc-900 bg-zinc-100;
   }
   .page-wrapper {
     @apply min-h-screen bg-zinc-100;
-  }
-  .page-content {
-    @apply max-w-4xl mx-auto px-4 py-8;
   }
 
   /* ── Cards ── */
