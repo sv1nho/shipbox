@@ -71,11 +71,11 @@ const PartyFieldset = ({
   errors,
   setValue,
 }: PartyFieldsetProps) => {
-  const name = (field: string) => `${prefix}_${field}` as Path<LabelPayload>
+  const name = (field: string): Path<LabelPayload> => `${prefix}_${field}` as Path<LabelPayload>
   const err = (field: string): string | undefined => {
-    const e = errors[name(field) as keyof LabelPayload]
+    const e = errors[name(field)]
     return e && typeof e === 'object' && 'message' in e
-      ? (e.message as string)
+      ? e.message
       : undefined
   }
   const isCompanyKey = name('isCompany') as
@@ -228,7 +228,7 @@ export function Form () {
     if (import.meta.env.VITE_TEST_MODE !== 'true') return
     const testData = getTestData(carrier);
     (Object.keys(testData) as (keyof typeof testData)[]).forEach((key) => {
-      setValue(key as Path<LabelPayload>, testData[key] as never)
+      setValue(key, testData[key] as never)
     })
   }, [setValue, carrier])
 
