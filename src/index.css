@@ -28,7 +28,7 @@ body {
     @apply max-w-4xl mx-auto px-4 py-8 pt-24;
   }
   .navbar-brand {
-    @apply flex items-center gap-2 font-semibold text-zinc-900 text-sm tracking-tight;
+    @apply flex items-center gap-2 font-semibold text-zinc-900 text-sm tracking-tight cursor-pointer bg-transparent border-none p-0;
   }
   .navbar-links {
     @apply flex items-center gap-1;
