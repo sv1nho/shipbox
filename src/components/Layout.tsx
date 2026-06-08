@@ -1,34 +1,45 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
-export function Layout() {
+export function Layout () {
+  const navigate = useNavigate()
   return (
-    <div className="page-wrapper">
-      <nav className="navbar">
-        <div className="navbar-inner">
-          <span className="navbar-brand">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
-              <path d="M16.5 9.4 7.55 4.24" />
-              <polyline points="3.29 7 12 12 20.71 7" />
-              <line x1="12" y1="22" x2="12" y2="12" />
-              <circle cx="18.5" cy="15.5" r="2.5" />
-              <path d="M20.27 17.27 22 19" />
+    <div className='page-wrapper'>
+      <nav className='navbar'>
+        <div className='navbar-inner relative'>
+          <button type='button' className='navbar-brand' onClick={() => { void navigate('/') }}>
+            <svg
+              width='18'
+              height='18'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            >
+              <path d='M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14' />
+              <path d='M16.5 9.4 7.55 4.24' />
+              <polyline points='3.29 7 12 12 20.71 7' />
+              <line x1='12' y1='22' x2='12' y2='12' />
+              <circle cx='18.5' cy='15.5' r='2.5' />
+              <path d='M20.27 17.27 22 19' />
             </svg>
             Label Generator
-          </span>
-          <div className="navbar-links">
-            <NavLink to="/" end className={({ isActive }) => isActive ? "navbar-link navbar-link-active" : "navbar-link"}>
-              Accueil
-            </NavLink>
-            <NavLink to="/form" className={({ isActive }) => isActive ? "navbar-link navbar-link-active" : "navbar-link"}>
+          </button>
+          <div className='absolute left-1/2 -translate-x-1/2 flex navbar-links'>
+            <NavLink
+              to='/form'
+              className={({ isActive }) =>
+                isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+            >
               Formulaire
             </NavLink>
           </div>
         </div>
       </nav>
-      <main className="page-content">
+      <main className='page-content'>
         <Outlet />
       </main>
     </div>
-  );
+  )
 }

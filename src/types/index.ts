@@ -6,6 +6,7 @@ export interface LabelPayload {
   sender_postal: string;
   sender_city: string;
   sender_country: Country;
+  sender_isCompany: boolean;
   recipient_firstname: string;
   recipient_lastname: string;
   recipient_company: string;
@@ -13,18 +14,19 @@ export interface LabelPayload {
   recipient_postal: string;
   recipient_city: string;
   recipient_country: Country;
+  recipient_isCompany: boolean;
+  label_language: Language;
   carrier: Carrier;
   tracking_number: string;
-  label_language: Language;
 }
 
-export type Country = "BE" | "NL" | "DE";
-export type Language = "en" | "fr" | "nl";
-export type Carrier = "postnl" | "bpost";
+export type Country = 'BE' | 'NL' | 'DE'
+export type Language = 'en' | 'fr' | 'nl'
+export type Carrier = 'postnl' | 'bpost'
 
 export interface BuildLabelResult {
   svg: string;
   trackingShown: string;
 }
 
-export type { CarrierConfig } from "./config.js";
+export type { CarrierConfig } from './config.js'

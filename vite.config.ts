@@ -1,6 +1,6 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -9,10 +9,10 @@ export default defineConfig({
     open: true,
   },
   test: {
-    environment: "happy-dom",
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    environment: 'happy-dom',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
-      reportsDirectory: "coverage",
+      reportsDirectory: 'coverage',
     },
   },
-});
+})
