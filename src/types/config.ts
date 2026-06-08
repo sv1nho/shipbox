@@ -36,4 +36,4 @@ export type CarrierConfig = {
     fontSize: number;
   };
   senderLabel: string;
-};
+}
