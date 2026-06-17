@@ -4,16 +4,32 @@ export function Layout () {
   const navigate = useNavigate()
   return (
     <div className='page-wrapper'>
+      <div className='deco-layer' aria-hidden='true'>
+        <span className='deco-star deco-star-1'>★</span>
+        <span className='deco-star deco-star-2'>✦</span>
+        <span className='deco-star deco-star-3'>◆</span>
+        <span className='deco-star deco-star-4'>★</span>
+        <span className='deco-star deco-star-5'>✦</span>
+        <span className='deco-star deco-star-6'>◆</span>
+        <div className='deco-bubble deco-bubble-1' />
+        <div className='deco-bubble deco-bubble-2' />
+        <div className='deco-bubble deco-bubble-3' />
+      </div>
+
       <nav className='navbar'>
         <div className='navbar-inner relative'>
-          <button type='button' className='navbar-brand' onClick={() => { void navigate('/') }}>
+          <button
+            type='button'
+            className='navbar-brand'
+            onClick={() => { void navigate('/') }}
+          >
             <svg
-              width='18'
-              height='18'
+              width='20'
+              height='20'
               viewBox='0 0 24 24'
               fill='none'
               stroke='currentColor'
-              strokeWidth='2'
+              strokeWidth='2.5'
               strokeLinecap='round'
               strokeLinejoin='round'
             >
@@ -26,6 +42,7 @@ export function Layout () {
             </svg>
             Label Generator
           </button>
+
           <div className='absolute left-1/2 -translate-x-1/2 flex navbar-links'>
             <NavLink
               to='/form'
@@ -37,6 +54,7 @@ export function Layout () {
           </div>
         </div>
       </nav>
+
       <main className='page-content'>
         <Outlet />
       </main>
