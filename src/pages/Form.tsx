@@ -83,18 +83,18 @@ const PartyFieldset = ({
     | 'recipient_isCompany'
 
   const toggle = (
-    <div className='flex rounded-full border border-zinc-200 overflow-hidden text-xs font-medium'>
+    <div className='party-toggle'>
       <button
         type='button'
         onClick={() => setValue(isCompanyKey, false)}
-        className={`px-3 py-1 transition-colors ${!isCompany ? 'bg-zinc-900 text-white' : 'text-zinc-400 hover:text-zinc-700'}`}
+        className={!isCompany ? 'party-toggle-btn party-toggle-btn-active' : 'party-toggle-btn'}
       >
         Individual
       </button>
       <button
         type='button'
         onClick={() => setValue(isCompanyKey, true)}
-        className={`px-3 py-1 transition-colors ${isCompany ? 'bg-zinc-900 text-white' : 'text-zinc-400 hover:text-zinc-700'}`}
+        className={isCompany ? 'party-toggle-btn party-toggle-btn-active' : 'party-toggle-btn'}
       >
         Company
       </button>
