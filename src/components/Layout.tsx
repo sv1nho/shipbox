@@ -4,60 +4,77 @@ export function Layout () {
   const navigate = useNavigate()
   return (
     <div className='page-wrapper'>
-      <div className='deco-layer' aria-hidden='true'>
-        <span className='deco-star deco-star-1'>★</span>
-        <span className='deco-star deco-star-2'>✦</span>
-        <span className='deco-star deco-star-3'>◆</span>
-        <span className='deco-star deco-star-4'>★</span>
-        <span className='deco-star deco-star-5'>✦</span>
-        <span className='deco-star deco-star-6'>◆</span>
-        <div className='deco-bubble deco-bubble-1' />
-        <div className='deco-bubble deco-bubble-2' />
-        <div className='deco-bubble deco-bubble-3' />
+
+      {/* ── Site header banner ── */}
+      <div className='site-header'>
+        <div className='site-header-inner'>
+          <div className='site-header-logo'>
+            📦&nbsp;<em>Label</em>&nbsp;Generator&nbsp;<em>Pro</em>
+          </div>
+          <div className='site-header-right'>
+            <strong>★ 100% GRATUIT ★</strong><br />
+            Bpost &amp; PostNL<br />
+            Belgique · Pays-Bas · Allemagne
+          </div>
+        </div>
       </div>
 
+      {/* ── Navigation bar ── */}
       <nav className='navbar'>
-        <div className='navbar-inner relative'>
-          <button
-            type='button'
-            className='navbar-brand'
-            onClick={() => { void navigate('/') }}
-          >
-            <svg
-              width='20'
-              height='20'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2.5'
-              strokeLinecap='round'
-              strokeLinejoin='round'
+        <div className='navbar-inner'>
+          <div className='navbar-links'>
+            <button
+              type='button'
+              className='navbar-brand'
+              onClick={() => { void navigate('/') }}
             >
-              <path d='M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14' />
-              <path d='M16.5 9.4 7.55 4.24' />
-              <polyline points='3.29 7 12 12 20.71 7' />
-              <line x1='12' y1='22' x2='12' y2='12' />
-              <circle cx='18.5' cy='15.5' r='2.5' />
-              <path d='M20.27 17.27 22 19' />
-            </svg>
-            Label Generator
-          </button>
-
-          <div className='absolute left-1/2 -translate-x-1/2 flex navbar-links'>
+              🏠 Accueil
+            </button>
+            <span className='nav-sep'>|</span>
             <NavLink
               to='/form'
               className={({ isActive }) =>
                 isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
             >
-              Formulaire
+              📋 Formulaire
             </NavLink>
+          </div>
+          <div className='nav-badge'>
+            <span className='new-badge'>NEW!</span>
+            Version 2.0 disponible
           </div>
         </div>
       </nav>
 
+      {/* ── Marquee ticker ── */}
+      <div className='marquee-bar' aria-hidden='true'>
+        <div className='marquee-inner'>
+          ★ NOUVEAU — Génération de labels PDF instantanée ★&nbsp;&nbsp;
+          Bpost &amp; PostNL supportés ★&nbsp;&nbsp;
+          3 langues disponibles : FR · NL · EN ★&nbsp;&nbsp;
+          Belgique, Pays-Bas, Allemagne ★&nbsp;&nbsp;
+          100% gratuit — aucune inscription requise ★&nbsp;&nbsp;
+          Téléchargez vos labels en quelques secondes ★
+        </div>
+      </div>
+
+      {/* ── Main content ── */}
       <main className='page-content'>
         <Outlet />
       </main>
+
+      {/* ── Old-web footer ── */}
+      <div className='site-footer'>
+        <div>© 2004 Label Generator Pro — Tous droits réservés</div>
+        <div style={{ fontStyle: 'italic', color: '#888888', marginTop: 2 }}>
+          Best viewed in Internet Explorer 6.0 at 800×600 resolution
+        </div>
+        <div style={{ marginTop: 4 }}>
+          Nombre de visites :&nbsp;
+          <span className='hit-counter'>004219</span>
+        </div>
+      </div>
+
     </div>
   )
 }
