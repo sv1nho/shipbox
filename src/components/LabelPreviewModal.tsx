@@ -45,9 +45,7 @@ export function LabelPreviewModal ({
         <div className='modal-body'>
           <iframe
             src={pdfUrl}
-            className='w-full rounded border border-zinc-200'
             height='480'
-            style={{ border: 'none' }}
           />
           {maskedTracking && (
             <p className='mt-3 text-sm text-zinc-500'>
