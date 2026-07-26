@@ -43,6 +43,7 @@ export const COUNTRY_NAMES: Record<Country, Record<Language, string>> = {
 export const SVG_TEXT_CONFIG = {
   fontFamily: 'Arial, Helvetica, sans-serif',
   fill: 'black',
+  fontWeight: '400',
   textAnchor: 'start' as const,
   direction: 'ltr' as const,
 }
