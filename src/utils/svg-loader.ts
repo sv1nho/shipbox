@@ -1,10 +1,10 @@
 import type { Carrier } from '../types/index.js'
 
-const VALID_CARRIERS: readonly Carrier[] = ['bpost', 'postnl']
+const VALID_CARRIERS: Record<Carrier, true> = { bpost: true, postnl: true }
 
 export const loadSvgTemplate = async (carrier: Carrier): Promise<string> => {
-  if (!VALID_CARRIERS.includes(carrier)) {
-    throw new Error(`Unsupported carrier: ${String(carrier)}`)
+  if (!VALID_CARRIERS[carrier]) {
+    throw new Error(`Unsupported carrier: ${carrier}`)
   }
 
   const response = await globalThis.fetch(`/assets/models/${carrier}.svg`)

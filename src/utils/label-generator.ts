@@ -9,7 +9,7 @@ const resolveCountry = (payload: LabelPayload, prefix: Prefix): string => {
   const country = payload[`${prefix}_country`]
   const names = COUNTRY_NAMES[country]
   if (!names) {
-    throw new Error(`Unsupported country: ${String(country)}`)
+    throw new Error(`Unsupported country: ${country}`)
   }
   return names[payload.label_language].toUpperCase()
 }
@@ -230,7 +230,7 @@ export const buildLabelSvg = (
 ): { svg: string; maskedTracking: string } => {
   const config = CARRIER_CONFIGS[payload.carrier]
   if (!config) {
-    throw new Error(`Unsupported carrier: ${String(payload.carrier)}`)
+    throw new Error(`Unsupported carrier: ${payload.carrier}`)
   }
 
   const barcodeBase64 = generateBarcodeBase64(payload.tracking_number)

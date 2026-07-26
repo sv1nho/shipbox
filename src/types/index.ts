@@ -24,9 +24,4 @@ export type Country = 'BE' | 'NL' | 'DE'
 export type Language = 'en' | 'fr' | 'nl'
 export type Carrier = 'postnl' | 'bpost'
 
-export interface BuildLabelResult {
-  svg: string;
-  trackingShown: string;
-}
-
 export type { CarrierConfig } from './config.js'
