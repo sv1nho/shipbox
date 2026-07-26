@@ -7,7 +7,7 @@ import type {
   FieldErrors,
   Path,
 } from 'react-hook-form'
-import type { LabelPayload } from '../types/index.js'
+import type { Carrier, LabelPayload } from '../types/index.js'
 import { buildLabelSvg } from '../utils/label-generator.js'
 import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
@@ -18,6 +18,22 @@ import { fakerFR_BE, fakerNL_BE, fakerNL } from '@faker-js/faker'
 
 const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
 const randomFaker = () => fakers[Math.floor(Math.random() * fakers.length)]
+
+const TRACKING_NUMBER_RULES: Record<
+  Carrier,
+  { pattern: RegExp; message: string; placeholder: string }
+> = {
+  bpost: {
+    pattern: /^(3232|3299)\d{20}$/,
+    message: '24 digits starting with 3232 or 3299',
+    placeholder: '24 digits for Bpost',
+  },
+  postnl: {
+    pattern: /^[23]S[A-Z]{1,4}\d{6,9}$/,
+    message: '2S/3S followed by 1-4 letters and 6-9 digits',
+    placeholder: 'e.g. 3SDDRL000000409',
+  },
+}
 
 // ── Shared sub-components ────────────────────────────────────────────────────
 
@@ -303,9 +319,14 @@ export function Form () {
           <SectionCard title='Tracking Number'>
             <Field error={errors.tracking_number?.message}>
               <input
-                {...register('tracking_number', { required: 'Required' })}
+                {...register('tracking_number', {
+                  required: 'Required',
+                  validate: (value) =>
+                    TRACKING_NUMBER_RULES[carrier].pattern.test(value) ||
+                    `Must match: ${TRACKING_NUMBER_RULES[carrier].message}`,
+                })}
                 className='form-input'
-                placeholder='24 digits for Bpost'
+                placeholder={TRACKING_NUMBER_RULES[carrier].placeholder}
               />
             </Field>
           </SectionCard>
