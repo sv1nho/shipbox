@@ -7,7 +7,11 @@ type Prefix = 'sender' | 'recipient'
 
 const resolveCountry = (payload: LabelPayload, prefix: Prefix): string => {
   const country = payload[`${prefix}_country`]
-  return COUNTRY_NAMES[country][payload.label_language].toUpperCase()
+  const names = COUNTRY_NAMES[country]
+  if (!names) {
+    throw new Error(`Unsupported country: ${String(country)}`)
+  }
+  return names[payload.label_language].toUpperCase()
 }
 
 export const zoneFromPostal = (postalRaw: string): string => {
@@ -225,6 +229,9 @@ export const buildLabelSvg = (
   svgTemplate: string
 ): { svg: string; maskedTracking: string } => {
   const config = CARRIER_CONFIGS[payload.carrier]
+  if (!config) {
+    throw new Error(`Unsupported carrier: ${String(payload.carrier)}`)
+  }
 
   const barcodeBase64 = generateBarcodeBase64(payload.tracking_number)
   const maskedTracking = obfuscateTracking(
