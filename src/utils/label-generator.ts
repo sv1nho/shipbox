@@ -148,18 +148,32 @@ const createRecipientBox = (options: {
   strokeWidth: number
 }): string => {
   const { x, startY, boxWidth, boxHeight, padding, strokeWidth } = options
-  return `<rect x="${x - padding}" y="${startY - padding}" width="${boxWidth}" height="${boxHeight}" fill="none" stroke="black" stroke-width="${strokeWidth}" rx="2" ry="2"/>`
+  return `<rect x="${x - padding}" y="${startY - padding}" width="${boxWidth}" height="${boxHeight}" fill="none" stroke="${SVG_TEXT_CONFIG.fill}" stroke-width="${strokeWidth}" rx="2" ry="2"/>`
 }
 
-const createTextElement = (
-  text: string,
-  x: number,
-  y: number,
-  fontSize: number,
-  fontWeight: string = '400',
-  textAnchor: string = 'start'
-): string =>
-  `<text x="${x}" y="${y}" font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${fontSize}" font-weight="${fontWeight}" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${textAnchor}" direction="${SVG_TEXT_CONFIG.direction}">${text}</text>`
+const createTextElement = (options: {
+  text: string
+  fontSize: number
+  x?: number
+  y?: number
+  fontWeight?: string
+  textAnchor?: string
+  preserveSpace?: boolean
+}): string => {
+  const {
+    text,
+    x,
+    y,
+    fontSize,
+    fontWeight = SVG_TEXT_CONFIG.fontWeight,
+    textAnchor = SVG_TEXT_CONFIG.textAnchor,
+    preserveSpace = false
+  } = options
+  const position =
+    x !== undefined && y !== undefined ? ` x="${x}" y="${y}"` : ''
+  const space = preserveSpace ? ' xml:space="preserve"' : ''
+  return `<text${position} font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${fontSize}" font-weight="${fontWeight}" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${textAnchor}" direction="${SVG_TEXT_CONFIG.direction}"${space}>${text}</text>`
+}
 
 const generateBarcodeBase64 = (tracking: string): string => {
   const canvas = document.createElement('canvas')
@@ -276,13 +290,13 @@ export const buildLabelSvg = (
         config.recipient.detailsStartY +
         index * config.recipient.detailsLineHeight
       const fontWeight = index < addressLineCount ? '400' : '700'
-      return createTextElement(
-        escapeXml(line),
-        config.recipient.detailsX,
+      return createTextElement({
+        text: escapeXml(line),
+        x: config.recipient.detailsX,
         y,
-        config.recipient.fontSize,
+        fontSize: config.recipient.fontSize,
         fontWeight
-      )
+      })
     })
     .join('')
 
@@ -297,15 +311,15 @@ export const buildLabelSvg = (
 
   const overlay = `
   <g id="dynamic-label-overlay">
-    ${createTextElement(config.senderLabel, config.sender.x, config.sender.startY - 14, config.sender.fontSize)}
-    <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.sender.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${senderTspans}</text>
-    ${payload.carrier === 'postnl' ? createTextElement('AD', 24, 110, 36, '700') : ''}
+    ${createTextElement({ text: config.senderLabel, x: config.sender.x, y: config.sender.startY - 14, fontSize: config.sender.fontSize })}
+    ${createTextElement({ text: senderTspans, fontSize: config.sender.fontSize, preserveSpace: true })}
+    ${payload.carrier === 'postnl' ? createTextElement({ text: 'AD', x: 24, y: 110, fontSize: 36, fontWeight: '700' }) : ''}
     ${recipientBox}
-    <text font-family="${SVG_TEXT_CONFIG.fontFamily}" font-size="${config.recipient.fontSize}" font-weight="400" fill="${SVG_TEXT_CONFIG.fill}" text-anchor="${SVG_TEXT_CONFIG.textAnchor}" direction="${SVG_TEXT_CONFIG.direction}" xml:space="preserve">${recipientNameTspans}</text>
+    ${createTextElement({ text: recipientNameTspans, fontSize: config.recipient.fontSize, preserveSpace: true })}
     ${recipientDetailsText}
     <image x="${config.barcode.x}" y="${config.barcode.y}" width="${config.barcode.width}" height="${config.barcode.height}" href="data:image/png;base64,${barcodeBase64}"/>
-    ${createTextElement(escapeXml(maskedTracking), config.tracking.x, config.tracking.y, 12)}
-    ${config.zone ? createTextElement(escapeXml(postalZone), config.zone.x, config.zone.y, config.zone.fontSize, '700', 'middle') : ''}
+    ${createTextElement({ text: escapeXml(maskedTracking), x: config.tracking.x, y: config.tracking.y, fontSize: 12 })}
+    ${config.zone ? createTextElement({ text: escapeXml(postalZone), x: config.zone.x, y: config.zone.y, fontSize: config.zone.fontSize, fontWeight: '700', textAnchor: 'middle' }) : ''}
   </g>`
 
   return {
