@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 
 export const Home = () => {
   const navigate = useNavigate()
