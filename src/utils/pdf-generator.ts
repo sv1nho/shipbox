@@ -33,7 +33,8 @@ export const svgToPdf = async (svgString: string): Promise<Blob> => {
     return pdf.output('blob')
   } catch (error) {
     throw new Error(
-      `Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { cause: error }
     )
   }
 }
