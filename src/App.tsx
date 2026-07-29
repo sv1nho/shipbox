@@ -1,4 +1,5 @@
-import { RouterProvider, createBrowserRouter } from 'react-router-dom'
+import { RouterProvider } from 'react-router/dom'
+import { createBrowserRouter } from 'react-router'
 
 import { Form } from './pages/Form'
 import { Layout } from './components/Layout'
