@@ -1,14 +1,16 @@
-import neostandard from "neostandard";
+import js from "@eslint/js";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
-import reactPlugin from "eslint-plugin-react";
+import reactPlugin from "@eslint-react/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
+
+const reactRecommended = reactPlugin.configs["recommended-typescript"];
 
 export default [
   { ignores: ["dist/**", "node_modules/**", "eslint.config.js"] },
-  
-  ...neostandard(),
-  
+
+  js.configs.recommended,
+
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
@@ -49,15 +51,20 @@ export default [
   {
     files: ["**/*.tsx"],
     plugins: {
-      react: reactPlugin,
+      ...reactRecommended.plugins,
       "react-hooks": reactHooks,
     },
-    settings: { react: { version: "detect" } },
+    settings: reactRecommended.settings,
     rules: {
-      ...reactPlugin.configs.recommended.rules,
+      ...reactRecommended.rules,
       ...reactHooks.configs.recommended.rules,
-      "react/react-in-jsx-scope": "off",
-      "react/prop-types": "off",
+      // eslint-plugin-react-hooks is the source of truth for hooks rules;
+      // disable @eslint-react's duplicate implementations to avoid double-reporting.
+      "@eslint-react/rules-of-hooks": "off",
+      "@eslint-react/exhaustive-deps": "off",
+      "@eslint-react/set-state-in-effect": "off",
+      "@eslint-react/set-state-in-render": "off",
+      "@eslint-react/use-memo": "off",
     },
   },
 ];
