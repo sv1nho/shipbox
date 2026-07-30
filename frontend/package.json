@@ -1,7 +1,8 @@
 {
-  "name": "bpost-label-generator",
+  "name": "bpost-label-generator-frontend",
   "version": "1.0.0",
-  "description": "Shipping label generator with React",
+  "description": "React/Vite frontend for generating bpost and PostNL shipping labels",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host",
