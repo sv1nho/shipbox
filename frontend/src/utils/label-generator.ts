@@ -5,13 +5,20 @@ import { COUNTRY_NAMES, POSTAL_ZONES, SVG_TEXT_CONFIG } from './variables.js'
 
 type Prefix = 'sender' | 'recipient'
 
-const resolveCountry = (payload: LabelPayload, prefix: Prefix): string => {
+const maybeUpper = (value: string, uppercase: boolean): string =>
+  uppercase ? value.toUpperCase() : value
+
+const resolveCountry = (
+  payload: LabelPayload,
+  prefix: Prefix,
+  config: CarrierConfig
+): string => {
   const country = payload[`${prefix}_country`]
   const names = COUNTRY_NAMES[country]
   if (!names) {
     throw new Error(`Unsupported country: ${country}`)
   }
-  return names[payload.label_language].toUpperCase()
+  return maybeUpper(names[payload.label_language], config.uppercaseCityCountry)
 }
 
 export const zoneFromPostal = (postalRaw: string): string => {
@@ -101,31 +108,48 @@ export const obfuscateTracking = (
   return chars.join('')
 }
 
+const capitalize = (value: string): string =>
+  value.length === 0 ? value : value[0].toUpperCase() + value.slice(1)
+
 const party = (payload: LabelPayload, prefix: Prefix) => (key: string) =>
   payload[`${prefix}_${key}` as keyof LabelPayload]
 
 const nameLines = (payload: LabelPayload, prefix: Prefix): string[] => {
   const p = party(payload, prefix)
   const name = p('isCompany')
-    ? (p('company') as string)
-    : `${p('firstname')} ${p('lastname')}`
+    ? capitalize(p('company') as string)
+    : `${capitalize(p('firstname') as string)} ${capitalize(p('lastname') as string)}`
   return wrapText(name, prefix === 'sender' ? 40 : 35)
 }
 
-const addressLines = (payload: LabelPayload, prefix: Prefix): string[] => {
+const addressLines = (
+  payload: LabelPayload,
+  prefix: Prefix,
+  config: CarrierConfig
+): { lines: string[]; addressLineCount: number } => {
   const p = party(payload, prefix)
-  const address = p('address') as string
+  const address = capitalize(p('address') as string)
   const postal = p('postal') as string
   const city = p('city') as string
   const maxLen = prefix === 'sender' ? 45 : 35
-  const postalCity = `${postal} ${city.toUpperCase()}`
-  const country = resolveCountry(payload, prefix)
+  const displayCity = config.uppercaseCityCountry
+    ? city.toUpperCase()
+    : capitalize(city)
+  const postalCity = `${postal} ${displayCity}`
+  const country = resolveCountry(payload, prefix, config)
 
-  return [
-    ...wrapText(address, maxLen),
+  const addressWrapped = wrapText(address, maxLen).filter(
+    (line) => line.length > 0
+  )
+  const restWrapped = [
     ...wrapText(postalCity, maxLen),
     ...wrapText(country, maxLen)
   ].filter((line) => line.length > 0)
+
+  return {
+    lines: [...addressWrapped, ...restWrapped],
+    addressLineCount: addressWrapped.length
+  }
 }
 
 const linesToTspans = (
@@ -193,6 +217,75 @@ const generateBarcodeBase64 = (tracking: string): string => {
   }
 }
 
+const buildSenderBlock = (
+  payload: LabelPayload,
+  config: CarrierConfig
+): string => {
+  const senderTspans = linesToTspans(
+    [
+      ...nameLines(payload, 'sender'),
+      ...addressLines(payload, 'sender', config).lines
+    ],
+    {
+      x: config.sender.x,
+      startY: config.sender.startY,
+      lineHeight: config.sender.lineHeight
+    }
+  )
+
+  return `${createTextElement({ text: config.senderLabel, x: config.sender.x, y: config.sender.startY - 14, fontSize: config.sender.fontSize })}
+    ${createTextElement({ text: senderTspans, fontSize: config.sender.fontSize, preserveSpace: true })}`
+}
+
+const buildRecipientNameBlock = (
+  payload: LabelPayload,
+  config: CarrierConfig
+): string => {
+  const wrappedNameLines = wrapTextByPixelWidth(
+    nameLines(payload, 'recipient'),
+    config.recipient.boxWidth,
+    config.recipient.fontSize
+  )
+  const nameTspans = linesToTspans(wrappedNameLines, {
+    x: config.recipient.x,
+    startY: config.recipient.nameStartY,
+    lineHeight: config.recipient.nameLineHeight
+  })
+  return createTextElement({
+    text: nameTspans,
+    fontSize: config.recipient.fontSize,
+    preserveSpace: true
+  })
+}
+
+const buildRecipientDetailsBlock = (
+  payload: LabelPayload,
+  config: CarrierConfig
+): string => {
+  const { lines, addressLineCount } = addressLines(payload, 'recipient', config)
+  const wrappedLines = wrapTextByPixelWidth(
+    lines,
+    config.recipient.boxWidth,
+    config.recipient.fontSize
+  )
+
+  return wrappedLines
+    .map((line, index) => {
+      const y =
+        config.recipient.detailsStartY +
+        index * config.recipient.detailsLineHeight
+      const fontWeight = index < addressLineCount ? '400' : '700'
+      return createTextElement({
+        text: escapeXml(line),
+        x: config.recipient.x,
+        y,
+        fontSize: config.recipient.fontSize,
+        fontWeight
+      })
+    })
+    .join('')
+}
+
 const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
   postnl: {
     trackingTailDigitCount: 9,
@@ -208,12 +301,13 @@ const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
       nameLineHeight: 12.5,
       detailsStartY: 194,
       detailsLineHeight: 12.5,
-      nameX: 29,
-      detailsX: 29
+      x: 29
     },
     barcode: { x: 29, y: 280, width: 238, height: 70 },
     tracking: { x: 95, y: 355 },
-    senderLabel: 'Afzender:'
+    senderLabel: 'Afzender:',
+    uppercaseCityCountry: true,
+    extraMark: { text: 'AD', x: 24, y: 110, fontSize: 36, fontWeight: '700' }
   },
   bpost: {
     trackingTailDigitCount: 8,
@@ -229,13 +323,13 @@ const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
       nameLineHeight: 10,
       detailsStartY: 212.5,
       detailsLineHeight: 13.5,
-      nameX: 60,
-      detailsX: 60
+      x: 60
     },
     barcode: { x: 50, y: 110, width: 210, height: 70 },
     tracking: { x: 75, y: 180 },
     zone: { x: 150.5, y: 300, fontSize: 24 },
-    senderLabel: 'Expéditeur/Afzender:'
+    senderLabel: 'Expéditeur/Afzender:',
+    uppercaseCityCountry: false
   }
 }
 
@@ -255,54 +349,8 @@ export const buildLabelSvg = (
   )
   const postalZone = zoneFromPostal(payload.recipient_postal)
 
-  const senderTspans = linesToTspans(
-    [...nameLines(payload, 'sender'), ...addressLines(payload, 'sender')],
-    {
-      x: config.sender.x,
-      startY: config.sender.startY,
-      lineHeight: config.sender.lineHeight
-    }
-  )
-
-  const wrappedRecipientNameLines = wrapTextByPixelWidth(
-    nameLines(payload, 'recipient'),
-    config.recipient.boxWidth,
-    config.recipient.fontSize
-  )
-  const wrappedRecipientDetailsLines = wrapTextByPixelWidth(
-    addressLines(payload, 'recipient'),
-    config.recipient.boxWidth,
-    config.recipient.fontSize
-  )
-
-  const addressLineCount = wrapText(payload.recipient_address, 35).filter(
-    (l) => l.length > 0
-  ).length
-
-  const recipientNameTspans = linesToTspans(wrappedRecipientNameLines, {
-    x: config.recipient.nameX,
-    startY: config.recipient.nameStartY,
-    lineHeight: config.recipient.nameLineHeight
-  })
-
-  const recipientDetailsText = wrappedRecipientDetailsLines
-    .map((line, index) => {
-      const y =
-        config.recipient.detailsStartY +
-        index * config.recipient.detailsLineHeight
-      const fontWeight = index < addressLineCount ? '400' : '700'
-      return createTextElement({
-        text: escapeXml(line),
-        x: config.recipient.detailsX,
-        y,
-        fontSize: config.recipient.fontSize,
-        fontWeight
-      })
-    })
-    .join('')
-
   const recipientBox = createRecipientBox({
-    x: config.recipient.nameX,
+    x: config.recipient.x,
     startY: config.recipient.boxStartY,
     boxWidth: config.recipient.boxWidth,
     boxHeight: config.recipient.boxHeight,
@@ -312,12 +360,11 @@ export const buildLabelSvg = (
 
   const overlay = `
   <g id="dynamic-label-overlay">
-    ${createTextElement({ text: config.senderLabel, x: config.sender.x, y: config.sender.startY - 14, fontSize: config.sender.fontSize })}
-    ${createTextElement({ text: senderTspans, fontSize: config.sender.fontSize, preserveSpace: true })}
-    ${payload.carrier === 'postnl' ? createTextElement({ text: 'AD', x: 24, y: 110, fontSize: 36, fontWeight: '700' }) : ''}
+    ${buildSenderBlock(payload, config)}
+    ${config.extraMark ? createTextElement(config.extraMark) : ''}
     ${recipientBox}
-    ${createTextElement({ text: recipientNameTspans, fontSize: config.recipient.fontSize, preserveSpace: true })}
-    ${recipientDetailsText}
+    ${buildRecipientNameBlock(payload, config)}
+    ${buildRecipientDetailsBlock(payload, config)}
     <image x="${config.barcode.x}" y="${config.barcode.y}" width="${config.barcode.width}" height="${config.barcode.height}" href="data:image/png;base64,${barcodeBase64}"/>
     ${createTextElement({ text: escapeXml(maskedTracking), x: config.tracking.x, y: config.tracking.y, fontSize: 12 })}
     ${config.zone ? createTextElement({ text: escapeXml(postalZone), x: config.zone.x, y: config.zone.y, fontSize: config.zone.fontSize, fontWeight: '700', textAnchor: 'middle' }) : ''}

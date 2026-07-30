@@ -17,8 +17,7 @@ export type CarrierConfig = {
     nameLineHeight: number;
     detailsStartY: number;
     detailsLineHeight: number;
-    nameX: number;
-    detailsX: number;
+    x: number;
   };
   barcode: {
     x: number;
@@ -35,5 +34,13 @@ export type CarrierConfig = {
     y: number;
     fontSize: number;
   };
+  extraMark?: {
+    text: string;
+    x: number;
+    y: number;
+    fontSize: number;
+    fontWeight?: string;
+  };
   senderLabel: string;
+  uppercaseCityCountry: boolean;
 }
