@@ -1,0 +1,24 @@
+{
+  "name": "bpost-label-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sv1nho/label-generator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sv1nho/label-generator/issues"
+  },
+  "homepage": "https://github.com/sv1nho/label-generator#readme",
+  "devDependencies": {
+    "supabase": "^2.110.0"
+  }
+}
