@@ -2,6 +2,9 @@
 .branches
 .temp
 
+# Edge Function secrets used locally via `supabase functions serve --env-file`
+.env
+
 # dotenvx
 .env.keys
 .env.local
