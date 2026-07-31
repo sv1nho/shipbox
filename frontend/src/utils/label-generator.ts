@@ -85,7 +85,7 @@ export const obfuscateTracking = (
   const digitIndexes: number[] = []
 
   for (let i = 0; i < chars.length; i += 1) {
-    if (/\d/.test(chars[i] ?? '')) digitIndexes.push(i)
+    if (/\d/.test(chars[i])) digitIndexes.push(i)
   }
 
   const mutableIndexes = digitIndexes.slice(
@@ -102,7 +102,7 @@ export const obfuscateTracking = (
     const randomPoolIndex = Math.floor(Math.random() * mutableIndexes.length)
     const charIndex = mutableIndexes.splice(randomPoolIndex, 1)[0]
     if (charIndex === undefined) continue
-    chars[charIndex] = getRandomDigit(chars[charIndex] ?? '0')
+    chars[charIndex] = getRandomDigit(chars[charIndex])
   }
 
   return chars.join('')

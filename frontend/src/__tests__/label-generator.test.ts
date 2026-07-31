@@ -11,7 +11,7 @@ import {
   obfuscateTracking,
   buildLabelSvg,
 } from '../utils/label-generator.js'
-import type { LabelPayload } from '../types/index.js'
+import type { Carrier, Country, LabelPayload } from '../types/index.js'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -66,6 +66,17 @@ describe('wrapText', () => {
       'short',
       'averylongwordthatexceeds',
     ])
+  })
+
+  it('does not push an empty leading line when the very first word already exceeds maxLength', () => {
+    expect(wrapText('reallylongsingleword next', 5)).toEqual([
+      'reallylongsingleword',
+      'next',
+    ])
+  })
+
+  it('returns an empty array for a whitespace-only string longer than maxLength', () => {
+    expect(wrapText('    ', 2)).toEqual([])
   })
 })
 
@@ -217,10 +228,7 @@ describe('buildLabelSvg', () => {
   })
 
   it('includes the postal zone code for bpost', () => {
-    const { svg } = buildLabelSvg(
-      makePayload({ carrier: 'bpost', recipient_postal: '4000' }),
-      SVG_TEMPLATE
-    )
+    const { svg } = buildLabelSvg(makePayload(), SVG_TEMPLATE)
     expect(svg).toContain('C40L')
   })
 
@@ -265,5 +273,49 @@ describe('buildLabelSvg', () => {
     expect(() => buildLabelSvg(makePayload(), SVG_TEMPLATE)).toThrow(
       'Failed to generate barcode, barcode error'
     )
+  })
+
+  it('wraps a non-Error value thrown by JsBarcode with a generic message', () => {
+    vi.mocked(JsBarcode).mockImplementationOnce(() => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentionally non-Error, to test the fallback branch
+      throw 'barcode failure'
+    })
+    expect(() => buildLabelSvg(makePayload(), SVG_TEMPLATE)).toThrow(
+      'Failed to generate barcode, Unknown error'
+    )
+  })
+
+  it('falls back to an empty base64 payload when toDataURL has no comma-separated data', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/png;base64'
+    )
+    const { svg } = buildLabelSvg(makePayload(), SVG_TEMPLATE)
+    expect(svg).toContain('href="data:image/png;base64,"')
+  })
+
+  it('throws for an unsupported country', () => {
+    expect(() =>
+      buildLabelSvg(
+        makePayload({ sender_country: 'XX' as unknown as Country }),
+        SVG_TEMPLATE
+      )
+    ).toThrow('Unsupported country: XX')
+  })
+
+  it('throws for an unsupported carrier', () => {
+    expect(() =>
+      buildLabelSvg(
+        makePayload({ carrier: 'xx' as unknown as Carrier }),
+        SVG_TEMPLATE
+      )
+    ).toThrow('Unsupported carrier: xx')
+  })
+
+  it('does not throw when a company name is an empty string', () => {
+    const { svg } = buildLabelSvg(
+      makePayload({ sender_isCompany: true, sender_company: '' }),
+      SVG_TEMPLATE
+    )
+    expect(svg).toContain('dynamic-label-overlay')
   })
 })

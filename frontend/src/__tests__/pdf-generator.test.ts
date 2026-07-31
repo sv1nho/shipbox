@@ -56,6 +56,13 @@ describe('svgToPdf', () => {
       'Failed to generate PDF: render failed'
     )
   })
+
+  it('wraps non-Error svg2pdf rejections with a generic message', async () => {
+    vi.mocked(svg2pdf).mockRejectedValueOnce('render failed')
+    await expect(svgToPdf(VALID_SVG)).rejects.toThrow(
+      'Failed to generate PDF: Unknown error'
+    )
+  })
 })
 
 // ── downloadPdf ───────────────────────────────────────────────────────────────
