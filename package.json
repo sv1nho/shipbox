@@ -15,6 +15,12 @@
   },
   "homepage": "https://github.com/sv1nho/label-generator#readme",
   "devDependencies": {
-    "supabase": "^2.110.0"
+    "@stripe/cli": "^1.45.0",
+    "supabase": "^2.110.0",
+    "vercel": "^58.4.4"
+  },
+  "allowScripts": {
+    "@stripe/cli@1.45.0": true,
+    "esbuild@0.27.0": true
   }
 }
