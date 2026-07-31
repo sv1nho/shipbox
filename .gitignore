@@ -1,3 +1,8 @@
 dist
 node_modules
 coverage
+
+# Secrets — never commit real env files, only .env.example templates
+.env
+.env.local
+.env.*.local
