@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { loadSvgTemplate } from '../utils/svg-loader.js'
+import type { Carrier } from '../types/index.js'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -43,5 +44,11 @@ describe('loadSvgTemplate', () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'))
 
     await expect(loadSvgTemplate('postnl')).rejects.toThrow('Network error')
+  })
+
+  it('throws for an unsupported carrier', async () => {
+    await expect(
+      loadSvgTemplate('ups' as unknown as Carrier)
+    ).rejects.toThrow('Unsupported carrier: ups')
   })
 })
