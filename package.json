@@ -17,7 +17,7 @@
   "devDependencies": {
     "@stripe/cli": "^1.45.0",
     "supabase": "^2.110.0",
-    "vercel": "^58.4.4"
+    "vercel": "^59.3.0"
   },
   "allowScripts": {
     "@stripe/cli@1.45.0": true,
