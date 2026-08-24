@@ -16,7 +16,7 @@
   "homepage": "https://github.com/sv1nho/label-generator#readme",
   "devDependencies": {
     "@stripe/cli": "^1.45.0",
-    "supabase": "^2.110.0",
+    "supabase": "^2.115.0",
     "vercel": "^58.4.4"
   },
   "allowScripts": {
