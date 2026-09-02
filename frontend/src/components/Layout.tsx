@@ -40,13 +40,6 @@ export function Layout () {
             >
               Form
             </NavLink>
-            <NavLink
-              to='/buy'
-              className={({ isActive }) =>
-                isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
-            >
-              Buy
-            </NavLink>
           </div>
         </div>
       </nav>
