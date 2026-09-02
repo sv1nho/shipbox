@@ -1,7 +1,7 @@
 {
   "name": "bpost-label-generator",
   "version": "1.0.0",
-  "description": "Monorepo root — Supabase CLI tooling (backend schema/functions in supabase/) for the bpost-label-generator project. The app itself lives in frontend/.",
+  "description": "Monorepo root for the bpost-label-generator project. The app itself lives in frontend/.",
   "private": true,
   "repository": {
     "type": "git",
@@ -15,12 +15,9 @@
   },
   "homepage": "https://github.com/sv1nho/label-generator#readme",
   "devDependencies": {
-    "@stripe/cli": "^1.45.0",
-    "supabase": "^2.110.0",
     "vercel": "^58.4.4"
   },
   "allowScripts": {
-    "@stripe/cli@1.45.0": true,
     "esbuild@0.27.0": true
   }
 }
