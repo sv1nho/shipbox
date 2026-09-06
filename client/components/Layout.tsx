@@ -51,31 +51,32 @@ export function Layout () {
             >
               Form
             </NavLink>
-            <NavLink
-              to='/shipments'
-              className={({ isActive }) =>
-                isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
-            >
-              Shipments
-            </NavLink>
-
             {!isPending && (session
               ? (
-                <div className='navbar-user'>
-                  <span className='navbar-avatar' aria-hidden='true'>
-                    {initialOf(session.user.name, session.user.email)}
-                  </span>
-                  <span className='navbar-user-name' title={session.user.email}>
-                    {session.user.name}
-                  </span>
-                  <button
-                    type='button'
-                    className='btn btn-ghost text-xs px-2.5 py-1'
-                    onClick={() => { void handleSignOut() }}
+                <>
+                  <NavLink
+                    to='/shipments'
+                    className={({ isActive }) =>
+                      isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
                   >
-                    Sign out
-                  </button>
-                </div>
+                    Shipments
+                  </NavLink>
+                  <div className='navbar-user'>
+                    <span className='navbar-avatar' aria-hidden='true'>
+                      {initialOf(session.user.name, session.user.email)}
+                    </span>
+                    <span className='navbar-user-name' title={session.user.email}>
+                      {session.user.name}
+                    </span>
+                    <button
+                      type='button'
+                      className='btn btn-ghost text-xs px-2.5 py-1'
+                      onClick={() => { void handleSignOut() }}
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </>
                 )
               : (
                 <NavLink
