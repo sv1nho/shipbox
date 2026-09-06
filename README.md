@@ -43,3 +43,52 @@ API, which avoids CORS and cross-origin cookies during development.
 
 The PostgreSQL host port is **5433** rather than 5432, so the container can live
 alongside a native Postgres install.
+
+## Authentication setup
+
+Sign-in is OAuth only, no email and password. Without a Google client the app
+still runs, only sign-in is disabled and the API logs a warning at startup.
+
+### 1. Session secret
+
+```bash
+openssl rand -base64 32
+```
+
+Put the result in `BETTER_AUTH_SECRET`. Without it sessions do not work and the
+OAuth callback fails with a CSRF error.
+
+### 2. Google client
+
+1. Open <https://console.cloud.google.com/> and create a project, `ShipBox`.
+2. Go to **APIs & Services → OAuth consent screen**.
+   - User type **External**.
+   - Fill in app name, support email and developer email.
+   - Leave the app in **Testing** mode and add your own Google account under
+     **Test users**. Publishing would require Google's review, which is
+     pointless for private use.
+   - Scopes: the defaults (`email`, `profile`, `openid`) are enough.
+3. Go to **APIs & Services → Credentials → Create credentials → OAuth client ID**.
+   - Application type **Web application**.
+   - **Authorised JavaScript origins**, copy exactly:
+
+     ```
+     http://localhost:5173
+     ```
+
+   - **Authorised redirect URIs**, copy exactly:
+
+     ```
+     http://localhost:5173/api/auth/callback/google
+     ```
+
+4. Copy the client ID and client secret into `GOOGLE_CLIENT_ID` and
+   `GOOGLE_CLIENT_SECRET`, then restart the API.
+
+The redirect URI points at the **frontend** port, not the API port. The browser
+only ever talks to `localhost:5173`; the Vite proxy forwards `/api` to the API.
+A single character of difference between this URI and `BETTER_AUTH_URL` breaks
+the whole flow, and it is the most common cause of failure.
+
+When the app is deployed, register the production URLs the same way and update
+`BETTER_AUTH_URL` and `WEB_ORIGIN`.
