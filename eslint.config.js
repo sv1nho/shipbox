@@ -7,7 +7,15 @@ import reactHooks from "eslint-plugin-react-hooks";
 const reactRecommended = reactPlugin.configs["recommended-typescript"];
 
 export default [
-  { ignores: ["dist/**", "node_modules/**", "eslint.config.js"] },
+  {
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      "server/generated/**",
+      "eslint.config.js",
+    ],
+  },
 
   js.configs.recommended,
 
@@ -16,7 +24,7 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: ["./tsconfig.json", "./tsconfig.node.json"],
+        project: ["./tsconfig.json", "./tsconfig.server.json"],
         sourceType: "module",
       },
       globals: {
@@ -35,7 +43,6 @@ export default [
       ...tsPlugin.configs.recommended.rules,
       ...tsPlugin.configs["recommended-type-checked"].rules,
       ...tsPlugin.configs.strict.rules,
-      // Turn off base rules that TS versions supersede
       "new-cap": "off",
       "camelcase": "off",
       "no-void": ["error", { allowAsStatement: true }],
@@ -46,8 +53,42 @@ export default [
       "@typescript-eslint/consistent-type-imports": "error",
     },
   },
-
-  // React — .tsx only
+  
+  {
+    files: [
+      "server/**/*.ts",
+      "prisma/**/*.ts",
+      "scripts/**/*.ts",
+      "prisma.config.ts",
+      "vite.config.ts",
+    ],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        fetch: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+      },
+    },
+    rules: {
+      "no-console": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  
   {
     files: ["**/*.tsx"],
     plugins: {
@@ -58,8 +99,7 @@ export default [
     rules: {
       ...reactRecommended.rules,
       ...reactHooks.configs.recommended.rules,
-      // eslint-plugin-react-hooks is the source of truth for hooks rules;
-      // disable @eslint-react's duplicate implementations to avoid double-reporting.
+      
       "@eslint-react/rules-of-hooks": "off",
       "@eslint-react/exhaustive-deps": "off",
       "@eslint-react/set-state-in-effect": "off",
