@@ -70,6 +70,7 @@ export default [
         URL: "readonly",
         URLSearchParams: "readonly",
         fetch: "readonly",
+        Headers: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
         setInterval: "readonly",
