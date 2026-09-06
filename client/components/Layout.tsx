@@ -1,11 +1,22 @@
 import { NavLink, Outlet, useNavigate } from 'react-router'
+import { signOut, useSession } from '../auth/client.js'
+
+const initialOf = (name: string, email: string): string => {
+  const source = name.trim() || email.trim()
+  return source ? source.charAt(0).toUpperCase() : '?'
+}
 
 export function Layout () {
   const navigate = useNavigate()
+  const { data: session, isPending } = useSession()
+
+  const handleSignOut = async () => {
+    await signOut()
+    await navigate('/')
+  }
+
   return (
     <div className='page-wrapper'>
-
-      {/* ── Navigation bar ── */}
       <nav className='navbar'>
         <div className='navbar-inner'>
           <button
@@ -40,16 +51,47 @@ export function Layout () {
             >
               Form
             </NavLink>
+            <NavLink
+              to='/shipments'
+              className={({ isActive }) =>
+                isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+            >
+              Shipments
+            </NavLink>
+
+            {!isPending && (session
+              ? (
+                <div className='navbar-user'>
+                  <span className='navbar-avatar' aria-hidden='true'>
+                    {initialOf(session.user.name, session.user.email)}
+                  </span>
+                  <span className='navbar-user-name' title={session.user.email}>
+                    {session.user.name}
+                  </span>
+                  <button
+                    type='button'
+                    className='btn btn-ghost text-xs px-2.5 py-1'
+                    onClick={() => { void handleSignOut() }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+                )
+              : (
+                <NavLink
+                  to='/login'
+                  className={({ isActive }) =>
+                    isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+                >
+                  Sign in
+                </NavLink>
+                ))}
           </div>
         </div>
       </nav>
-
-      {/* ── Main content ── */}
       <main className='page-content'>
         <Outlet />
       </main>
-
-      {/* ── Footer ── */}
       <div className='site-footer'>
         <strong>ShipBox</strong> — Bpost &amp; PostNL shipping labels, 100% free
         <br />

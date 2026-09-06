@@ -454,6 +454,99 @@ html, body {
     padding: 1rem 1.25rem;
     background: var(--color-bg);
   }
+
+  .navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--color-border);
+  }
+
+  .navbar-avatar {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .navbar-user-name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text);
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .auth-pending {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 4rem 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .auth-page {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 0;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 26rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 2rem;
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-text);
+  }
+
+  .auth-text {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .auth-note {
+    font-size: 0.75rem;
+    color: var(--color-text-subtle);
+    line-height: 1.5;
+  }
+
+  .btn-google {
+    width: 100%;
+    justify-content: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-text);
+    font-weight: 700;
+  }
+
+  .btn-google:hover:not(:disabled) {
+    background: var(--color-bg);
+    border-color: var(--color-text-subtle);
+  }
 }
 
 /* ━━ ACCESSIBILITY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
