@@ -4,7 +4,7 @@ export const Home = () => {
   const navigate = useNavigate()
   return (
     <div className='hero'>
-      <h1 className='hero-title'>Label Generator</h1>
+      <h1 className='hero-title'>ShipBox</h1>
 
       <p className='hero-text'>
         Create and download PDF shipping labels for <strong>Bpost</strong> and{' '}

@@ -30,7 +30,7 @@ export function Layout () {
                 <line x1='12' y1='22' x2='12' y2='12' />
               </svg>
             </span>
-            Label Generator
+            ShipBox
           </button>
           <div className='navbar-links'>
             <NavLink
@@ -51,9 +51,9 @@ export function Layout () {
 
       {/* ── Footer ── */}
       <div className='site-footer'>
-        <strong>Label Generator</strong> — Bpost &amp; PostNL shipping labels, 100% free
+        <strong>ShipBox</strong> — Bpost &amp; PostNL shipping labels, 100% free
         <br />
-        © 2026 Label Generator — All rights reserved
+        © 2026 ShipBox — All rights reserved
       </div>
 
     </div>
