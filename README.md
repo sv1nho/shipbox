@@ -40,9 +40,35 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:studio` | Prisma database browser |
+| `npm run db:backup` | dumps the database to `backups/` |
+| `npm run db:restore` | restores a dump, see below |
 
 The PostgreSQL host port is **5433** rather than 5432, so the container can live
 alongside a native Postgres install.
+
+## Backups
+
+Everything lives in a local container, so a stray `docker compose down -v` wipes
+it. `pg_dump` and `psql` run inside the container, nothing extra to install.
+
+```bash
+npm run db:backup
+```
+
+Writes `backups/shipbox-YYYY-MM-DD-HHmmss.sql` (Europe/Brussels), a folder that
+is gitignored. The dump drops and recreates every object, so restoring works on
+a database that already has tables.
+
+```bash
+npm run db:restore -- backups/shipbox-2026-09-07-001000.sql confirm
+```
+
+Without the trailing `confirm` the script refuses and explains what it would
+destroy. The word is a positional argument rather than a `--flag` because npm
+swallows unknown flags before they reach the script.
+
+Prisma's migration history is part of the dump, so `npx prisma migrate status`
+stays accurate after a restore.
 
 ## Authentication setup
 
