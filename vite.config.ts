@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, coverageConfigDefaults } from 'vitest/config'
 import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -20,10 +20,43 @@ export default defineConfig(({ mode }) => {
       },
     },
     test: {
-      environment: 'happy-dom',
-      include: ['client/**/*.{test,spec}.{ts,tsx}'],
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'client',
+            environment: 'happy-dom',
+            include: ['client/**/*.{test,spec}.{ts,tsx}'],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'server',
+            environment: 'node',
+            include: ['server/**/*.{test,spec}.ts', 'shared/**/*.{test,spec}.ts'],
+          },
+        },
+      ],
       coverage: {
         reportsDirectory: 'coverage',
+        include: [
+          'client/utils/**/*.ts',
+          'server/**/*.ts',
+          'shared/**/*.ts',
+          // Add 'client/**/*.tsx' once React components have tests.
+        ],
+        exclude: [
+          ...coverageConfigDefaults.exclude,
+          'server/generated/**',
+          'server/types/**',
+          'server/index.ts',
+          'server/prisma.ts',
+          'server/env.ts',
+          'server/auth/auth.ts',
+          // Drop this entry once Supertest covers the routes.
+          'server/app.ts',
+        ],
       },
     },
   }

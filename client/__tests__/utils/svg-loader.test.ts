@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { loadSvgTemplate } from '../utils/svg-loader.js'
-import type { Carrier } from '../types/index.js'
+import { loadSvgTemplate } from '../../utils/svg-loader.js'
+import type { Carrier } from '../../types/index.js'
 
 afterEach(() => {
   vi.restoreAllMocks()

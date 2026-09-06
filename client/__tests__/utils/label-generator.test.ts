@@ -10,8 +10,8 @@ import {
   zoneFromPostal,
   obfuscateTracking,
   buildLabelSvg,
-} from '../utils/label-generator.js'
-import type { Carrier, Country, LabelPayload } from '../types/index.js'
+} from '../../utils/label-generator.js'
+import type { Carrier, Country, LabelPayload } from '../../types/index.js'
 
 afterEach(() => {
   vi.restoreAllMocks()

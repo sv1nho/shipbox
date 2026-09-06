@@ -2,17 +2,15 @@ import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { prisma } from '../prisma.js'
 import { env, isProduction } from '../env.js'
-import { SOCIAL_PROVIDER_IDS } from '../../shared/auth-providers.js'
-import type { SocialProviderId } from '../../shared/auth-providers.js'
+import { resolveEnabledProviders } from './resolve-providers.js'
+import type { ProviderCredentials } from './resolve-providers.js'
 
-const credentials: Record<SocialProviderId, { clientId?: string; clientSecret?: string }> = {
+const credentials: ProviderCredentials = {
   google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
   github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET },
 }
 
-export const enabledProviders: SocialProviderId[] = SOCIAL_PROVIDER_IDS.filter(
-  (id) => credentials[id].clientId !== undefined && credentials[id].clientSecret !== undefined
-)
+export const enabledProviders = resolveEnabledProviders(credentials)
 
 const socialProviders = Object.fromEntries(
   enabledProviders.map((id) => [

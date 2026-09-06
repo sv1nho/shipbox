@@ -14,7 +14,7 @@ vi.mock('svg2pdf.js', () => ({
   svg2pdf: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
+import { svgToPdf, downloadPdf } from '../../utils/pdf-generator.js'
 
 afterEach(() => {
   vi.restoreAllMocks()

@@ -3,8 +3,9 @@ import type { Express } from 'express'
 import { toNodeHandler } from 'better-auth/node'
 import { auth, enabledProviders } from './auth/auth.js'
 import { requireUser, currentUser } from './auth/require-user.js'
-import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
+import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
 import { prisma } from './prisma.js'
+import { isProduction } from './env.js'
 
 export function createApp (): Express {
   const app = express()
@@ -32,7 +33,7 @@ export function createApp (): Express {
   })
 
   app.use(notFoundHandler)
-  app.use(errorHandler)
+  app.use(createErrorHandler({ exposeDetails: !isProduction }))
 
   return app
 }
