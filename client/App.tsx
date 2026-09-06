@@ -4,6 +4,9 @@ import { createBrowserRouter } from 'react-router'
 import { Form } from './pages/Form'
 import { Layout } from './components/Layout'
 import { Home } from './pages/Home'
+import { Login } from './pages/Login'
+import { Shipments } from './pages/Shipments'
+import { RequireAuth } from './auth/RequireAuth'
 
 const router = createBrowserRouter([
   {
@@ -16,6 +19,19 @@ const router = createBrowserRouter([
       {
         path: '/form',
         element: <Form />,
+      },
+      {
+        path: '/login',
+        element: <Login />,
+      },
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            path: '/shipments',
+            element: <Shipments />,
+          },
+        ],
       },
     ],
   },
