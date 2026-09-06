@@ -90,5 +90,32 @@ only ever talks to `localhost:5173`; the Vite proxy forwards `/api` to the API.
 A single character of difference between this URI and `BETTER_AUTH_URL` breaks
 the whole flow, and it is the most common cause of failure.
 
+### 3. GitHub client
+
+1. Open <https://github.com/settings/developers> → **OAuth Apps** → **New OAuth App**.
+2. Fill in:
+   - **Application name**: `ShipBox`
+   - **Homepage URL**, copy exactly:
+
+     ```
+     http://localhost:5173
+     ```
+
+   - **Authorization callback URL**, copy exactly:
+
+     ```
+     http://localhost:5173/api/auth/callback/github
+     ```
+
+3. Create the app, then **Generate a new client secret**.
+4. Copy both values into `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, then
+   restart the API.
+
+GitHub OAuth Apps take a single callback URL, so a deployed app needs its own
+OAuth App separate from the local one.
+
+Signing in with Google and with GitHub on the same verified email address lands
+on the same account, rather than failing or creating a duplicate.
+
 When the app is deployed, register the production URLs the same way and update
 `BETTER_AUTH_URL` and `WEB_ORIGIN`.

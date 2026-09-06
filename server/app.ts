@@ -1,11 +1,10 @@
 import express from 'express'
 import type { Express } from 'express'
 import { toNodeHandler } from 'better-auth/node'
-import { auth } from './auth/auth.js'
+import { auth, enabledProviders } from './auth/auth.js'
 import { requireUser, currentUser } from './auth/require-user.js'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
 import { prisma } from './prisma.js'
-import { hasGoogleCredentials } from './env.js'
 
 export function createApp (): Express {
   const app = express()
@@ -19,13 +18,13 @@ export function createApp (): Express {
   app.get('/api/health', (_req, res, next) => {
     prisma.$queryRaw`SELECT 1`
       .then(() => {
-        res.json({
-          status: 'ok',
-          database: 'up',
-          providers: hasGoogleCredentials ? ['google'] : [],
-        })
+        res.json({ status: 'ok', database: 'up' })
       })
       .catch(next)
+  })
+
+  app.get('/api/config', (_req, res) => {
+    res.json({ providers: enabledProviders })
   })
 
   app.get('/api/me', requireUser, (req, res) => {

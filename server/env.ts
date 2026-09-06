@@ -30,18 +30,42 @@ const envSchema = z
 
     GOOGLE_CLIENT_ID: optionalSecret,
     GOOGLE_CLIENT_SECRET: optionalSecret,
+
+    GITHUB_CLIENT_ID: optionalSecret,
+    GITHUB_CLIENT_SECRET: optionalSecret,
   })
   .superRefine((value, ctx) => {
-    if (value.NODE_ENV !== 'production') return
+    const pairs = [
+      ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
+      ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'],
+    ] as const
 
-    for (const key of ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] as const) {
-      if (!value[key]) {
+    let configured = 0
+
+    for (const [idKey, secretKey] of pairs) {
+      const hasId = value[idKey] !== undefined
+      const hasSecret = value[secretKey] !== undefined
+
+      if (hasId && hasSecret) {
+        configured += 1
+        continue
+      }
+
+      if (hasId !== hasSecret) {
         ctx.addIssue({
           code: 'custom',
-          path: [key],
-          message: 'is required in production',
+          path: [hasId ? secretKey : idKey],
+          message: 'is required when the other half of the pair is set',
         })
       }
+    }
+
+    if (value.NODE_ENV === 'production' && configured === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_CLIENT_ID'],
+        message: 'at least one OAuth provider must be configured in production',
+      })
     }
   })
 
@@ -59,6 +83,3 @@ if (!parsed.success) {
 export const env = parsed.data
 
 export const isProduction = env.NODE_ENV === 'production'
-
-export const hasGoogleCredentials =
-  env.GOOGLE_CLIENT_ID !== undefined && env.GOOGLE_CLIENT_SECRET !== undefined

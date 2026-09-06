@@ -540,7 +540,7 @@ html, body {
     line-height: 1.5;
   }
 
-  .btn-google {
+  .btn-social {
     width: 100%;
     justify-content: center;
     background: var(--color-surface);
@@ -549,7 +549,7 @@ html, body {
     font-weight: 700;
   }
 
-  .btn-google:hover:not(:disabled) {
+  .btn-social:hover:not(:disabled) {
     background: var(--color-bg);
     border-color: var(--color-text-subtle);
   }

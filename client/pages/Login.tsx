@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router'
 import { signIn, useSession } from '../auth/client.js'
+import { SOCIAL_PROVIDERS } from '../auth/providers.js'
+import { isSocialProviderId } from '../../shared/auth-providers.js'
+import type { SocialProviderId } from '../../shared/auth-providers.js'
+import { SessionPending } from '../auth/SessionPending.js'
 import { Spinner } from '../components/Spinner.js'
 
 const DEFAULT_REDIRECT = '/shipments'
@@ -8,41 +12,49 @@ const DEFAULT_REDIRECT = '/shipments'
 export function Login () {
   const { data: session, isPending } = useSession()
   const [searchParams] = useSearchParams()
+  const [providers, setProviders] = useState<SocialProviderId[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isSigningIn, setIsSigningIn] = useState(false)
+  const [pendingProvider, setPendingProvider] = useState<SocialProviderId | null>(null)
 
   const redirectTo = searchParams.get('redirect') ?? DEFAULT_REDIRECT
 
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetch('/api/config', { signal: controller.signal })
+      .then((response) => response.json())
+      .then((body: { providers?: unknown }) => {
+        setProviders(Array.isArray(body.providers) ? body.providers.filter(isSocialProviderId) : [])
+      })
+      .catch((cause: unknown) => {
+        if (cause instanceof DOMException && cause.name === 'AbortError') return
+        setProviders([])
+      })
+
+    return () => { controller.abort() }
+  }, [])
+
   if (isPending) {
-    return (
-      <div className='auth-pending'>
-        <Spinner />
-        <span>Checking your session…</span>
-      </div>
-    )
+    return <SessionPending label='Checking your session…' />
   }
 
   if (session) {
     return <Navigate to={redirectTo} replace />
   }
 
-  const handleGoogle = async () => {
+  const handleSignIn = async (provider: SocialProviderId) => {
     setError(null)
-    setIsSigningIn(true)
+    setPendingProvider(provider)
 
     const result = await signIn.social({
-      provider: 'google',
+      provider,
       callbackURL: redirectTo,
       errorCallbackURL: '/login?error=oauth',
     })
 
     if (result.error) {
-      setIsSigningIn(false)
-      setError(
-        result.error.code === 'PROVIDER_NOT_FOUND'
-          ? 'Google sign-in is not configured on this server.'
-          : (result.error.message ?? 'Sign-in failed, please try again.')
-      )
+      setPendingProvider(null)
+      setError(result.error.message ?? 'Sign-in failed, please try again.')
     }
   }
 
@@ -57,37 +69,43 @@ export function Login () {
 
         {searchParams.get('error') === 'oauth' && (
           <div className='alert-error'>
-            Google sign-in was cancelled or refused. You can try again.
+            Sign-in was cancelled or refused. You can try again.
           </div>
         )}
 
         {error && <div className='alert-error'>{error}</div>}
 
-        <button
-          type='button'
-          className='btn btn-google'
-          disabled={isSigningIn}
-          onClick={() => { void handleGoogle() }}
-        >
-          {isSigningIn
-            ? (
-              <>
-                <Spinner />
-                Redirecting to Google…
-              </>
-              )
-            : (
-              <>
-                <svg width='18' height='18' viewBox='0 0 24 24' aria-hidden='true'>
-                  <path fill='#4285F4' d='M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z' />
-                  <path fill='#34A853' d='M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0 0 12 24z' />
-                  <path fill='#FBBC05' d='M5.4 14.4a7.2 7.2 0 0 1 0-4.6V6.7H1.4a12 12 0 0 0 0 10.8l4-3.1z' />
-                  <path fill='#EA4335' d='M12 4.8c1.8 0 3.4.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.4 6.7l4 3.1C6.3 6.9 8.9 4.8 12 4.8z' />
-                </svg>
-                Continue with Google
-              </>
-              )}
-        </button>
+        {providers === null && <SessionPending label='Loading sign-in options…' />}
+
+        {providers !== null && providers.length === 0 && (
+          <div className='alert-error'>
+            No sign-in provider is configured on this server.
+          </div>
+        )}
+
+        {providers?.map((provider) => (
+          <button
+            key={provider}
+            type='button'
+            className='btn btn-social'
+            disabled={pendingProvider !== null}
+            onClick={() => { void handleSignIn(provider) }}
+          >
+            {pendingProvider === provider
+              ? (
+                <>
+                  <Spinner />
+                  Redirecting…
+                </>
+                )
+              : (
+                <>
+                  {SOCIAL_PROVIDERS[provider].icon}
+                  {SOCIAL_PROVIDERS[provider].label}
+                </>
+                )}
+          </button>
+        ))}
 
         <p className='auth-note'>
           No password is ever stored. Signing in only shares your name, email

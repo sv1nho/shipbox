@@ -1,18 +1,13 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { useSession } from './client.js'
-import { Spinner } from '../components/Spinner.js'
+import { SessionPending } from './SessionPending.js'
 
 export function RequireAuth () {
   const { data: session, isPending } = useSession()
   const location = useLocation()
 
   if (isPending) {
-    return (
-      <div className='auth-pending'>
-        <Spinner />
-        <span>Checking your session…</span>
-      </div>
-    )
+    return <SessionPending label='Checking your session…' />
   }
 
   if (!session) {

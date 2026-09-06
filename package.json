@@ -6,12 +6,12 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sv1nho/label-generator.git"
+    "url": "git+https://github.com/sv1nho/shipbox.git"
   },
   "bugs": {
-    "url": "https://github.com/sv1nho/label-generator/issues"
+    "url": "https://github.com/sv1nho/shipbox/issues"
   },
-  "homepage": "https://github.com/sv1nho/label-generator#readme",
+  "homepage": "https://github.com/sv1nho/shipbox#readme",
   "scripts": {
     "dev": "concurrently -k -n web,api -c cyan,magenta \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "vite --host",
