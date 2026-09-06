@@ -17,5 +17,5 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true
   },
-  "include": ["server", "prisma", "scripts", "prisma.config.ts", "vite.config.ts"]
+  "include": ["server", "shared", "prisma", "scripts", "prisma.config.ts", "vite.config.ts"]
 }

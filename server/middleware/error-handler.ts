@@ -2,14 +2,8 @@ import type { ErrorRequestHandler, RequestHandler } from 'express'
 import { AppError } from '../errors.js'
 import { isProduction } from '../env.js'
 
-export const notFoundHandler: RequestHandler = (req, res) => {
-  res.status(404).json({
-    error: {
-      code: 'NOT_FOUND',
-      message: `Unknown route: ${req.method} ${req.path}`,
-      details: null,
-    },
-  })
+export const notFoundHandler: RequestHandler = (req, _res, next) => {
+  next(new AppError('NOT_FOUND', `Unknown route: ${req.method} ${req.path}`))
 }
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
