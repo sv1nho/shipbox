@@ -10,7 +10,7 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['client/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       reportsDirectory: 'coverage',
     },
