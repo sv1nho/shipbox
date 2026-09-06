@@ -1,7 +1,7 @@
 {
-  "name": "bpost-label-generator",
+  "name": "ship_box",
   "version": "1.0.0",
-  "description": "React/Vite app for generating bpost and PostNL shipping labels",
+  "description": "ShipBox — return label generator and shipment tracker for bpost and PostNL",
   "private": true,
   "type": "module",
   "repository": {
@@ -13,14 +13,26 @@
   },
   "homepage": "https://github.com/sv1nho/label-generator#readme",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "concurrently -k -n web,api -c cyan,magenta \"npm:dev:web\" \"npm:dev:api\"",
+    "dev:web": "vite --host",
+    "dev:api": "tsx watch server/index.ts",
     "dev:mock": "cross-env VITE_TEST_MODE=true vite --host",
+    "start:api": "tsx server/index.ts",
     "test": "vitest run --coverage",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
-    "clear": "rimraf node_modules dist package-lock.json"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset",
+    "db:studio": "prisma studio",
+    "clear": "rimraf node_modules dist package-lock.json",
+    "postinstall": "prisma generate"
   },
   "license": "ISC",
   "engines": {
@@ -28,7 +40,10 @@
   },
   "dependencies": {
     "@faker-js/faker": "10.5.0",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
     "@tailwindcss/vite": "4.3.0",
+    "express": "5.2.1",
     "jsbarcode": "3.12.3",
     "jspdf": "4.2.1",
     "react": "19.2.7",
@@ -36,25 +51,36 @@
     "react-hook-form": "7.78.0",
     "react-router": "8.3.0",
     "svg2pdf.js": "2.7.0",
-    "tailwindcss": "4.3.0"
+    "tailwindcss": "4.3.0",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "5.18.0",
     "@eslint/js": "10.0.1",
+    "@types/express": "5.0.6",
     "@types/jsbarcode": "3.11.4",
+    "@types/node": "24.13.3",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/eslint-plugin": "8.65.0",
     "@typescript-eslint/parser": "8.65.0",
     "@vitejs/plugin-react": "6.0.2",
     "@vitest/coverage-v8": "4.1.8",
+    "concurrently": "10.0.5",
     "cross-env": "10.1.0",
     "eslint": "10.8.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "happy-dom": "20.10.2",
+    "prisma": "7.10.0",
     "rimraf": "6.1.3",
+    "tsx": "4.23.13",
     "typescript": "6.0.3",
     "vite": "8.1.5",
     "vitest": "4.1.8"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.0": true,
+    "esbuild@0.28.2": true,
+    "prisma@7.10.0": true
   }
 }

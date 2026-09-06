@@ -1,8 +1,45 @@
-# bpost-label-generator
+# ShipBox
 
-Générateur d'étiquettes d'expédition Bpost/PostNL. L'app (React + Vite) vit à la racine du
-dépôt et fonctionne actuellement de façon autonome, 100% gratuite, sans backend.
+Return label generator for bpost and PostNL, with shipment tracking from drop-off
+to refund. React + Vite on the front, Express + Prisma + PostgreSQL on the back.
 
-Un modèle payant (forfaits d'étiquettes achetés via un moyen de paiement à définir, débloqués
-par une clé de licence envoyée par email) est prévu mais mis de côté pour l'instant, le temps de
-se concentrer sur le frontend et l'ajout de fonctionnalités. Il sera réintroduit plus tard.
+A paid model (label bundles bought through a payment method still to be decided,
+unlocked by a license key sent over email) is planned but set aside for now, while
+the focus stays on the frontend and new features. It will come back later.
+
+## Repository layout
+
+| Folder | Role |
+|---|---|
+| `client/` | React application served by Vite |
+| `server/` | Express + Prisma API, binds to `127.0.0.1` |
+| `prisma/` | schema, migrations, seed |
+| `shared/` | code shared by the frontend and the API (types, carrier config) |
+
+## Local setup
+
+Requires Node >= 20.19 and Docker.
+
+```bash
+cp .env.example .env      # then fill it in
+npm install               # also generates the Prisma client
+npm run db:up             # starts PostgreSQL (container, host port 5433)
+npm run dev               # frontend on :5173, API on :3000
+```
+
+The frontend calls `/api` on its own origin: the Vite dev proxy forwards to the
+API, which avoids CORS and cross-origin cookies during development.
+
+### Scripts
+
+| Script | Effect |
+|---|---|
+| `npm run dev` | frontend and API together |
+| `npm run dev:web` / `dev:api` | either one on its own |
+| `npm run lint` / `typecheck` / `test` | the same checks CI runs |
+| `npm run db:up` / `db:down` | PostgreSQL container |
+| `npm run db:migrate` | creates and applies migrations |
+| `npm run db:studio` | Prisma database browser |
+
+The PostgreSQL host port is **5433** rather than 5432, so the container can live
+alongside a native Postgres install.

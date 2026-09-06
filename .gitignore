@@ -2,6 +2,12 @@ dist
 node_modules
 coverage
 
+# Generated Prisma client, recreated by `npm run db:generate`
+server/generated
+
+# pg_dump backups
+backups
+
 # Secrets — never commit real env files, only .env.example templates
 .env
 .env.local
