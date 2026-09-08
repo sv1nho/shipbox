@@ -48,6 +48,7 @@ export default defineConfig(({ mode }) => {
         ],
         exclude: [
           ...coverageConfigDefaults.exclude,
+          'shared/label-payload.ts',
           'server/generated/**',
           'server/types/**',
           'server/index.ts',
