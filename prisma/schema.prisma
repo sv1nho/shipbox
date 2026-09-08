@@ -76,7 +76,7 @@ model Shipment {
   userId              String    @map("user_id")
   user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  trackingNumber      String    @map("tracking_number")
+  trackingNumber      String    @unique @map("tracking_number")
   carrier             String
 
   recipientPostalCode String    @map("recipient_postal_code")
@@ -99,10 +99,10 @@ model Shipment {
 
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt           DateTime  @updatedAt @default(now()) @map("updated_at") @db.Timestamptz
-  deletedAt           DateTime?                 @map("deleted_at") @db.Timestamptz
+  archivedAt          DateTime?                 @map("archived_at") @db.Timestamptz
 
   @@index([userId, status])
-  @@index([userId, deletedAt])
+  @@index([userId, archivedAt])
   @@map("shipments")
 }
 

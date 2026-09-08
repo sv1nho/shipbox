@@ -231,7 +231,7 @@ for (const shipment of SHIPMENTS) {
     decisionDate: shipment.decisionAgo === undefined ? null : MIDNIGHT_UTC(shipment.decisionAgo),
     orderNumber: shipment.orderNumber ?? null,
     note: shipment.note ?? null,
-    deletedAt: null,
+    archivedAt: null,
   }
 
   await prisma.shipment.upsert({
