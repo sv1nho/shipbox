@@ -81,6 +81,10 @@
     "vite": "8.1.5",
     "vitest": "4.1.8"
   },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2",
+    "mysql2": "^3.24.4"
+  },
   "allowScripts": {
     "@prisma/engines@7.10.0": true,
     "esbuild@0.28.2": true,
