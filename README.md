@@ -44,6 +44,10 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:backup` | dumps the database to `backups/` |
 | `npm run db:restore` | restores a dump, see below |
 
+`npm test` runs three suites: `client` and `server` need nothing, while `db`
+checks the constraints against a real PostgreSQL. That one creates and migrates
+`<your database>_test` on its own, so the development data is never touched.
+
 The Prisma client is generated into `server/generated`, which is gitignored.
 `npm install` recreates it. If the editor reports unresolved Prisma types
 (`Unsafe call of a type that could not be resolved`), that folder is missing or
