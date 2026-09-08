@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest'
 import { createPrismaClient } from '../../server/prisma-client.js'
 import { testDatabaseUrl } from './test-database.js'
 
-const prisma = createPrismaClient(testDatabaseUrl(), false)
+const prisma = createPrismaClient(testDatabaseUrl(), [])
 
 const OWNER = 'constraint-tests-owner'
 const OTHER = 'constraint-tests-other'
