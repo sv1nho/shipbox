@@ -2,6 +2,8 @@ import { AppError } from '../../errors.js'
 import { RECEPTION_ALERT_DAYS, PENDING_ALERT_DAYS } from '../../config/constants.js'
 import { diffDays, isIsoDate } from './dates.js'
 import type { IsoDate } from './dates.js'
+import { workingDaysBetween } from './working-days.js'
+import { isDecisionStatus } from '../../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
 
 export type DateField = 'dropoffDate' | 'receivedDate' | 'decisionDate'
@@ -64,7 +66,10 @@ export function planTransition (
 ): ShipmentState {
   const { target, dateField } = TRANSITIONS[action]
 
-  if (STATUS_RANK[target] <= STATUS_RANK[state.status]) {
+  const changesDecision =
+    isDecisionStatus(state.status) && isDecisionStatus(target) && target !== state.status
+
+  if (!changesDecision && STATUS_RANK[target] <= STATUS_RANK[state.status]) {
     throw new AppError(
       'ILLEGAL_TRANSITION',
       `A shipment that is ${state.status} cannot move to ${target}.`,
@@ -129,20 +134,20 @@ export type DerivedFields = {
 export type DerivedInput = ShipmentState & { createdDate: IsoDate }
 
 export function computeDerived (shipment: DerivedInput, today: IsoDate): DerivedFields {
-  const daysSinceCreated = diffDays(shipment.createdDate, today)
+  const daysSinceCreated = workingDaysBetween(shipment.createdDate, today)
 
   const daysSinceReceived =
-    shipment.receivedDate === null ? null : diffDays(shipment.receivedDate, today)
+    shipment.receivedDate === null ? null : workingDaysBetween(shipment.receivedDate, today)
 
   const decisionDelayDays =
     shipment.receivedDate === null || shipment.decisionDate === null
       ? null
-      : diffDays(shipment.receivedDate, shipment.decisionDate)
+      : workingDaysBetween(shipment.receivedDate, shipment.decisionDate)
 
   const totalDelayDays =
     shipment.dropoffDate === null || shipment.decisionDate === null
       ? null
-      : diffDays(shipment.dropoffDate, shipment.decisionDate)
+      : workingDaysBetween(shipment.dropoffDate, shipment.decisionDate)
 
   return {
     daysSinceCreated,
@@ -152,7 +157,7 @@ export function computeDerived (shipment: DerivedInput, today: IsoDate): Derived
     needsAction:
       shipment.status === 'received' &&
       daysSinceReceived !== null &&
-      daysSinceReceived > RECEPTION_ALERT_DAYS,
-    shouldDropOff: shipment.status === 'pending' && daysSinceCreated > PENDING_ALERT_DAYS,
+      daysSinceReceived >= RECEPTION_ALERT_DAYS,
+    shouldDropOff: shipment.status === 'pending' && daysSinceCreated >= PENDING_ALERT_DAYS,
   }
 }

@@ -49,7 +49,7 @@ const SHIPMENTS: SeedShipment[] = [
     status: 'pending',
     amountCents: 2350,
     store: 'Zalando BE',
-    createdAgo: 12,
+    createdAgo: 16,
     note: 'Waiting for a free afternoon to drop it off.',
   },
   {
@@ -86,9 +86,9 @@ const SHIPMENTS: SeedShipment[] = [
     status: 'received',
     amountCents: 12500,
     store: 'Decathlon',
-    createdAgo: 30,
-    dropoffAgo: 25,
-    receivedAgo: 20,
+    createdAgo: 40,
+    dropoffAgo: 34,
+    receivedAgo: 28,
   },
   {
     id: id(6),
