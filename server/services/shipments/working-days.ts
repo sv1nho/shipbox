@@ -1,13 +1,36 @@
 import { diffDays, toIsoDate, toUtcDate } from './dates.js'
 import type { IsoDate } from './dates.js'
+import { HOME_COUNTRY } from '../../config/constants.js'
 
-const FIXED_HOLIDAYS = ['01-01', '05-01', '07-21', '08-15', '11-01', '11-11', '12-25']
+type HolidayCalendar = {
+  fixed: string[]
+  easterOffsets: number[]
+}
 
-const MOVABLE_HOLIDAY_OFFSETS = [1, 39, 50]
+const CALENDARS: Record<string, HolidayCalendar> = {
+  BE: {
+    fixed: ['01-01', '05-01', '07-21', '08-15', '11-01', '11-11', '12-25'],
+    easterOffsets: [1, 39, 50],
+  },
+  NL: {
+    fixed: ['01-01', '04-27', '12-25', '12-26'],
+    easterOffsets: [1, 39, 50],
+  },
+  DE: {
+    fixed: ['01-01', '05-01', '10-03', '12-25', '12-26'],
+    easterOffsets: [-2, 1, 39, 50],
+  },
+}
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
 
-const holidaysByYear = new Map<number, Set<IsoDate>>()
+const holidaysByCountryAndYear = new Map<string, Set<IsoDate>>()
+
+export const HOLIDAY_COUNTRIES = Object.keys(CALENDARS)
+
+export function resolveCountry (country: string): string {
+  return Object.hasOwn(CALENDARS, country) ? country : HOME_COUNTRY
+}
 
 export function easterSunday (year: number): IsoDate {
   const a = year % 19
@@ -28,22 +51,25 @@ export function easterSunday (year: number): IsoDate {
   return toIsoDate(new Date(Date.UTC(year, month - 1, day)))
 }
 
-export function belgianHolidays (year: number): Set<IsoDate> {
-  const cached = holidaysByYear.get(year)
+export function holidays (year: number, country: string): Set<IsoDate> {
+  const resolved = resolveCountry(country)
+  const key = `${resolved}-${String(year)}`
+  const cached = holidaysByCountryAndYear.get(key)
   if (cached) return cached
 
-  const holidays = new Set<IsoDate>(
-    FIXED_HOLIDAYS.map((monthDay) => `${String(year)}-${monthDay}`)
+  const calendar = CALENDARS[resolved]
+  const dates = new Set<IsoDate>(
+    calendar.fixed.map((monthDay) => `${String(year)}-${monthDay}`)
   )
 
   const easter = toUtcDate(easterSunday(year)).getTime()
 
-  for (const offset of MOVABLE_HOLIDAY_OFFSETS) {
-    holidays.add(toIsoDate(new Date(easter + offset * MILLISECONDS_PER_DAY)))
+  for (const offset of calendar.easterOffsets) {
+    dates.add(toIsoDate(new Date(easter + offset * MILLISECONDS_PER_DAY)))
   }
 
-  holidaysByYear.set(year, holidays)
-  return holidays
+  holidaysByCountryAndYear.set(key, dates)
+  return dates
 }
 
 export function isWeekend (date: IsoDate): boolean {
@@ -51,23 +77,23 @@ export function isWeekend (date: IsoDate): boolean {
   return day === 0 || day === 6
 }
 
-export function isHoliday (date: IsoDate): boolean {
-  return belgianHolidays(Number(date.slice(0, 4))).has(date)
+export function isHoliday (date: IsoDate, country: string): boolean {
+  return holidays(Number(date.slice(0, 4)), country).has(date)
 }
 
-export function isWorkingDay (date: IsoDate): boolean {
-  return !isWeekend(date) && !isHoliday(date)
+export function isWorkingDay (date: IsoDate, country: string): boolean {
+  return !isWeekend(date) && !isHoliday(date, country)
 }
 
-export function workingDaysBetween (from: IsoDate, to: IsoDate): number {
-  if (diffDays(from, to) < 0) return -workingDaysBetween(to, from)
+export function workingDaysBetween (from: IsoDate, to: IsoDate, country: string): number {
+  if (diffDays(from, to) < 0) return -workingDaysBetween(to, from, country)
 
   const end = toUtcDate(to).getTime()
   let cursor = toUtcDate(from).getTime() + MILLISECONDS_PER_DAY
   let count = 0
 
   while (cursor <= end) {
-    if (isWorkingDay(toIsoDate(new Date(cursor)))) count += 1
+    if (isWorkingDay(toIsoDate(new Date(cursor)), country)) count += 1
     cursor += MILLISECONDS_PER_DAY
   }
 

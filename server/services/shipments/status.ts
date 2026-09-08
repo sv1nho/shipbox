@@ -1,5 +1,5 @@
 import { AppError } from '../../errors.js'
-import { RECEPTION_ALERT_DAYS, PENDING_ALERT_DAYS } from '../../config/constants.js'
+import { RECEPTION_ALERT_DAYS, PENDING_ALERT_DAYS, HOME_COUNTRY } from '../../config/constants.js'
 import { diffDays, isIsoDate } from './dates.js'
 import type { IsoDate } from './dates.js'
 import { workingDaysBetween } from './working-days.js'
@@ -131,23 +131,30 @@ export type DerivedFields = {
   shouldDropOff: boolean
 }
 
-export type DerivedInput = ShipmentState & { createdDate: IsoDate }
+export type DerivedInput = ShipmentState & {
+  createdDate: IsoDate
+  recipientCountry: string
+}
 
 export function computeDerived (shipment: DerivedInput, today: IsoDate): DerivedFields {
-  const daysSinceCreated = workingDaysBetween(shipment.createdDate, today)
+  const handler = shipment.recipientCountry
+
+  const daysSinceCreated = workingDaysBetween(shipment.createdDate, today, HOME_COUNTRY)
 
   const daysSinceReceived =
-    shipment.receivedDate === null ? null : workingDaysBetween(shipment.receivedDate, today)
+    shipment.receivedDate === null
+      ? null
+      : workingDaysBetween(shipment.receivedDate, today, handler)
 
   const decisionDelayDays =
     shipment.receivedDate === null || shipment.decisionDate === null
       ? null
-      : workingDaysBetween(shipment.receivedDate, shipment.decisionDate)
+      : workingDaysBetween(shipment.receivedDate, shipment.decisionDate, handler)
 
   const totalDelayDays =
     shipment.dropoffDate === null || shipment.decisionDate === null
       ? null
-      : workingDaysBetween(shipment.dropoffDate, shipment.decisionDate)
+      : workingDaysBetween(shipment.dropoffDate, shipment.decisionDate, handler)
 
   return {
     daysSinceCreated,

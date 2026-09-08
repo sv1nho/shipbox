@@ -292,8 +292,13 @@ describe('assertChronology', () => {
 })
 
 describe('computeDerived', () => {
-  const derived = (overrides: Partial<ShipmentState> & { createdDate?: string } = {}) =>
-    computeDerived({ ...state(), createdDate: '2026-06-01', ...overrides }, TODAY)
+  const derived = (
+    overrides: Partial<ShipmentState> & { createdDate?: string; recipientCountry?: string } = {}
+  ) =>
+    computeDerived(
+      { ...state(), createdDate: '2026-06-01', recipientCountry: 'BE', ...overrides },
+      TODAY
+    )
 
   describe('delays, counted in working days', () => {
     it('measures the store decision delay from the reception', () => {
@@ -318,6 +323,20 @@ describe('computeDerived', () => {
 
     it('skips a public holiday that falls on a weekday', () => {
       expect(derived({ receivedDate: '2026-07-17', decisionDate: '2026-07-24' }).decisionDelayDays).toBe(4)
+    })
+
+    it('measures a dutch handler against the dutch calendar, not the belgian one', () => {
+      const window = { receivedDate: '2026-07-17', decisionDate: '2026-07-24' }
+
+      expect(derived({ ...window, recipientCountry: 'BE' }).decisionDelayDays).toBe(4)
+      expect(derived({ ...window, recipientCountry: 'NL' }).decisionDelayDays).toBe(5)
+    })
+
+    it('measures the drop-off reminder against the home calendar, whatever the destination', () => {
+      const belgian = derived({ status: 'pending', createdDate: '2026-07-17', recipientCountry: 'BE' })
+      const dutch = derived({ status: 'pending', createdDate: '2026-07-17', recipientCountry: 'NL' })
+
+      expect(dutch.daysSinceCreated).toBe(belgian.daysSinceCreated)
     })
   })
 
