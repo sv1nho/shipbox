@@ -1,6 +1,8 @@
+import type { CarrierId } from './carriers.js'
+
 export type Country = 'BE' | 'NL' | 'DE'
 export type Language = 'en' | 'fr' | 'nl'
-export type Carrier = 'postnl' | 'bpost'
+export type Carrier = CarrierId
 
 export type LabelPayload = {
   sender_firstname: string;

@@ -7,7 +7,8 @@ import type {
   FieldErrors,
   Path,
 } from 'react-hook-form'
-import type { Carrier, LabelPayload } from '../types/index.js'
+import type { LabelPayload } from '../types/index.js'
+import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import { buildLabelSvg } from '../utils/label-generator.js'
 import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
@@ -18,22 +19,6 @@ import { fakerFR_BE, fakerNL_BE, fakerNL } from '@faker-js/faker'
 
 const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
 const randomFaker = () => fakers[Math.floor(Math.random() * fakers.length)]
-
-const TRACKING_NUMBER_RULES: Record<
-  Carrier,
-  { pattern: RegExp; message: string; placeholder: string }
-> = {
-  bpost: {
-    pattern: /^(3232|3299)\d{20}$/,
-    message: '24 digits starting with 3232 or 3299',
-    placeholder: '24 digits for Bpost',
-  },
-  postnl: {
-    pattern: /^[23]S[A-Z]{1,4}\d{6,9}$/,
-    message: '2S/3S followed by 1-4 letters and 6-9 digits',
-    placeholder: 'e.g. 3SDDRL000000409',
-  },
-}
 
 // ── Shared sub-components ────────────────────────────────────────────────────
 
@@ -311,8 +296,9 @@ export function Form () {
 
           <SectionCard title='Carrier'>
             <select {...register('carrier')} className='form-select'>
-              <option value='bpost'>Bpost</option>
-              <option value='postnl'>PostNL</option>
+              {CARRIER_IDS.map((id) => (
+                <option key={id} value={id}>{CARRIERS[id].label}</option>
+              ))}
             </select>
           </SectionCard>
 
@@ -322,11 +308,11 @@ export function Form () {
                 {...register('tracking_number', {
                   required: 'Required',
                   validate: (value) =>
-                    TRACKING_NUMBER_RULES[carrier].pattern.test(value) ||
-                    `Must match: ${TRACKING_NUMBER_RULES[carrier].message}`,
+                    CARRIERS[carrier].pattern.test(value) ||
+                    `Must match: ${CARRIERS[carrier].patternHint}`,
                 })}
                 className='form-input'
-                placeholder={TRACKING_NUMBER_RULES[carrier].placeholder}
+                placeholder={CARRIERS[carrier].placeholder}
               />
             </Field>
           </SectionCard>
