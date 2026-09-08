@@ -17,6 +17,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  shipments     Shipment[]
 
   @@unique([email])
   @@map("user")
@@ -68,4 +69,51 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Shipment {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String    @map("user_id")
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  trackingNumber      String    @map("tracking_number")
+  carrier             String
+
+  recipientPostalCode String    @map("recipient_postal_code")
+  recipientCountry    String    @map("recipient_country")
+
+  status              String    @default("pending")
+
+  amountCents         Int       @map("amount_cents")
+  currency            String    @default("EUR")
+  store               String
+
+  dropoffDate         DateTime? @map("dropoff_date")  @db.Date
+  receivedDate        DateTime? @map("received_date") @db.Date
+  decisionDate        DateTime? @map("decision_date") @db.Date
+
+  orderNumber         String?   @map("order_number")
+  note                String?
+
+  label               Label?
+
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt      @map("updated_at") @db.Timestamptz
+  deletedAt           DateTime?                 @map("deleted_at") @db.Timestamptz
+
+  @@index([userId, status])
+  @@index([userId, deletedAt])
+  @@map("shipments")
+}
+
+model Label {
+  shipmentId     String   @id @map("shipment_id") @db.Uuid
+  shipment       Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  payload        Json     @db.JsonB
+  payloadVersion Int      @default(1) @map("payload_version")
+
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("labels")
 }

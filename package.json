@@ -31,6 +31,7 @@
     "db:deploy": "prisma migrate deploy && prisma generate",
     "db:reset": "prisma migrate reset && prisma generate",
     "db:studio": "prisma studio",
+    "db:seed": "prisma db seed",
     "db:backup": "tsx scripts/db-backup.ts",
     "db:restore": "tsx scripts/db-restore.ts",
     "clear": "rimraf node_modules dist package-lock.json",
