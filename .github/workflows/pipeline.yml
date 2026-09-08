@@ -27,6 +27,9 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://ship_box:ship_box@127.0.0.1:5432/ship_box
+      WEB_ORIGIN: http://localhost:5173
+      BETTER_AUTH_URL: http://localhost:5173
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-for-any-session
 
     steps:
       - name: Checkout

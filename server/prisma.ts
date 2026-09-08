@@ -1,7 +1,7 @@
 import { createPrismaClient } from './prisma-client.js'
-import { env, isProduction } from './env.js'
+import { env, isProduction, isTest } from './env.js'
+import type { PrismaLogLevel } from './prisma-client.js'
 
-export const prisma = createPrismaClient(
-  env.DATABASE_URL,
-  isProduction ? ['error'] : ['warn', 'error']
-)
+const logLevels: PrismaLogLevel[] = isTest ? [] : isProduction ? ['error'] : ['warn', 'error']
+
+export const prisma = createPrismaClient(env.DATABASE_URL, logLevels)

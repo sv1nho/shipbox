@@ -16,7 +16,7 @@ export function testDatabaseUrl (): string {
     throw new Error(`DATABASE_URL has no database name: ${base}`)
   }
 
-  url.pathname = `/${name}_test`
+  url.pathname = name.endsWith('_test') ? `/${name}` : `/${name}_test`
   return url.toString()
 }
 

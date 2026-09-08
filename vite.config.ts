@@ -35,6 +35,7 @@ export default defineConfig(({ mode }) => {
             name: 'server',
             environment: 'node',
             include: ['server/**/*.{test,spec}.ts', 'shared/**/*.{test,spec}.ts'],
+            exclude: ['**/*.db.{test,spec}.ts'],
           },
         },
         {
@@ -42,8 +43,9 @@ export default defineConfig(({ mode }) => {
           test: {
             name: 'db',
             environment: 'node',
-            include: ['prisma/**/*.{test,spec}.ts'],
+            include: ['prisma/**/*.{test,spec}.ts', 'server/**/*.db.{test,spec}.ts'],
             globalSetup: ['prisma/__tests__/global-setup.ts'],
+            setupFiles: ['prisma/__tests__/setup-test-database.ts'],
             fileParallelism: false,
           },
         },

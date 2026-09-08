@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest'
-import { createPrismaClient } from '../../server/prisma-client.js'
-import { testDatabaseUrl } from './test-database.js'
-
-const prisma = createPrismaClient(testDatabaseUrl(), [])
+import { prisma } from '../../server/prisma.js'
 
 const OWNER = 'constraint-tests-owner'
 const OTHER = 'constraint-tests-other'

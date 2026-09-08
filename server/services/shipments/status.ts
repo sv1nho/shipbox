@@ -39,6 +39,23 @@ const DATE_FIELD_RANK: Record<DateField, number> = {
 
 const ORDERED_DATE_FIELDS: DateField[] = ['dropoffDate', 'receivedDate', 'decisionDate']
 
+export function assertDate (field: DateField, value: string, today: IsoDate): void {
+  if (!isIsoDate(value)) {
+    throw new AppError('VALIDATION_ERROR', `${field} must be a YYYY-MM-DD date.`, { [field]: value })
+  }
+
+  if (diffDays(today, value) > 0) {
+    throw new AppError('VALIDATION_ERROR', `${field} cannot be in the future.`, { [field]: value, today })
+  }
+}
+
+export function assertDates (dates: ShipmentDates, today: IsoDate): void {
+  for (const field of ORDERED_DATE_FIELDS) {
+    const value = dates[field]
+    if (value !== null) assertDate(field, value, today)
+  }
+}
+
 export function assertChronology (dates: ShipmentDates): void {
   const filled = ORDERED_DATE_FIELDS
     .map((field) => ({ field, value: dates[field] }))
@@ -55,6 +72,26 @@ export function assertChronology (dates: ShipmentDates): void {
         { [previous.field]: previous.value, [current.field]: current.value }
       )
     }
+  }
+}
+
+const REQUIRED_DATE: Record<ShipmentStatus, DateField | null> = {
+  pending: null,
+  dropped_off: 'dropoffDate',
+  received: 'receivedDate',
+  refunded: 'decisionDate',
+  rejected: 'decisionDate',
+}
+
+export function assertStatusHasItsDate (state: ShipmentState): void {
+  const field = REQUIRED_DATE[state.status]
+
+  if (field !== null && state[field] === null) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      `A shipment that is ${state.status} needs its ${field}.`,
+      { status: state.status, missing: field }
+    )
   }
 }
 
@@ -77,13 +114,7 @@ export function planTransition (
     )
   }
 
-  if (!isIsoDate(date)) {
-    throw new AppError('VALIDATION_ERROR', `${dateField} must be a YYYY-MM-DD date.`, { [dateField]: date })
-  }
-
-  if (diffDays(today, date) > 0) {
-    throw new AppError('VALIDATION_ERROR', `${dateField} cannot be in the future.`, { [dateField]: date, today })
-  }
+  assertDate(dateField, date, today)
 
   const next: ShipmentState = { ...state, status: target, [dateField]: date }
   assertChronology(next)
