@@ -8,7 +8,9 @@ import {
   planTransition,
 } from '../../../services/shipments/status.js'
 import type { ShipmentState, TransitionAction } from '../../../services/shipments/status.js'
+import { workingDaysBetween } from '../../../services/shipments/working-days.js'
 import { AppError } from '../../../errors.js'
+import { HOME_COUNTRY } from '../../../config/constants.js'
 import { SHIPMENT_STATUSES } from '../../../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../../../shared/shipment-status.js'
 
@@ -292,13 +294,8 @@ describe('assertChronology', () => {
 })
 
 describe('computeDerived', () => {
-  const derived = (
-    overrides: Partial<ShipmentState> & { createdDate?: string; recipientCountry?: string } = {}
-  ) =>
-    computeDerived(
-      { ...state(), createdDate: '2026-06-01', recipientCountry: 'BE', ...overrides },
-      TODAY
-    )
+  const derived = (overrides: Partial<ShipmentState> & { createdDate?: string } = {}) =>
+    computeDerived({ ...state(), createdDate: '2026-06-01', ...overrides }, TODAY)
 
   describe('delays, counted in working days', () => {
     it('measures the store decision delay from the reception', () => {
@@ -321,22 +318,10 @@ describe('computeDerived', () => {
       expect(derived({ receivedDate: '2026-06-05', decisionDate: '2026-06-08' }).decisionDelayDays).toBe(1)
     })
 
-    it('skips a public holiday that falls on a weekday', () => {
+    it('uses the home calendar, since the staff deciding the refund work where the user shops', () => {
       expect(derived({ receivedDate: '2026-07-17', decisionDate: '2026-07-24' }).decisionDelayDays).toBe(4)
-    })
-
-    it('measures a dutch handler against the dutch calendar, not the belgian one', () => {
-      const window = { receivedDate: '2026-07-17', decisionDate: '2026-07-24' }
-
-      expect(derived({ ...window, recipientCountry: 'BE' }).decisionDelayDays).toBe(4)
-      expect(derived({ ...window, recipientCountry: 'NL' }).decisionDelayDays).toBe(5)
-    })
-
-    it('measures the drop-off reminder against the home calendar, whatever the destination', () => {
-      const belgian = derived({ status: 'pending', createdDate: '2026-07-17', recipientCountry: 'BE' })
-      const dutch = derived({ status: 'pending', createdDate: '2026-07-17', recipientCountry: 'NL' })
-
-      expect(dutch.daysSinceCreated).toBe(belgian.daysSinceCreated)
+      expect(workingDaysBetween('2026-07-17', '2026-07-24', HOME_COUNTRY)).toBe(4)
+      expect(workingDaysBetween('2026-07-17', '2026-07-24', 'NL')).toBe(5)
     })
   })
 

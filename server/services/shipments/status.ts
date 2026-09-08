@@ -131,30 +131,25 @@ export type DerivedFields = {
   shouldDropOff: boolean
 }
 
-export type DerivedInput = ShipmentState & {
-  createdDate: IsoDate
-  recipientCountry: string
-}
+export type DerivedInput = ShipmentState & { createdDate: IsoDate }
 
 export function computeDerived (shipment: DerivedInput, today: IsoDate): DerivedFields {
-  const handler = shipment.recipientCountry
-
   const daysSinceCreated = workingDaysBetween(shipment.createdDate, today, HOME_COUNTRY)
 
   const daysSinceReceived =
     shipment.receivedDate === null
       ? null
-      : workingDaysBetween(shipment.receivedDate, today, handler)
+      : workingDaysBetween(shipment.receivedDate, today, HOME_COUNTRY)
 
   const decisionDelayDays =
     shipment.receivedDate === null || shipment.decisionDate === null
       ? null
-      : workingDaysBetween(shipment.receivedDate, shipment.decisionDate, handler)
+      : workingDaysBetween(shipment.receivedDate, shipment.decisionDate, HOME_COUNTRY)
 
   const totalDelayDays =
     shipment.dropoffDate === null || shipment.decisionDate === null
       ? null
-      : workingDaysBetween(shipment.dropoffDate, shipment.decisionDate, handler)
+      : workingDaysBetween(shipment.dropoffDate, shipment.decisionDate, HOME_COUNTRY)
 
   return {
     daysSinceCreated,
