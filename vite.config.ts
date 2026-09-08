@@ -37,6 +37,16 @@ export default defineConfig(({ mode }) => {
             include: ['server/**/*.{test,spec}.ts', 'shared/**/*.{test,spec}.ts'],
           },
         },
+        {
+          extends: true,
+          test: {
+            name: 'db',
+            environment: 'node',
+            include: ['prisma/**/*.{test,spec}.ts'],
+            globalSetup: ['prisma/__tests__/global-setup.ts'],
+            fileParallelism: false,
+          },
+        },
       ],
       coverage: {
         reportsDirectory: 'coverage',
@@ -53,6 +63,7 @@ export default defineConfig(({ mode }) => {
           'server/types/**',
           'server/index.ts',
           'server/prisma.ts',
+          'server/prisma-client.ts',
           'server/env.ts',
           'server/auth/auth.ts',
           // Drop this entry once Supertest covers the routes.
