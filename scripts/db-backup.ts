@@ -1,10 +1,11 @@
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { pipeline } from 'node:stream/promises'
-import { createWriteStream, existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
+import { createWriteStream, mkdirSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { loadLocalEnv } from '../server/load-env.js'
 
-if (existsSync('.env')) process.loadEnvFile()
+loadLocalEnv()
 
 const user = process.env.POSTGRES_USER
 const database = process.env.POSTGRES_DB

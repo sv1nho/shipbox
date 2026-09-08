@@ -1,6 +1,6 @@
-import { existsSync } from 'node:fs'
+import { loadLocalEnv } from '../../server/load-env.js'
 
-if (existsSync('.env')) process.loadEnvFile()
+loadLocalEnv()
 
 export function testDatabaseUrl (): string {
   const base = process.env.DATABASE_URL

@@ -1,7 +1,7 @@
-import { existsSync } from 'node:fs'
+import { loadLocalEnv } from './load-env.js'
 import { envSchema } from './env-schema.js'
 
-if (existsSync('.env')) process.loadEnvFile()
+loadLocalEnv()
 
 const parsed = envSchema.safeParse(process.env)
 

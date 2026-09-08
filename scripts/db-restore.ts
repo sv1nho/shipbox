@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process'
 import { createReadStream, existsSync } from 'node:fs'
+import { loadLocalEnv } from '../server/load-env.js'
 
-if (existsSync('.env')) process.loadEnvFile()
+loadLocalEnv()
 
 const user = process.env.POSTGRES_USER
 const database = process.env.POSTGRES_DB

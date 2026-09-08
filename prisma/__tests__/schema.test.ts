@@ -29,6 +29,27 @@ const valid = (overrides: Record<string, unknown> = {}): Record<string, unknown>
   ...overrides,
 })
 
+type ShipmentOverrides = {
+  userId?: string
+  trackingNumber?: string
+  carrier?: string
+  store?: string
+}
+
+const createShipment = (overrides: ShipmentOverrides = {}) =>
+  prisma.shipment.create({
+    data: {
+      userId: OWNER,
+      trackingNumber: `TRK-${String(Math.random()).slice(2)}`,
+      carrier: 'bpost',
+      recipientPostalCode: '2000',
+      recipientCountry: 'BE',
+      amountCents: 1000,
+      store: 'Zalando',
+      ...overrides,
+    },
+  })
+
 beforeAll(async () => {
   for (const [id, email] of [[OWNER, 'owner@example.test'], [OTHER, 'other@example.test']]) {
     await prisma.user.upsert({
@@ -156,54 +177,43 @@ describe('shipments constraints', () => {
 })
 
 describe('tracking number uniqueness', () => {
-  const shipment = (userId: string, trackingNumber: string, carrier = 'bpost') => ({
-    userId,
-    trackingNumber,
-    carrier,
-    recipientPostalCode: '2000',
-    recipientCountry: 'BE',
-    amountCents: 1000,
-    store: 'Zalando',
-  })
-
   it('rejects the same number twice, with the Prisma code the service will map to a 409', async () => {
-    await prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-1') })
+    await createShipment({ trackingNumber: 'UNIQUE-1' })
 
-    const failure = await prisma.shipment
-      .create({ data: shipment(OWNER, 'UNIQUE-1') })
+    const failure = await createShipment({ trackingNumber: 'UNIQUE-1' })
       .catch((cause: unknown) => cause)
 
     expect((failure as { code?: string }).code).toBe('P2002')
   })
 
   it('rejects the same number under another carrier', async () => {
-    await prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-2', 'bpost') })
+    await createShipment({ trackingNumber: 'UNIQUE-2', carrier: 'bpost' })
 
-    await expect(prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-2', 'postnl') })).rejects.toThrow()
+    await expect(createShipment({ trackingNumber: 'UNIQUE-2', carrier: 'postnl' })).rejects.toThrow()
   })
 
   it('rejects the same number for a different user, uniqueness is global', async () => {
-    await prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-3') })
+    await createShipment({ trackingNumber: 'UNIQUE-3' })
 
-    await expect(prisma.shipment.create({ data: shipment(OTHER, 'UNIQUE-3') })).rejects.toThrow()
+    await expect(createShipment({ userId: OTHER, trackingNumber: 'UNIQUE-3' })).rejects.toThrow()
   })
 
   it('does not free the number when the shipment is archived', async () => {
-    const created = await prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-4') })
+    const created = await createShipment({ trackingNumber: 'UNIQUE-4' })
     await prisma.shipment.update({ where: { id: created.id }, data: { archivedAt: new Date() } })
 
-    await expect(prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-4') })).rejects.toThrow()
+    await expect(createShipment({ trackingNumber: 'UNIQUE-4' })).rejects.toThrow()
   })
 
   it('frees the number once the shipment is deleted for good', async () => {
-    const created = await prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-5') })
+    const created = await createShipment({ trackingNumber: 'UNIQUE-5' })
     await prisma.shipment.delete({ where: { id: created.id } })
 
-    await expect(prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-5') })).resolves.toBeDefined()
+    await expect(createShipment({ trackingNumber: 'UNIQUE-5' })).resolves.toBeDefined()
   })
 
   it('unarchives without ever conflicting', async () => {
-    const created = await prisma.shipment.create({ data: shipment(OWNER, 'UNIQUE-6') })
+    const created = await createShipment({ trackingNumber: 'UNIQUE-6' })
     await prisma.shipment.update({ where: { id: created.id }, data: { archivedAt: new Date() } })
 
     const restored = await prisma.shipment.update({
@@ -218,19 +228,6 @@ describe('tracking number uniqueness', () => {
 describe('labels', () => {
   const payload = { tracking_number: 'LABEL-1' }
 
-  const createShipment = (trackingNumber: string) =>
-    prisma.shipment.create({
-      data: {
-        userId: OWNER,
-        trackingNumber,
-        carrier: 'bpost',
-        recipientPostalCode: '2000',
-        recipientCountry: 'BE',
-        amountCents: 1000,
-        store: 'Zalando',
-      },
-    })
-
   it('refuses a label pointing at no shipment', async () => {
     await expect(
       prisma.label.create({
@@ -240,14 +237,14 @@ describe('labels', () => {
   })
 
   it('allows at most one label per shipment', async () => {
-    const created = await createShipment('LABEL-ONE')
+    const created = await createShipment({ trackingNumber: 'LABEL-ONE' })
     await prisma.label.create({ data: { shipmentId: created.id, payload } })
 
     await expect(prisma.label.create({ data: { shipmentId: created.id, payload } })).rejects.toThrow()
   })
 
   it('deletes the label along with its shipment', async () => {
-    const created = await createShipment('LABEL-CASCADE')
+    const created = await createShipment({ trackingNumber: 'LABEL-CASCADE' })
     await prisma.label.create({ data: { shipmentId: created.id, payload } })
 
     await prisma.shipment.delete({ where: { id: created.id } })
@@ -256,7 +253,7 @@ describe('labels', () => {
   })
 
   it('keeps the label when the shipment is only archived', async () => {
-    const created = await createShipment('LABEL-ARCHIVED')
+    const created = await createShipment({ trackingNumber: 'LABEL-ARCHIVED' })
     await prisma.label.create({ data: { shipmentId: created.id, payload } })
 
     await prisma.shipment.update({ where: { id: created.id }, data: { archivedAt: new Date() } })
@@ -265,7 +262,7 @@ describe('labels', () => {
   })
 
   it('stores the payload as queryable jsonb', async () => {
-    const created = await createShipment('LABEL-JSONB')
+    const created = await createShipment({ trackingNumber: 'LABEL-JSONB' })
     await prisma.label.create({
       data: { shipmentId: created.id, payload: { store: 'Zalando', nested: { amount: 42 } } },
     })
@@ -311,22 +308,9 @@ describe('updated_at', () => {
 })
 
 describe('store search', () => {
-  const withStore = (trackingNumber: string, store: string) =>
-    prisma.shipment.create({
-      data: {
-        userId: OWNER,
-        trackingNumber,
-        carrier: 'bpost',
-        recipientPostalCode: '2000',
-        recipientCountry: 'BE',
-        amountCents: 1000,
-        store,
-      },
-    })
-
   it('ranks a typo closer to the store it meant than to any other', async () => {
-    await withStore('SEARCH-1', 'Zalando')
-    await withStore('SEARCH-2', 'Decathlon')
+    await createShipment({ trackingNumber: 'SEARCH-1', store: 'Zalando' })
+    await createShipment({ trackingNumber: 'SEARCH-2', store: 'Decathlon' })
 
     const rows = await prisma.$queryRaw<{ store: string }[]>`
       SELECT store FROM shipments
@@ -338,7 +322,7 @@ describe('store search', () => {
   })
 
   it('ignores case and accents', async () => {
-    await withStore('SEARCH-3', 'Décathlon')
+    await createShipment({ trackingNumber: 'SEARCH-3', store: 'Décathlon' })
 
     const rows = await prisma.$queryRaw<{ store: string }[]>`
       SELECT store FROM shipments
