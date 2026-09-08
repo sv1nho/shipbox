@@ -40,8 +40,14 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:studio` | Prisma database browser |
+| `npm run db:seed` | fills the database with sample shipments |
 | `npm run db:backup` | dumps the database to `backups/` |
 | `npm run db:restore` | restores a dump, see below |
+
+The Prisma client is generated into `server/generated`, which is gitignored.
+`npm install` recreates it. If the editor reports unresolved Prisma types
+(`Unsafe call of a type that could not be resolved`), that folder is missing or
+stale: run `npm run db:generate` and reload the TypeScript server.
 
 The PostgreSQL host port is **5433** rather than 5432, so the container can live
 alongside a native Postgres install.
