@@ -1,19 +1,6 @@
-import { PrismaPg } from '@prisma/adapter-pg'
-import { existsSync } from 'node:fs'
-import { PrismaClient } from '../server/generated/prisma/client.js'
+import { prisma } from '../server/prisma.js'
 import { CURRENT_PAYLOAD_VERSION } from '../shared/label-payload.js'
 import type { LabelPayload } from '../shared/label-payload.js'
-
-if (existsSync('.env')) process.loadEnvFile()
-
-const connectionString = process.env.DATABASE_URL
-
-if (!connectionString) {
-  console.error('DATABASE_URL must be set in .env')
-  process.exit(1)
-}
-
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 
 const MIDNIGHT_UTC = (offsetDays: number): Date => {
   const now = new Date()
