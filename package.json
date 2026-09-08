@@ -75,7 +75,7 @@
     "@vitest/coverage-v8": "4.1.8",
     "concurrently": "10.0.5",
     "cross-env": "10.1.0",
-    "eslint": "10.8.0",
+    "eslint": "10.10.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "happy-dom": "20.10.2",
     "pg": "8.23.0",
