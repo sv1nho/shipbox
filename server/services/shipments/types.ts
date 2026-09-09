@@ -2,7 +2,7 @@ import type { CarrierId } from '../../../shared/carriers.js'
 import type { LabelPayload } from '../../../shared/label-payload.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
 import type { IsoDate } from './dates.js'
-import type { DerivedFields, TransitionAction } from './status.js'
+import type { DerivedFields } from './status.js'
 
 export type ShipmentDto = {
   id: string
@@ -26,7 +26,7 @@ export type ShipmentDto = {
   hasLabel: boolean
 } & DerivedFields
 
-export type LabelInput = {
+type LabelInput = {
   payload: LabelPayload
   payloadVersion: number
 }
@@ -63,7 +63,7 @@ export type CorrectIdentityInput = {
   trackingNumber: string
 }
 
-export type ArchivedFilter = 'exclude' | 'only' | 'include'
+type ArchivedFilter = 'exclude' | 'only' | 'include'
 
 export type SortKey =
   | 'createdAt'
@@ -99,5 +99,3 @@ export type ExistsResult = {
   id?: string
   archived?: boolean
 }
-
-export type { TransitionAction }

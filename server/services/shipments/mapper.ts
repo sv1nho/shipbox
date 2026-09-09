@@ -7,6 +7,7 @@ import type { CarrierId } from '../../../shared/carriers.js'
 import { toIsoDate, toIsoDateInZone } from './dates.js'
 import type { IsoDate } from './dates.js'
 import { computeDerived } from './status.js'
+import type { ShipmentState } from './status.js'
 import type { ShipmentDto } from './types.js'
 
 export type ShipmentRow = {
@@ -47,13 +48,18 @@ const asStatus = (value: string): ShipmentStatus => {
   return value
 }
 
+export function toShipmentState (row: ShipmentRow): ShipmentState {
+  return {
+    status: asStatus(row.status),
+    dropoffDate: asIsoDate(row.dropoffDate),
+    receivedDate: asIsoDate(row.receivedDate),
+    decisionDate: asIsoDate(row.decisionDate),
+  }
+}
+
 export function toShipmentDto (row: ShipmentRow, today: IsoDate): ShipmentDto {
   const carrier = asCarrier(row.carrier)
-  const status = asStatus(row.status)
-
-  const dropoffDate = asIsoDate(row.dropoffDate)
-  const receivedDate = asIsoDate(row.receivedDate)
-  const decisionDate = asIsoDate(row.decisionDate)
+  const { status, dropoffDate, receivedDate, decisionDate } = toShipmentState(row)
 
   const derived = computeDerived(
     {

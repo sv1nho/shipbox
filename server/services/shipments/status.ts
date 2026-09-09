@@ -6,7 +6,7 @@ import { workingDaysBetween } from './working-days.js'
 import { isDecisionStatus } from '../../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
 
-export type DateField = 'dropoffDate' | 'receivedDate' | 'decisionDate'
+type DateField = 'dropoffDate' | 'receivedDate' | 'decisionDate'
 
 export type ShipmentDates = Record<DateField, IsoDate | null>
 
@@ -31,15 +31,11 @@ const STATUS_RANK: Record<ShipmentStatus, number> = {
   rejected: 3,
 }
 
-const DATE_FIELD_RANK: Record<DateField, number> = {
-  dropoffDate: 1,
-  receivedDate: 2,
-  decisionDate: 3,
-}
-
 const ORDERED_DATE_FIELDS: DateField[] = ['dropoffDate', 'receivedDate', 'decisionDate']
 
-export function assertDate (field: DateField, value: string, today: IsoDate): void {
+const dateFieldRank = (field: DateField): number => ORDERED_DATE_FIELDS.indexOf(field) + 1
+
+function assertDate (field: DateField, value: string, today: IsoDate): void {
   if (!isIsoDate(value)) {
     throw new AppError('VALIDATION_ERROR', `${field} must be a YYYY-MM-DD date.`, { [field]: value })
   }
@@ -138,7 +134,7 @@ export function planRevert (state: ShipmentState): ShipmentState {
   }
 
   for (const field of ORDERED_DATE_FIELDS) {
-    if (DATE_FIELD_RANK[field] >= undone) {
+    if (dateFieldRank(field) >= undone) {
       cleared[field] = null
     }
   }
@@ -162,7 +158,7 @@ export type DerivedFields = {
   shouldDropOff: boolean
 }
 
-export type DerivedInput = ShipmentState & { createdDate: IsoDate }
+type DerivedInput = ShipmentState & { createdDate: IsoDate }
 
 export function computeDerived (shipment: DerivedInput, today: IsoDate): DerivedFields {
   const daysSinceCreated = workingDaysBetween(shipment.createdDate, today, HOME_COUNTRY)

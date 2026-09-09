@@ -1,4 +1,4 @@
-export type ErrorCode =
+type ErrorCode =
   | 'UNAUTHORIZED'
   | 'NOT_FOUND'
   | 'CONFLICT'

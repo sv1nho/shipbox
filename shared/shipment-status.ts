@@ -13,7 +13,7 @@ export const isShipmentStatus = (value: unknown): value is ShipmentStatus =>
 
 export const DECISION_STATUSES = ['refunded', 'rejected'] as const
 
-export type DecisionStatus = typeof DECISION_STATUSES[number]
+type DecisionStatus = typeof DECISION_STATUSES[number]
 
 export const isDecisionStatus = (value: unknown): value is DecisionStatus =>
   typeof value === 'string' && (DECISION_STATUSES as readonly string[]).includes(value)

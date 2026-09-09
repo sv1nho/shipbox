@@ -1,6 +1,6 @@
 import JsBarcode from 'jsbarcode'
-import type { LabelPayload } from '../types/index.js'
-import type { CarrierConfig } from '../types/config.js'
+import type { Carrier, LabelPayload } from '../types/index.js'
+import type { CarrierLayout } from '../types/config.js'
 import { COUNTRY_NAMES, POSTAL_ZONES, SVG_TEXT_CONFIG } from './variables.js'
 
 type Prefix = 'sender' | 'recipient'
@@ -11,7 +11,7 @@ const maybeUpper = (value: string, uppercase: boolean): string =>
 const resolveCountry = (
   payload: LabelPayload,
   prefix: Prefix,
-  config: CarrierConfig
+  config: CarrierLayout
 ): string => {
   const country = payload[`${prefix}_country`]
   const names = COUNTRY_NAMES[country]
@@ -125,7 +125,7 @@ const nameLines = (payload: LabelPayload, prefix: Prefix): string[] => {
 const addressLines = (
   payload: LabelPayload,
   prefix: Prefix,
-  config: CarrierConfig
+  config: CarrierLayout
 ): { lines: string[]; addressLineCount: number } => {
   const p = party(payload, prefix)
   const address = capitalize(p('address') as string)
@@ -219,7 +219,7 @@ const generateBarcodeBase64 = (tracking: string): string => {
 
 const buildSenderBlock = (
   payload: LabelPayload,
-  config: CarrierConfig
+  config: CarrierLayout
 ): string => {
   const senderTspans = linesToTspans(
     [
@@ -239,7 +239,7 @@ const buildSenderBlock = (
 
 const buildRecipientNameBlock = (
   payload: LabelPayload,
-  config: CarrierConfig
+  config: CarrierLayout
 ): string => {
   const wrappedNameLines = wrapTextByPixelWidth(
     nameLines(payload, 'recipient'),
@@ -260,7 +260,7 @@ const buildRecipientNameBlock = (
 
 const buildRecipientDetailsBlock = (
   payload: LabelPayload,
-  config: CarrierConfig
+  config: CarrierLayout
 ): string => {
   const { lines, addressLineCount } = addressLines(payload, 'recipient', config)
   const wrappedLines = wrapTextByPixelWidth(
@@ -286,7 +286,7 @@ const buildRecipientDetailsBlock = (
     .join('')
 }
 
-const CARRIER_CONFIGS: Record<string, CarrierConfig> = {
+const CARRIER_LAYOUTS: Record<Carrier, CarrierLayout> = {
   postnl: {
     trackingTailDigitCount: 9,
     sender: { x: 24, startY: 30, lineHeight: 12, fontSize: 10 },
@@ -337,7 +337,7 @@ export const buildLabelSvg = (
   payload: LabelPayload,
   svgTemplate: string
 ): { svg: string; maskedTracking: string } => {
-  const config = CARRIER_CONFIGS[payload.carrier]
+  const config = CARRIER_LAYOUTS[payload.carrier]
   if (!config) {
     throw new Error(`Unsupported carrier: ${payload.carrier}`)
   }

@@ -11,13 +11,12 @@ import {
 } from './status.js'
 import type { ShipmentDates, ShipmentState, TransitionAction } from './status.js'
 import { normalizeCountry, normalizePostalCode, normalizeStore, normalizeTrackingNumber } from './normalize.js'
-import { toShipmentDto } from './mapper.js'
+import { toShipmentDto, toShipmentState } from './mapper.js'
 import type { ShipmentRow } from './mapper.js'
 import type {
   CorrectIdentityInput,
   CreateShipmentInput,
   ExistsResult,
-  LabelInput,
   ListParams,
   ListResult,
   ShipmentDto,
@@ -46,11 +45,33 @@ const alreadyRegistered = (): AppError =>
 const asDate = (value: IsoDate | null): Date | null =>
   value === null ? null : toUtcDate(value)
 
-const datesOf = (row: ShipmentRow): ShipmentDates => ({
-  dropoffDate: row.dropoffDate === null ? null : row.dropoffDate.toISOString().slice(0, 10),
-  receivedDate: row.receivedDate === null ? null : row.receivedDate.toISOString().slice(0, 10),
-  decisionDate: row.decisionDate === null ? null : row.decisionDate.toISOString().slice(0, 10),
+type ShipmentWrite = {
+  status?: ShipmentState['status']
+  carrier?: string
+  trackingNumber?: string
+  recipientPostalCode?: string
+  recipientCountry?: string
+  amountCents?: number
+  store?: string
+  orderNumber?: string | null
+  note?: string | null
+  dropoffDate?: Date | null
+  receivedDate?: Date | null
+  decisionDate?: Date | null
+  archivedAt?: Date | null
+}
+
+const stateWrite = (next: ShipmentState): ShipmentWrite => ({
+  status: next.status,
+  dropoffDate: asDate(next.dropoffDate),
+  receivedDate: asDate(next.receivedDate),
+  decisionDate: asDate(next.decisionDate),
 })
+
+async function writeOwned (id: string, data: ShipmentWrite, now: IsoDate): Promise<ShipmentDto> {
+  const updated = await prisma.shipment.update({ where: { id }, include: LABEL_PRESENCE, data })
+  return toShipmentDto(updated, now)
+}
 
 async function ownedRow (userId: string, id: string): Promise<ShipmentRow> {
   if (!UUID.test(id)) throw notFound()
@@ -198,8 +219,7 @@ export async function update (
 ): Promise<ShipmentDto> {
   const row = await ownedRow(userId, id)
   const now = today()
-
-  const current = datesOf(row)
+  const current = toShipmentState(row)
 
   const dates: ShipmentDates = {
     dropoffDate: patch.dropoffDate === undefined ? current.dropoffDate : patch.dropoffDate,
@@ -209,12 +229,11 @@ export async function update (
 
   assertDates(dates, now)
   assertChronology(dates)
-  assertStatusHasItsDate({ status: row.status as ShipmentState['status'], ...dates })
+  assertStatusHasItsDate({ status: current.status, ...dates })
 
-  const updated = await prisma.shipment.update({
-    where: { id: row.id },
-    include: LABEL_PRESENCE,
-    data: {
+  return writeOwned(
+    row.id,
+    {
       ...(patch.recipientPostalCode === undefined
         ? {}
         : { recipientPostalCode: normalizePostalCode(patch.recipientPostalCode) }),
@@ -229,9 +248,8 @@ export async function update (
       receivedDate: asDate(dates.receivedDate),
       decisionDate: asDate(dates.decisionDate),
     },
-  })
-
-  return toShipmentDto(updated, now)
+    now
+  )
 }
 
 export async function correctIdentity (
@@ -242,16 +260,11 @@ export async function correctIdentity (
   const row = await ownedRow(userId, id)
 
   try {
-    const updated = await prisma.shipment.update({
-      where: { id: row.id },
-      include: LABEL_PRESENCE,
-      data: {
-        carrier: input.carrier,
-        trackingNumber: normalizeTrackingNumber(input.trackingNumber),
-      },
-    })
-
-    return toShipmentDto(updated, today())
+    return await writeOwned(
+      row.id,
+      { carrier: input.carrier, trackingNumber: normalizeTrackingNumber(input.trackingNumber) },
+      today()
+    )
   } catch (cause) {
     if (isUniqueViolation(cause)) throw alreadyRegistered()
     throw cause
@@ -267,46 +280,19 @@ export async function transition (
 ): Promise<ShipmentDto> {
   const row = await ownedRow(userId, id)
   const now = today()
+  const next = planTransition(toShipmentState(row), action, date, now)
 
-  const next = planTransition(
-    { status: row.status as ShipmentState['status'], ...datesOf(row) },
-    action,
-    date,
+  return writeOwned(
+    row.id,
+    { ...stateWrite(next), ...(note === undefined ? {} : { note }) },
     now
   )
-
-  const updated = await prisma.shipment.update({
-    where: { id: row.id },
-    include: LABEL_PRESENCE,
-    data: {
-      status: next.status,
-      dropoffDate: asDate(next.dropoffDate),
-      receivedDate: asDate(next.receivedDate),
-      decisionDate: asDate(next.decisionDate),
-      ...(note === undefined ? {} : { note }),
-    },
-  })
-
-  return toShipmentDto(updated, now)
 }
 
 export async function revert (userId: string, id: string): Promise<ShipmentDto> {
   const row = await ownedRow(userId, id)
 
-  const next = planRevert({ status: row.status as ShipmentState['status'], ...datesOf(row) })
-
-  const updated = await prisma.shipment.update({
-    where: { id: row.id },
-    include: LABEL_PRESENCE,
-    data: {
-      status: next.status,
-      dropoffDate: asDate(next.dropoffDate),
-      receivedDate: asDate(next.receivedDate),
-      decisionDate: asDate(next.decisionDate),
-    },
-  })
-
-  return toShipmentDto(updated, today())
+  return writeOwned(row.id, stateWrite(planRevert(toShipmentState(row))), today())
 }
 
 export async function archive (userId: string, id: string): Promise<ShipmentDto> {
@@ -316,13 +302,7 @@ export async function archive (userId: string, id: string): Promise<ShipmentDto>
     throw new AppError('CONFLICT', 'This shipment is already archived.')
   }
 
-  const updated = await prisma.shipment.update({
-    where: { id: row.id },
-    include: LABEL_PRESENCE,
-    data: { archivedAt: new Date() },
-  })
-
-  return toShipmentDto(updated, today())
+  return writeOwned(row.id, { archivedAt: new Date() }, today())
 }
 
 export async function unarchive (userId: string, id: string): Promise<ShipmentDto> {
@@ -332,13 +312,7 @@ export async function unarchive (userId: string, id: string): Promise<ShipmentDt
     throw new AppError('CONFLICT', 'This shipment is not archived.')
   }
 
-  const updated = await prisma.shipment.update({
-    where: { id: row.id },
-    include: LABEL_PRESENCE,
-    data: { archivedAt: null },
-  })
-
-  return toShipmentDto(updated, today())
+  return writeOwned(row.id, { archivedAt: null }, today())
 }
 
 export async function remove (userId: string, id: string): Promise<void> {
@@ -383,5 +357,3 @@ export async function getLabelPayload (
 }
 
 export { searchStores } from './stores.js'
-
-export type { LabelInput }

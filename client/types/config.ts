@@ -1,4 +1,4 @@
-export type CarrierConfig = {
+export type CarrierLayout = {
   trackingTailDigitCount: number;
   sender: {
     x: number;

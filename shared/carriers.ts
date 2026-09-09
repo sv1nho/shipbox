@@ -5,7 +5,7 @@ export type TrackingTarget = {
   recipientCountry: string
 }
 
-export type CarrierConfig = {
+type CarrierConfig = {
   label: string
   pattern: RegExp
   patternHint: string

@@ -1,7 +1,7 @@
 import { SOCIAL_PROVIDER_IDS } from '../../shared/auth-providers.js'
 import type { SocialProviderId } from '../../shared/auth-providers.js'
 
-export type ProviderCredential = {
+type ProviderCredential = {
   clientId?: string
   clientSecret?: string
 }
