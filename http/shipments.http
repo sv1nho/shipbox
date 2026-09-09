@@ -1,0 +1,272 @@
+@host = http://localhost:5173
+@id = 00000000-0000-4000-8000-000000000001
+@tracking = 323200000000000000000001
+
+### Sign in first, the browser stores the session cookie this file relies on.
+# Should open the Google consent screen and come back with a session.
+GET {{host}}/login
+
+### Health
+# Should answer 200 with { status: "ok", database: "up" }.
+GET {{host}}/api/health
+
+### Providers
+# Should answer 200 with the OAuth providers this server has keys for.
+GET {{host}}/api/config
+
+### Identity
+# Should answer 200 with the signed-in user, or 401 without a session.
+GET {{host}}/api/me
+
+### API documentation
+# Should answer 200 with the OpenAPI document built from the Zod schemas.
+GET {{host}}/api/openapi.json
+
+### Create a shipment
+# Should answer 201 with the shipment, its trackingUrl and its derived fields.
+POST {{host}}/api/shipments
+Content-Type: application/json
+
+{
+  "trackingNumber": "{{tracking}}",
+  "carrier": "bpost",
+  "recipientPostalCode": "2000",
+  "recipientCountry": "BE",
+  "amountCents": 4999,
+  "store": "Zalando",
+  "orderNumber": "ZAL-2026-0001"
+}
+
+### Create a shipment already dropped off
+# Should answer 201 with status "dropped_off", the drop-off date being mandatory here.
+POST {{host}}/api/shipments
+Content-Type: application/json
+
+{
+  "trackingNumber": "323200000000000000000002",
+  "carrier": "bpost",
+  "recipientPostalCode": "1000",
+  "recipientCountry": "BE",
+  "amountCents": 2350,
+  "store": "H&M",
+  "status": "dropped_off",
+  "dropoffDate": "2026-09-01"
+}
+
+### Create with a label, in a single transaction
+# Should answer 201 with hasLabel true, and store nothing of the sender in the shipment row.
+POST {{host}}/api/shipments
+Content-Type: application/json
+
+{
+  "trackingNumber": "3SDDRL000000409",
+  "carrier": "postnl",
+  "recipientPostalCode": "5145RC",
+  "recipientCountry": "NL",
+  "amountCents": 8990,
+  "store": "Zara",
+  "label": {
+    "payloadVersion": 1,
+    "payload": {
+      "sender_firstname": "Yann",
+      "sender_lastname": "Nintunze",
+      "sender_company": "",
+      "sender_address": "Rue de la Loi 16",
+      "sender_postal": "1000",
+      "sender_city": "Bruxelles",
+      "sender_country": "BE",
+      "sender_isCompany": false,
+      "recipient_firstname": "",
+      "recipient_lastname": "",
+      "recipient_company": "Returns Handling BV",
+      "recipient_address": "Logistiekweg 4",
+      "recipient_postal": "5145RC",
+      "recipient_city": "Rotterdam",
+      "recipient_country": "NL",
+      "recipient_isCompany": true,
+      "label_language": "fr",
+      "carrier": "postnl",
+      "tracking_number": "3SDDRL000000409"
+    }
+  }
+}
+
+### Create with a tracking number that does not match the carrier
+# Should answer 422, details naming the trackingNumber path and the expected format.
+POST {{host}}/api/shipments
+Content-Type: application/json
+
+{
+  "trackingNumber": "323200000000000000000009",
+  "carrier": "postnl",
+  "recipientPostalCode": "5145RC",
+  "recipientCountry": "NL",
+  "amountCents": 1000,
+  "store": "Zara"
+}
+
+### Create a duplicate
+# Should answer 409, with a message that never reveals whose shipment it is.
+POST {{host}}/api/shipments
+Content-Type: application/json
+
+{
+  "trackingNumber": "{{tracking}}",
+  "carrier": "bpost",
+  "recipientPostalCode": "2000",
+  "recipientCountry": "BE",
+  "amountCents": 4999,
+  "store": "Zalando"
+}
+
+### List
+# Should answer 200 with { items, total, page, pageSize }, archived shipments excluded.
+GET {{host}}/api/shipments
+
+### List with filters, sorting and pagination
+# Should answer 200 with at most two items, the longest wait first.
+GET {{host}}/api/shipments?carrier=bpost&status=received&sort=waitingDays&direction=desc&page=1&pageSize=2
+
+### List with an unknown sort key
+# Should answer 422 rather than silently falling back to a default order.
+GET {{host}}/api/shipments?sort=nonsense
+
+### Free text search
+# Should answer 200, matching the tracking number, the store or the order number.
+GET {{host}}/api/shipments?search=zalando
+
+### Archived only
+# Should answer 200 with the archived shipments, which the default list hides.
+GET {{host}}/api/shipments?archived=only
+
+### Does this parcel already have a shipment?
+# Should answer 200 with { exists, id, archived }, archived ones included.
+# Must reach the exists route, never be read as a shipment whose id is "exists".
+GET {{host}}/api/shipments/exists?carrier=bpost&trackingNumber={{tracking}}
+
+### Exists without the tracking number
+# Should answer 422, both query parameters being required.
+GET {{host}}/api/shipments/exists?carrier=bpost
+
+### Store suggestions
+# Should answer 200 with { stores }, tolerating case, accents, substrings and typos.
+GET {{host}}/api/shipments/stores?q=zalndo
+
+### Store suggestions with no query
+# Should answer 200 with the most recently used stores.
+GET {{host}}/api/shipments/stores
+
+### Export as JSON
+# Should answer 200 with every matching shipment, without pagination.
+GET {{host}}/api/shipments/export
+
+### Export as CSV
+# Should answer 200 with a text/csv body, a header row and a download filename.
+GET {{host}}/api/shipments/export?format=csv&status=refunded
+
+### Read one shipment
+# Should answer 200 with the shipment and its derived fields.
+GET {{host}}/api/shipments/{{id}}
+
+### Read a shipment whose id is not a uuid
+# Should answer 422, the id failing validation before anything is queried.
+GET {{host}}/api/shipments/not-a-uuid
+
+### Read a shipment that belongs to someone else
+# Should answer 404, never 403, so the two cases stay indistinguishable.
+GET {{host}}/api/shipments/00000000-0000-4000-8000-999999999999
+
+### Edit what is not the physical identity of the label
+# Should answer 200. Sending trackingNumber or carrier here changes nothing.
+PATCH {{host}}/api/shipments/{{id}}
+Content-Type: application/json
+
+{
+  "amountCents": 5499,
+  "store": "Zalando BE",
+  "note": "Refund promised by the store"
+}
+
+### Edit with an empty body
+# Should answer 422, at least one field being required.
+PATCH {{host}}/api/shipments/{{id}}
+Content-Type: application/json
+
+{}
+
+### Fix a typo in the identity
+# Should answer 200. This is the only way to change the tracking number.
+POST {{host}}/api/shipments/{{id}}/correct-identity
+Content-Type: application/json
+
+{
+  "carrier": "bpost",
+  "trackingNumber": "329900000000000000000010"
+}
+
+### Record the drop-off
+# Should answer 200 with status "dropped_off".
+POST {{host}}/api/shipments/{{id}}/drop-off
+Content-Type: application/json
+
+{ "dropoffDate": "2026-09-01" }
+
+### Record the drop-off with a future date
+# Should answer 422, a date that has not happened yet being refused.
+POST {{host}}/api/shipments/{{id}}/drop-off
+Content-Type: application/json
+
+{ "dropoffDate": "2099-01-01" }
+
+### Record the reception
+# Should answer 200 with status "received".
+POST {{host}}/api/shipments/{{id}}/receive
+Content-Type: application/json
+
+{ "receivedDate": "2026-09-04" }
+
+### Record a refund
+# Should answer 200 with status "refunded" and a decisionDelayDays in working days.
+POST {{host}}/api/shipments/{{id}}/refund
+Content-Type: application/json
+
+{ "decisionDate": "2026-09-08" }
+
+### Record a refusal
+# Should answer 200 with status "rejected" and the note stored.
+POST {{host}}/api/shipments/{{id}}/reject
+Content-Type: application/json
+
+{ "decisionDate": "2026-09-08", "note": "Worn item according to the store" }
+
+### Go back a step
+# Should answer 200 with status "dropped_off", the drop-off date being the only one left.
+POST {{host}}/api/shipments/{{id}}/revert
+
+### Go back a step on a pending shipment
+# Should answer 409, there being nothing to undo.
+POST {{host}}/api/shipments/{{id}}/revert
+
+### Archive
+# Should answer 200 with archivedAt set. The row stays, the tracking number stays taken.
+POST {{host}}/api/shipments/{{id}}/archive
+
+### Archive twice
+# Should answer 409.
+POST {{host}}/api/shipments/{{id}}/archive
+
+### Put back in the list
+# Should answer 200 with archivedAt null, and never conflict.
+POST {{host}}/api/shipments/{{id}}/unarchive
+
+### Get the payload to regenerate the PDF
+# Should answer 200 with { payload, payloadVersion }, or 404 when there is no label.
+GET {{host}}/api/shipments/{{id}}/label
+
+### Delete for good
+# Should answer 204 with no body, take the label with it and free the tracking number.
+DELETE {{host}}/api/shipments/{{id}}
+
+### Sign out, then retry anything above
+# Should answer 401 on every /api/shipments route.
+POST {{host}}/api/auth/sign-out

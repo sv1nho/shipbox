@@ -1,7 +1,10 @@
 import type { CarrierId } from './carriers.js'
 
-export type Country = 'BE' | 'NL' | 'DE'
-export type Language = 'en' | 'fr' | 'nl'
+export const COUNTRIES = ['BE', 'NL', 'DE'] as const
+export const LANGUAGES = ['en', 'fr', 'nl'] as const
+
+export type Country = typeof COUNTRIES[number]
+export type Language = typeof LANGUAGES[number]
 export type Carrier = CarrierId
 
 export type LabelPayload = {

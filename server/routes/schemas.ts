@@ -1,0 +1,161 @@
+import { z } from 'zod'
+import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
+import type { CarrierId } from '../../shared/carriers.js'
+import { SHIPMENT_STATUSES } from '../../shared/shipment-status.js'
+import { COUNTRIES, LANGUAGES } from '../../shared/label-payload.js'
+import { normalizeTrackingNumber } from '../services/shipments/normalize.js'
+
+const asTuple = <T extends string>(values: readonly T[]): [T, ...T[]] =>
+  values as unknown as [T, ...T[]]
+
+export const carrierSchema = z.enum(asTuple(CARRIER_IDS))
+
+export const statusSchema = z.enum(asTuple(SHIPMENT_STATUSES))
+
+export const isoDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be a YYYY-MM-DD date')
+
+const trackingNumberSchema = z.string().min(1).max(64)
+
+const storeSchema = z.string().min(1).max(120)
+
+const postalCodeSchema = z.string().min(1).max(16)
+
+const countryCodeSchema = z.string().length(2)
+
+const amountCentsSchema = z.int().min(0).max(100_000_000)
+
+const orderNumberSchema = z.string().max(64).nullish()
+
+const noteSchema = z.string().max(2000).nullish()
+
+export const idParamSchema = z.object({ id: z.uuid() })
+
+export const labelPayloadSchema = z.object({
+  sender_firstname: z.string().max(120),
+  sender_lastname: z.string().max(120),
+  sender_company: z.string().max(120),
+  sender_address: z.string().max(200),
+  sender_postal: z.string().max(16),
+  sender_city: z.string().max(120),
+  sender_country: z.enum(asTuple(COUNTRIES)),
+  sender_isCompany: z.boolean(),
+  recipient_firstname: z.string().max(120),
+  recipient_lastname: z.string().max(120),
+  recipient_company: z.string().max(120),
+  recipient_address: z.string().max(200),
+  recipient_postal: z.string().max(16),
+  recipient_city: z.string().max(120),
+  recipient_country: z.enum(asTuple(COUNTRIES)),
+  recipient_isCompany: z.boolean(),
+  label_language: z.enum(asTuple(LANGUAGES)),
+  carrier: carrierSchema,
+  tracking_number: trackingNumberSchema,
+})
+
+const labelSchema = z.object({
+  payload: labelPayloadSchema,
+  payloadVersion: z.int().min(1),
+})
+
+const matchesCarrierPattern = (
+  value: { carrier: CarrierId; trackingNumber: string },
+  ctx: z.RefinementCtx
+): void => {
+  const config = CARRIERS[value.carrier]
+
+  if (!config.pattern.test(normalizeTrackingNumber(value.trackingNumber))) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['trackingNumber'],
+      message: `must match the ${config.label} format: ${config.patternHint}`,
+    })
+  }
+}
+
+export const createShipmentSchema = z
+  .object({
+    trackingNumber: trackingNumberSchema,
+    carrier: carrierSchema,
+    recipientPostalCode: postalCodeSchema,
+    recipientCountry: countryCodeSchema,
+    amountCents: amountCentsSchema,
+    store: storeSchema,
+    status: z.enum(['pending', 'dropped_off', 'received']).optional(),
+    dropoffDate: isoDateSchema.nullish(),
+    receivedDate: isoDateSchema.nullish(),
+    orderNumber: orderNumberSchema,
+    note: noteSchema,
+    label: labelSchema.optional(),
+  })
+  .superRefine(matchesCarrierPattern)
+
+export const updateShipmentSchema = z
+  .object({
+    recipientPostalCode: postalCodeSchema.optional(),
+    recipientCountry: countryCodeSchema.optional(),
+    amountCents: amountCentsSchema.optional(),
+    store: storeSchema.optional(),
+    orderNumber: orderNumberSchema,
+    note: noteSchema,
+    dropoffDate: isoDateSchema.nullish(),
+    receivedDate: isoDateSchema.nullish(),
+    decisionDate: isoDateSchema.nullish(),
+  })
+  .refine((value) => Object.keys(value).length > 0, 'at least one field must be given')
+
+export const correctIdentitySchema = z
+  .object({
+    carrier: carrierSchema,
+    trackingNumber: trackingNumberSchema,
+  })
+  .superRefine(matchesCarrierPattern)
+
+export const dropOffSchema = z.object({ dropoffDate: isoDateSchema })
+
+export const receiveSchema = z.object({ receivedDate: isoDateSchema })
+
+export const refundSchema = z.object({ decisionDate: isoDateSchema })
+
+export const rejectSchema = z.object({
+  decisionDate: isoDateSchema,
+  note: z.string().max(2000).optional(),
+})
+
+export const listQuerySchema = z.object({
+  carrier: carrierSchema.optional(),
+  status: statusSchema.optional(),
+  store: z.string().min(1).max(120).optional(),
+  search: z.string().min(1).max(120).optional(),
+  archived: z.enum(['exclude', 'only', 'include']).optional(),
+  sort: z
+    .enum([
+      'createdAt',
+      'updatedAt',
+      'dropoffDate',
+      'receivedDate',
+      'decisionDate',
+      'amountCents',
+      'store',
+      'waitingDays',
+    ])
+    .optional(),
+  direction: z.enum(['asc', 'desc']).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+})
+
+export const exportQuerySchema = listQuerySchema
+  .omit({ page: true, pageSize: true })
+  .extend({ format: z.enum(['json', 'csv']).default('json') })
+
+export const existsQuerySchema = z.object({
+  carrier: carrierSchema,
+  trackingNumber: trackingNumberSchema,
+})
+
+export const storesQuerySchema = z.object({
+  q: z.string().max(120).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+})

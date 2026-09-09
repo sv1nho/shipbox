@@ -106,13 +106,11 @@ const orderByOf = (sort: SortKey, direction: 'asc' | 'desc') => {
   }
 }
 
-export async function list (userId: string, params: ListParams = {}): Promise<ListResult> {
-  const page = Math.max(1, Math.trunc(params.page ?? 1))
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(params.pageSize ?? DEFAULT_PAGE_SIZE)))
+const whereOf = (userId: string, params: ListParams) => {
   const archived = params.archived ?? 'exclude'
   const search = params.search?.trim()
 
-  const where = {
+  return {
     userId,
     ...(params.carrier ? { carrier: params.carrier } : {}),
     ...(params.status ? { status: params.status } : {}),
@@ -129,6 +127,23 @@ export async function list (userId: string, params: ListParams = {}): Promise<Li
         }
       : {}),
   }
+}
+
+export async function listAll (userId: string, params: ListParams = {}): Promise<ShipmentDto[]> {
+  const rows = await prisma.shipment.findMany({
+    where: whereOf(userId, params),
+    include: LABEL_PRESENCE,
+    orderBy: orderByOf(params.sort ?? 'createdAt', params.direction ?? 'desc'),
+  })
+
+  const now = today()
+  return rows.map((row) => toShipmentDto(row, now))
+}
+
+export async function list (userId: string, params: ListParams = {}): Promise<ListResult> {
+  const page = Math.max(1, Math.trunc(params.page ?? 1))
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(params.pageSize ?? DEFAULT_PAGE_SIZE)))
+  const where = whereOf(userId, params)
 
   const [rows, total] = await Promise.all([
     prisma.shipment.findMany({

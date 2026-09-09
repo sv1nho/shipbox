@@ -1,9 +1,12 @@
 import express from 'express'
 import type { Express } from 'express'
+import swaggerUi from 'swagger-ui-express'
 import { toNodeHandler } from 'better-auth/node'
 import { auth, enabledProviders } from './auth/auth.js'
 import { requireUser, currentUser } from './auth/require-user.js'
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
+import { shipmentsRouter } from './routes/shipments.js'
+import { openApiDocument } from './openapi.js'
 import { prisma } from './prisma.js'
 import { isProduction } from './env.js'
 
@@ -31,6 +34,14 @@ export function createApp (): Express {
   app.get('/api/me', requireUser, (req, res) => {
     res.json({ user: currentUser(req) })
   })
+
+  app.get('/api/openapi.json', (_req, res) => {
+    res.json(openApiDocument)
+  })
+
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument))
+
+  app.use('/api/shipments', shipmentsRouter)
 
   app.use(notFoundHandler)
   app.use(createErrorHandler({ exposeDetails: !isProduction }))
