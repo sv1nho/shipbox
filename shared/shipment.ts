@@ -5,7 +5,7 @@ import type { ShipmentStatus } from './shipment-status.js'
 export type IsoDate = string
 
 export type DerivedFields = {
-  daysSinceCreated: number
+  daysSinceRequested: number
   daysSinceDropoff: number | null
   daysSinceReceived: number | null
   decisionDelayDays: number | null
@@ -26,6 +26,7 @@ export type ShipmentDto = {
   amountCents: number
   currency: string
   store: string
+  requestedDate: IsoDate
   dropoffDate: IsoDate | null
   receivedDate: IsoDate | null
   decisionDate: IsoDate | null
@@ -38,12 +39,12 @@ export type ShipmentDto = {
   hasLabel: boolean
 } & DerivedFields
 
-export type LabelInput = {
+type LabelInput = {
   payload: LabelPayload
   payloadVersion: number
 }
 
-export type StartingStatus = Extract<ShipmentStatus, 'pending' | 'dropped_off' | 'received'>
+type StartingStatus = Extract<ShipmentStatus, 'pending' | 'dropped_off' | 'received'>
 
 export type CreateShipmentInput = {
   trackingNumber: string
@@ -53,6 +54,7 @@ export type CreateShipmentInput = {
   amountCents: number
   store: string
   status?: StartingStatus
+  requestedDate?: IsoDate
   dropoffDate?: IsoDate | null
   receivedDate?: IsoDate | null
   orderNumber?: string | null
@@ -67,9 +69,10 @@ export type UpdateShipmentInput = {
   store?: string
   orderNumber?: string | null
   note?: string | null
-  dropoffDate?: IsoDate | null
-  receivedDate?: IsoDate | null
-  decisionDate?: IsoDate | null
+  requestedDate?: IsoDate
+  dropoffDate?: IsoDate
+  receivedDate?: IsoDate
+  decisionDate?: IsoDate
 }
 
 export type CorrectIdentityInput = {

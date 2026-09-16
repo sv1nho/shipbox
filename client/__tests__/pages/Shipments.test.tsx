@@ -258,9 +258,9 @@ describe('recording a step', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('never lets a step predate the label this app made', async () => {
+  it('never lets a step predate the day the return was requested', async () => {
     vi.mocked(listShipments).mockResolvedValue(
-      listed([makeShipment({ status: 'pending', hasLabel: true, createdAt: '2026-06-01T10:00:00.000Z' })])
+      listed([makeShipment({ status: 'pending', requestedDate: '2026-06-01' })])
     )
 
     renderPage()
@@ -268,26 +268,6 @@ describe('recording a step', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
 
     expect(screen.getByLabelText(/which day/i)).toHaveAttribute('min', '2026-06-01')
-  })
-
-  it('imposes no floor on a shipment added by hand, which may be an old return', async () => {
-    vi.mocked(listShipments).mockResolvedValue(
-      listed([makeShipment({ status: 'pending', hasLabel: false, createdAt: '2026-06-01T10:00:00.000Z' })])
-    )
-
-    renderPage()
-    await screen.findByText('Zalando')
-    await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
-
-    expect(screen.getByLabelText(/which day/i)).not.toHaveAttribute('min')
-  })
-
-  it('never lets a day be recorded in the future', async () => {
-    renderPage()
-    await screen.findByText('Zalando')
-    await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
-
-    expect(screen.getByLabelText(/which day/i)).toHaveAttribute('max', today())
   })
 
   it('forbids a reception dated before the drop-off', async () => {
@@ -476,9 +456,9 @@ describe('a decision that skips the reception', () => {
     ])
   })
 
-  it('floors the reception at the label when there is no drop-off to floor it at', async () => {
+  it('floors the reception at the request when there is no drop-off to floor it at', async () => {
     vi.mocked(listShipments).mockResolvedValue(
-      listed([makeShipment({ status: 'pending', hasLabel: true, createdAt: '2026-06-01T10:00:00.000Z' })])
+      listed([makeShipment({ status: 'pending', requestedDate: '2026-06-01' })])
     )
 
     renderPage()
@@ -516,7 +496,7 @@ describe('the details panel', () => {
 
   it('saves a corrected date and shows the shipment the api sent back', async () => {
     vi.mocked(listShipments).mockResolvedValue(
-      listed([makeShipment({ status: 'refunded', decisionDate: '2026-06-09' })])
+      listed([makeShipment({ status: 'refunded', requestedDate: '2026-06-01', decisionDate: '2026-06-09' })])
     )
     vi.mocked(updateShipment).mockResolvedValue(
       makeShipment({ status: 'refunded', decisionDate: '2026-06-09', receivedDate: '2026-06-05', decisionDelayDays: 2 })
@@ -531,7 +511,7 @@ describe('the details panel', () => {
 
     await waitFor(() => {
       expect(updateShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', {
-        dropoffDate: null,
+        requestedDate: '2026-06-01',
         receivedDate: '2026-06-05',
         decisionDate: '2026-06-09',
       })

@@ -10,7 +10,7 @@ import {
   nextActions,
   nextStep,
 } from '../transitions.js'
-import type { DateField, TransitionAction } from '../transitions.js'
+import type { DateField, ShipmentTimeline, TransitionAction } from '../transitions.js'
 import { SHIPMENT_STATUSES } from '../shipment-status.js'
 import type { ShipmentStatus } from '../shipment-status.js'
 
@@ -122,17 +122,16 @@ describe('nextActions, the single chained button', () => {
 })
 
 describe('earliestDateFor, the floor the date picker imposes', () => {
-  const dates = (
-    overrides: Partial<Record<DateField, string>> = {}
-  ): Record<DateField, string | null> => ({
+  const dates = (overrides: Partial<Record<DateField, string>> = {}): ShipmentTimeline => ({
+    requestedDate: '2026-05-01',
     dropoffDate: null,
     receivedDate: null,
     decisionDate: null,
     ...overrides,
   })
 
-  it('leaves the drop-off day free, since nothing happened before it', () => {
-    expect(earliestDateFor(dates({ dropoffDate: '2026-06-01' }), 'drop_off')).toBeNull()
+  it('floors the drop-off at the day the return was requested', () => {
+    expect(earliestDateFor(dates({ dropoffDate: '2026-06-01' }), 'drop_off')).toBe('2026-05-01')
   })
 
   it('stops a reception from landing before the drop-off', () => {
@@ -151,12 +150,12 @@ describe('earliestDateFor, the floor the date picker imposes', () => {
     expect(earliestDateFor(dates({ dropoffDate: '2026-06-01' }), 'refund')).toBe('2026-06-01')
   })
 
-  it('imposes nothing when every earlier step was skipped', () => {
-    expect(earliestDateFor(dates(), 'refund')).toBeNull()
+  it('falls back to the request when every earlier step was skipped', () => {
+    expect(earliestDateFor(dates(), 'refund')).toBe('2026-05-01')
   })
 
   it('ignores a decision already recorded, which a new decision replaces', () => {
-    expect(earliestDateFor(dates({ decisionDate: '2026-06-10' }), 'reject')).toBeNull()
+    expect(earliestDateFor(dates({ decisionDate: '2026-06-10' }), 'reject')).toBe('2026-05-01')
   })
 })
 

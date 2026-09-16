@@ -10,21 +10,25 @@ import { diffDays, isIsoDate } from './dates.js'
 import type { IsoDate } from './dates.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
 import {
+  ORDERED_DATED_FIELDS,
   ORDERED_DATE_FIELDS,
+  findOrderBreak,
   STATUS_RANK,
   TRANSITIONS,
   isTransitionAllowed,
 } from '../../../shared/transitions.js'
-import type { DateField, TransitionAction } from '../../../shared/transitions.js'
+import type { DatedField, DateField, TransitionAction } from '../../../shared/transitions.js'
 import type { DerivedFields } from '../../../shared/shipment.js'
 
-export type ShipmentDates = Record<DateField, IsoDate | null>
+type ShipmentDates = Record<DateField, IsoDate | null>
 
-export type ShipmentState = ShipmentDates & { status: ShipmentStatus }
+export type DatedShipment = ShipmentDates & { requestedDate: IsoDate }
+
+export type ShipmentState = DatedShipment & { status: ShipmentStatus }
 
 const dateFieldRank = (field: DateField): number => ORDERED_DATE_FIELDS.indexOf(field) + 1
 
-function assertDate (field: DateField, value: string, today: IsoDate): void {
+function assertDate (field: DatedField, value: string, today: IsoDate): void {
   if (!isIsoDate(value)) {
     throw new AppError('VALIDATION_ERROR', `${field} must be a YYYY-MM-DD date.`, { [field]: value })
   }
@@ -34,30 +38,23 @@ function assertDate (field: DateField, value: string, today: IsoDate): void {
   }
 }
 
-export function assertDates (dates: ShipmentDates, today: IsoDate): void {
-  for (const field of ORDERED_DATE_FIELDS) {
-    const value = dates[field]
+export function assertDates (shipment: DatedShipment, today: IsoDate): void {
+  for (const field of ORDERED_DATED_FIELDS) {
+    const value = shipment[field]
     if (value !== null) assertDate(field, value, today)
   }
 }
 
-export function assertChronology (dates: ShipmentDates): void {
-  const filled = ORDERED_DATE_FIELDS
-    .map((field) => ({ field, value: dates[field] }))
-    .filter((entry): entry is { field: DateField; value: IsoDate } => entry.value !== null)
+export function assertChronology (shipment: DatedShipment): void {
+  const broken = findOrderBreak(shipment)
 
-  for (let index = 1; index < filled.length; index += 1) {
-    const previous = filled[index - 1]
-    const current = filled[index]
+  if (broken === null) return
 
-    if (diffDays(previous.value, current.value) < 0) {
-      throw new AppError(
-        'VALIDATION_ERROR',
-        `${current.field} cannot be earlier than ${previous.field}.`,
-        { [previous.field]: previous.value, [current.field]: current.value }
-      )
-    }
-  }
+  throw new AppError(
+    'VALIDATION_ERROR',
+    `${broken.field} cannot be earlier than ${broken.previous}.`,
+    { [broken.previous]: shipment[broken.previous], [broken.field]: shipment[broken.field] }
+  )
 }
 
 const REQUIRED_DATE: Record<ShipmentStatus, DateField | null> = {
@@ -132,13 +129,11 @@ export function planRevert (state: ShipmentState): ShipmentState {
         ? 'dropped_off'
         : 'pending'
 
-  return { ...cleared, status }
+  return { ...cleared, requestedDate: state.requestedDate, status }
 }
 
-type DerivedInput = ShipmentState & { createdDate: IsoDate }
-
-export function computeDerived (shipment: DerivedInput, today: IsoDate): DerivedFields {
-  const daysSinceCreated = diffDays(shipment.createdDate, today)
+export function computeDerived (shipment: ShipmentState, today: IsoDate): DerivedFields {
+  const daysSinceRequested = diffDays(shipment.requestedDate, today)
 
   const daysSinceDropoff =
     shipment.dropoffDate === null
@@ -161,7 +156,7 @@ export function computeDerived (shipment: DerivedInput, today: IsoDate): Derived
       : diffDays(shipment.dropoffDate, shipment.decisionDate)
 
   return {
-    daysSinceCreated,
+    daysSinceRequested,
     daysSinceDropoff,
     daysSinceReceived,
     decisionDelayDays,
@@ -176,7 +171,7 @@ export function computeDerived (shipment: DerivedInput, today: IsoDate): Derived
       daysSinceDropoff >= SHIPPING_ALERT_DAYS,
     labelExpiring:
       shipment.status === 'pending' &&
-      daysSinceCreated >= LABEL_VALIDITY_DAYS - LABEL_EXPIRY_WARNING_DAYS,
-    shouldDropOff: shipment.status === 'pending' && daysSinceCreated >= PENDING_ALERT_DAYS,
+      daysSinceRequested >= LABEL_VALIDITY_DAYS - LABEL_EXPIRY_WARNING_DAYS,
+    shouldDropOff: shipment.status === 'pending' && daysSinceRequested >= PENDING_ALERT_DAYS,
   }
 }

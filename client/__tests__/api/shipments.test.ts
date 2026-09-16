@@ -69,11 +69,11 @@ describe('the urls each call builds', () => {
     expect(calledWith(mock).init.method).toBe(method)
   })
 
-  it('sends the patch as the body, so a null clears a date', async () => {
+  it('sends the patch as the body', async () => {
     const mock = fetchMock()
-    await api.updateShipment('abc', { receivedDate: '2026-06-05', dropoffDate: null })
+    await api.updateShipment('abc', { requestedDate: '2026-06-01', receivedDate: '2026-06-05' })
 
-    expect(calledWith(mock).init.body).toBe('{"receivedDate":"2026-06-05","dropoffDate":null}')
+    expect(calledWith(mock).init.body).toBe('{"requestedDate":"2026-06-01","receivedDate":"2026-06-05"}')
   })
 
   it('asks the exists route with both parameters', async () => {

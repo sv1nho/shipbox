@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { IsoDate, ShipmentDto, UpdateShipmentInput } from '../../shared/shipment.js'
 import { CARRIERS } from '../../shared/carriers.js'
-import { ORDERED_DATE_FIELDS } from '../../shared/transitions.js'
-import type { DateField } from '../../shared/transitions.js'
+import { ORDERED_DATED_FIELDS, findOrderBreak } from '../../shared/transitions.js'
+import type { DatedField } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
 import { alertMessage, days, formatAmount, formatDate, zonedDate } from './format.js'
 import { StatusPill } from './StatusPill.js'
@@ -17,24 +17,31 @@ type DetailsProps = {
   onSave: (patch: UpdateShipmentInput) => void
 }
 
-const DATE_LABELS: Record<DateField, string> = {
+const DATE_LABELS: Record<DatedField, string> = {
+  requestedDate: 'Return requested',
   dropoffDate: 'Dropped off',
   receivedDate: 'Received',
   decisionDate: 'Decided',
 }
 
-type Draft = Record<DateField, string>
+type Draft = Record<DatedField, string>
 
 const draftOf = (shipment: ShipmentDto): Draft => ({
+  requestedDate: shipment.requestedDate,
   dropoffDate: shipment.dropoffDate ?? '',
   receivedDate: shipment.receivedDate ?? '',
   decisionDate: shipment.decisionDate ?? '',
 })
 
-const outOfOrder = (draft: Draft): boolean => {
-  const filled = ORDERED_DATE_FIELDS.map((field) => draft[field]).filter((value) => value !== '')
+const boundsOf = (draft: Draft, field: DatedField): { min?: IsoDate; max: IsoDate } => {
+  const index = ORDERED_DATED_FIELDS.indexOf(field)
+  const before = ORDERED_DATED_FIELDS.slice(0, index).map((name) => draft[name]).filter((value) => value !== '')
+  const after = ORDERED_DATED_FIELDS.slice(index + 1).map((name) => draft[name]).filter((value) => value !== '')
 
-  return filled.some((value, index) => index > 0 && value < filled[index - 1])
+  return {
+    ...(before.length === 0 ? {} : { min: before[before.length - 1] }),
+    max: after.length === 0 ? today() : after[0],
+  }
 }
 
 function Field ({ label, children }: { label: string; children: ReactNode }) {
@@ -49,10 +56,11 @@ function Field ({ label, children }: { label: string; children: ReactNode }) {
 export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: DetailsProps) {
   const [draft, setDraft] = useState<Draft | null>(null)
 
+  const stored = draftOf(shipment)
   const alert = alertMessage(shipment)
-  const broken = draft !== null && outOfOrder(draft)
-
-  const asDate = (value: string): IsoDate | null => (value === '' ? null : value)
+  const broken = draft !== null && findOrderBreak(draft) !== null
+  const erased = draft !== null && ORDERED_DATED_FIELDS.some((f) => draft[f] === '' && stored[f] !== '')
+  const addedApart = zonedDate(shipment.createdAt) !== shipment.requestedDate
 
   return (
     <Modal titleId='details-title' onClose={onClose}>
@@ -80,31 +88,32 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             {shipment.recipientPostalCode} {shipment.recipientCountry}
           </Field>
 
-          <Field label='Added'>{formatDate(zonedDate(shipment.createdAt))}</Field>
-
           {draft === null
-            ? ORDERED_DATE_FIELDS
-              .map((field) => ({ field, value: shipment[field] }))
-              .filter((step): step is { field: DateField; value: IsoDate } => step.value !== null)
-              .map((step) => (
-                <Field key={step.field} label={DATE_LABELS[step.field]}>
-                  {formatDate(step.value)}
+            ? ORDERED_DATED_FIELDS
+              .filter((field) => stored[field] !== '')
+              .map((field) => (
+                <Field key={field} label={DATE_LABELS[field]}>
+                  {formatDate(stored[field])}
                 </Field>
               ))
-            : ORDERED_DATE_FIELDS.map((field) => (
+            : ORDERED_DATED_FIELDS.map((field) => (
               <Field key={field} label={DATE_LABELS[field]}>
                 <input
                   type='date'
                   className='form-input'
                   aria-label={DATE_LABELS[field]}
                   value={draft[field]}
-                  max={today()}
+                  {...boundsOf(draft, field)}
                   onChange={(event) => { setDraft({ ...draft, [field]: event.target.value }) }}
                 />
               </Field>
             ))}
 
-          <Field label='Since it was added'>{days(shipment.daysSinceCreated)}</Field>
+          {addedApart && (
+            <Field label='Added to ShipBox'>{formatDate(zonedDate(shipment.createdAt))}</Field>
+          )}
+
+          <Field label='Since the request'>{days(shipment.daysSinceRequested)}</Field>
           {shipment.daysSinceDropoff !== null && (
             <Field label='Since the drop-off'>{days(shipment.daysSinceDropoff)}</Field>
           )}
@@ -132,7 +141,13 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
 
         {broken && (
           <p className='field-error'>
-            The dates must follow the drop-off, reception then decision order.
+            The dates must follow the request, drop-off, reception then decision order.
+          </p>
+        )}
+
+        {erased && (
+          <p className='field-error'>
+            A date already recorded cannot be removed here. Undo the step instead.
           </p>
         )}
 
@@ -146,7 +161,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             <button
               type='button'
               className='btn btn-primary'
-              onClick={() => { setDraft(draftOf(shipment)) }}
+              onClick={() => { setDraft(stored) }}
             >
               Edit the dates
             </button>
@@ -164,13 +179,15 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             <button
               type='button'
               className='btn btn-primary'
-              disabled={busy || broken}
+              disabled={busy || broken || erased}
               onClick={() => {
-                onSave({
-                  dropoffDate: asDate(draft.dropoffDate),
-                  receivedDate: asDate(draft.receivedDate),
-                  decisionDate: asDate(draft.decisionDate),
-                })
+                onSave(
+                  Object.fromEntries(
+                    ORDERED_DATED_FIELDS
+                      .filter((field) => draft[field] !== '')
+                      .map((field) => [field, draft[field]])
+                  )
+                )
               }}
             >
               {busy ? 'Saving…' : 'Save the dates'}

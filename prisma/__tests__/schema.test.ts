@@ -23,6 +23,7 @@ const valid = (overrides: Record<string, unknown> = {}): Record<string, unknown>
   status: 'pending',
   amount_cents: 1000,
   store: 'Zalando',
+  requested_date: '2026-04-01',
   ...overrides,
 })
 
@@ -43,6 +44,7 @@ const createShipment = (overrides: ShipmentOverrides = {}) =>
       recipientCountry: 'BE',
       amountCents: 1000,
       store: 'Zalando',
+      requestedDate: new Date('2026-06-01T00:00:00.000Z'),
       ...overrides,
     },
   })
@@ -120,6 +122,9 @@ describe('shipments constraints', () => {
 
   describe('chronological order', () => {
     it.each([
+      ['a drop-off before the return was requested', { dropoff_date: '2026-03-01' }],
+      ['a reception before the return was requested', { received_date: '2026-03-01', status: 'received' }],
+      ['a decision before the return was requested', { decision_date: '2026-03-01', status: 'refunded' }],
       ['dropoff after received', { dropoff_date: '2026-05-10', received_date: '2026-05-01', status: 'received' }],
       ['received after decision', { received_date: '2026-05-10', decision_date: '2026-05-01', status: 'refunded' }],
       ['dropoff after decision with the reception skipped', { dropoff_date: '2026-05-10', decision_date: '2026-05-01', status: 'refunded' }],

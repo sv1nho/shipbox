@@ -15,6 +15,7 @@ const row = (overrides: Partial<ShipmentRow> = {}): ShipmentRow => ({
   amountCents: 4999,
   currency: 'EUR',
   store: 'Zalando',
+  requestedDate: new Date('2026-06-01T00:00:00.000Z'),
   dropoffDate: null,
   receivedDate: null,
   decisionDate: null,

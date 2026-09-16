@@ -14,8 +14,8 @@ export type PromptResult = {
 
 type DatePromptProps = {
   actions: NextStep['actions']
-  earliest: IsoDate | null
-  reception: { earliest: IsoDate | null } | null
+  earliest: IsoDate
+  reception: { earliest: IsoDate } | null
   busy: boolean
   error: string | null
   onCancel: () => void
@@ -32,10 +32,9 @@ export function DatePrompt (
 
   const { label } = TRANSITIONS[action]
 
-  const receptionFloor = reception?.earliest ?? null
-  const receptionTooEarly = receptionFloor !== null && received < receptionFloor
+  const receptionTooEarly = reception !== null && received < reception.earliest
   const floor = reception === null ? earliest : received
-  const tooEarly = floor !== null && date < floor
+  const tooEarly = date < floor
 
   const incomplete =
     date === '' || tooEarly || (reception !== null && (received === '' || receptionTooEarly))
@@ -78,7 +77,7 @@ export function DatePrompt (
               className='form-input'
               value={received}
               max={today()}
-              min={receptionFloor ?? undefined}
+              min={reception.earliest}
               onChange={(event) => { setReceived(event.target.value) }}
             />
             <p className='field-hint'>
@@ -100,7 +99,7 @@ export function DatePrompt (
           className='form-input'
           value={date}
           max={today()}
-          min={floor ?? undefined}
+          min={floor}
           onChange={(event) => { setDate(event.target.value) }}
         />
 

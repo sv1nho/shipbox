@@ -88,6 +88,7 @@ model Shipment {
   currency            String    @default("EUR")
   store               String
 
+  requestedDate       DateTime  @map("requested_date") @db.Date
   dropoffDate         DateTime? @map("dropoff_date")  @db.Date
   receivedDate        DateTime? @map("received_date") @db.Date
   decisionDate        DateTime? @map("decision_date") @db.Date

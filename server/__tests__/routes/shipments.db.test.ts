@@ -38,6 +38,7 @@ const validBody = (overrides: Record<string, unknown> = {}) => ({
   recipientCountry: 'BE',
   amountCents: 4999,
   store: 'Zalando',
+  requestedDate: '2026-01-01',
   ...overrides,
 })
 
@@ -330,6 +331,18 @@ describe('PATCH and correct-identity', () => {
 
     await request(app).patch(`/api/shipments/${created.id}`).send({}).expect(422)
   })
+
+  it.each(['requestedDate', 'dropoffDate', 'receivedDate', 'decisionDate'])(
+    'answers 422 when the patch tries to erase %s',
+    async (field) => {
+      const created = await createShipment()
+
+      await request(app)
+        .patch(`/api/shipments/${created.id}`)
+        .send({ [field]: null })
+        .expect(422)
+    }
+  )
 
   it('ignores an attempt to change the identity through patch', async () => {
     const created = await createShipment()

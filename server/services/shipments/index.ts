@@ -9,7 +9,7 @@ import {
   planRevert,
   planTransition,
 } from './status.js'
-import type { ShipmentDates, ShipmentState } from './status.js'
+import type { DatedShipment, ShipmentState } from './status.js'
 import type { TransitionAction } from '../../../shared/transitions.js'
 import { normalizeCountry, normalizePostalCode, normalizeStore, normalizeTrackingNumber } from './normalize.js'
 import { toShipmentDto, toShipmentState } from './mapper.js'
@@ -56,6 +56,7 @@ type ShipmentWrite = {
   store?: string
   orderNumber?: string | null
   note?: string | null
+  requestedDate?: Date
   dropoffDate?: Date | null
   receivedDate?: Date | null
   decisionDate?: Date | null
@@ -175,7 +176,8 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
   const now = today()
   const status = input.status ?? 'pending'
 
-  const dates: ShipmentDates = {
+  const dates: DatedShipment = {
+    requestedDate: input.requestedDate ?? now,
     dropoffDate: input.dropoffDate ?? null,
     receivedDate: input.receivedDate ?? null,
     decisionDate: null,
@@ -194,6 +196,7 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
     status,
     amountCents: input.amountCents,
     store: normalizeStore(input.store),
+    requestedDate: toUtcDate(dates.requestedDate),
     dropoffDate: asDate(dates.dropoffDate),
     receivedDate: asDate(dates.receivedDate),
     decisionDate: null,
@@ -237,15 +240,15 @@ export async function update (
   const now = today()
   const current = toShipmentState(row)
 
-  const dates: ShipmentDates = {
-    dropoffDate: patch.dropoffDate === undefined ? current.dropoffDate : patch.dropoffDate,
-    receivedDate: patch.receivedDate === undefined ? current.receivedDate : patch.receivedDate,
-    decisionDate: patch.decisionDate === undefined ? current.decisionDate : patch.decisionDate,
+  const dates: DatedShipment = {
+    requestedDate: patch.requestedDate ?? current.requestedDate,
+    dropoffDate: patch.dropoffDate ?? current.dropoffDate,
+    receivedDate: patch.receivedDate ?? current.receivedDate,
+    decisionDate: patch.decisionDate ?? current.decisionDate,
   }
 
   assertDates(dates, now)
   assertChronology(dates)
-  assertStatusHasItsDate({ status: current.status, ...dates })
 
   return writeOwned(
     row.id,
@@ -260,6 +263,7 @@ export async function update (
       ...(patch.store === undefined ? {} : { store: normalizeStore(patch.store) }),
       ...(patch.orderNumber === undefined ? {} : { orderNumber: patch.orderNumber }),
       ...(patch.note === undefined ? {} : { note: patch.note }),
+      requestedDate: toUtcDate(dates.requestedDate),
       dropoffDate: asDate(dates.dropoffDate),
       receivedDate: asDate(dates.receivedDate),
       decisionDate: asDate(dates.decisionDate),

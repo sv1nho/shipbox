@@ -17,21 +17,16 @@ import { ShipmentDetails } from '../shipments/ShipmentDetails.js'
 import { ShipmentRow } from '../shipments/ShipmentRow.js'
 import type { RowHandlers } from '../shipments/ShipmentRow.js'
 import { filtersFromSearch, hasActiveFilters, searchFromFilters } from '../shipments/filters.js'
-import { zonedDate } from '../shipments/format.js'
 import { regenerateLabel } from '../shipments/regenerate-label.js'
 import { useShipmentList } from '../shipments/useShipmentList.js'
 import { earliestDateFor } from '../../shared/transitions.js'
-import type { NextStep, TransitionAction } from '../../shared/transitions.js'
+import type { NextStep } from '../../shared/transitions.js'
 import { isDecisionStatus } from '../../shared/shipment-status.js'
 import { TRANSITIONS } from '../../shared/transitions.js'
 import type { PromptResult } from '../shipments/DatePrompt.js'
-import type { IsoDate, ListParams, ShipmentDto, UpdateShipmentInput } from '../../shared/shipment.js'
+import type { ListParams, ShipmentDto, UpdateShipmentInput } from '../../shared/shipment.js'
 
 type Prompt = { shipment: ShipmentDto; actions: NextStep['actions'] }
-
-const floorFor = (shipment: ShipmentDto, action: TransitionAction): IsoDate | null =>
-  earliestDateFor(shipment, action) ??
-  (shipment.hasLabel ? zonedDate(shipment.createdAt) : null)
 
 export function Shipments () {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -206,14 +201,14 @@ export function Shipments () {
         <DatePrompt
           key={`${prompt.shipment.id}-${prompt.actions.join('-')}`}
           actions={prompt.actions}
-          earliest={floorFor(prompt.shipment, prompt.actions[0])}
+          earliest={earliestDateFor(prompt.shipment, prompt.actions[0])}
           busy={busy}
           error={actionError}
           onCancel={() => { setPrompt(null); setActionError(null) }}
           reception={
             isDecisionStatus(TRANSITIONS[prompt.actions[0]].target) &&
             prompt.shipment.receivedDate === null
-              ? { earliest: floorFor(prompt.shipment, 'receive') }
+              ? { earliest: earliestDateFor(prompt.shipment, 'receive') }
               : null
           }
           onConfirm={(result) => { void confirmTransition(prompt, result) }}

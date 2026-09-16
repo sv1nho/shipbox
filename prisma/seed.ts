@@ -167,6 +167,7 @@ for (const shipment of SHIPMENTS) {
       amountCents: shipment.amountCents,
       store: shipment.store,
       createdAt: MIDNIGHT_UTC(shipment.createdAgo),
+      requestedDate: MIDNIGHT_UTC(shipment.createdAgo),
       dropoffDate: null,
       receivedDate: null,
       decisionDate: null,

@@ -9,11 +9,11 @@ import { normalizeTrackingNumber } from '../services/shipments/normalize.js'
 const asTuple = <T extends string>(values: readonly T[]): [T, ...T[]] =>
   values as unknown as [T, ...T[]]
 
-export const carrierSchema = z.enum(asTuple(CARRIER_IDS))
+const carrierSchema = z.enum(asTuple(CARRIER_IDS))
 
-export const statusSchema = z.enum(asTuple(SHIPMENT_STATUSES))
+const statusSchema = z.enum(asTuple(SHIPMENT_STATUSES))
 
-export const isoDateSchema = z
+const isoDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be a YYYY-MM-DD date')
 
@@ -33,7 +33,7 @@ const noteSchema = z.string().max(2000).nullish()
 
 export const idParamSchema = z.object({ id: z.uuid() })
 
-export const labelPayloadSchema = z.object({
+const labelPayloadSchema = z.object({
   sender_firstname: z.string().max(120),
   sender_lastname: z.string().max(120),
   sender_company: z.string().max(120),
@@ -84,6 +84,7 @@ export const createShipmentSchema = z
     amountCents: amountCentsSchema,
     store: storeSchema,
     status: z.enum(['pending', 'dropped_off', 'received']).optional(),
+    requestedDate: isoDateSchema.optional(),
     dropoffDate: isoDateSchema.nullish(),
     receivedDate: isoDateSchema.nullish(),
     orderNumber: orderNumberSchema,
@@ -100,9 +101,10 @@ export const updateShipmentSchema = z
     store: storeSchema.optional(),
     orderNumber: orderNumberSchema,
     note: noteSchema,
-    dropoffDate: isoDateSchema.nullish(),
-    receivedDate: isoDateSchema.nullish(),
-    decisionDate: isoDateSchema.nullish(),
+    requestedDate: isoDateSchema.optional(),
+    dropoffDate: isoDateSchema.optional(),
+    receivedDate: isoDateSchema.optional(),
+    decisionDate: isoDateSchema.optional(),
   })
   .refine((value) => Object.keys(value).length > 0, 'at least one field must be given')
 

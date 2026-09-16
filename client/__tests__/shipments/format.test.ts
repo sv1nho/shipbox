@@ -75,9 +75,9 @@ describe('days', () => {
 })
 
 describe('statusDate, the day the pill is about', () => {
-  it('shows the day it was added while nothing has happened', () => {
-    expect(statusDate(shipment({ status: 'pending', createdAt: '2026-06-01T10:00:00.000Z' })))
-      .toEqual({ label: 'Added', date: '2026-06-01' })
+  it('shows the day the return was requested while nothing has happened', () => {
+    expect(statusDate(shipment({ status: 'pending', requestedDate: '2026-06-01' })))
+      .toEqual({ label: 'Requested', date: '2026-06-01' })
   })
 
   it.each([
@@ -96,20 +96,20 @@ describe('statusDate, the day the pill is about', () => {
     expect(statusDate(dated)).toEqual({ label, date })
   })
 
-  it('falls back to the day it was added rather than showing nothing', () => {
-    expect(statusDate(shipment({ status: 'received', receivedDate: null })))
-      .toEqual({ label: 'Added', date: '2026-06-01' })
+  it('falls back to the request rather than showing nothing', () => {
+    expect(statusDate(shipment({ status: 'received', receivedDate: null, requestedDate: '2026-06-01' })))
+      .toEqual({ label: 'Requested', date: '2026-06-01' })
   })
 })
 
 describe('delayInfo, the figure next to the date', () => {
   it('counts from the day it was added while nothing has moved', () => {
-    expect(delayInfo(shipment({ status: 'pending', daysSinceCreated: 4 })))
+    expect(delayInfo(shipment({ status: 'pending', daysSinceRequested: 4 })))
       .toEqual({ label: 'Waiting', days: 4 })
   })
 
   it('counts from the drop-off while the parcel travels', () => {
-    expect(delayInfo(shipment({ status: 'dropped_off', daysSinceCreated: 9, daysSinceDropoff: 4 })))
+    expect(delayInfo(shipment({ status: 'dropped_off', daysSinceRequested: 9, daysSinceDropoff: 4 })))
       .toEqual({ label: 'Waiting', days: 4 })
   })
 
@@ -141,7 +141,7 @@ describe('alertMessage', () => {
   })
 
   it('explains a label that never became a parcel', () => {
-    const message = alertMessage(shipment({ shouldDropOff: true, daysSinceCreated: 9 }))
+    const message = alertMessage(shipment({ shouldDropOff: true, daysSinceRequested: 9 }))
 
     expect(message).toContain('9 days')
     expect(message).toContain('dropped off')
@@ -161,7 +161,7 @@ describe('alertMessage', () => {
   })
 
   it('warns that the label is about to expire', () => {
-    const message = alertMessage(shipment({ labelExpiring: true, daysSinceCreated: 24 }))
+    const message = alertMessage(shipment({ labelExpiring: true, daysSinceRequested: 24 }))
 
     expect(message).toContain('24 days')
     expect(message).toContain('about to expire')
@@ -169,7 +169,7 @@ describe('alertMessage', () => {
 
   it('prefers the expiry to the gentler nudge, both being about a pending shipment', () => {
     const message = alertMessage(
-      shipment({ labelExpiring: true, shouldDropOff: true, daysSinceCreated: 24 })
+      shipment({ labelExpiring: true, shouldDropOff: true, daysSinceRequested: 24 })
     )
 
     expect(message).toContain('about to expire')
@@ -185,7 +185,7 @@ describe('alertMessage', () => {
 
   it('never invents a count the api did not send', () => {
     const message = alertMessage(
-      shipment({ needsAction: true, daysSinceReceived: null, shouldDropOff: true, daysSinceCreated: 9 })
+      shipment({ needsAction: true, daysSinceReceived: null, shouldDropOff: true, daysSinceRequested: 9 })
     )
 
     expect(message).toContain('dropped off')

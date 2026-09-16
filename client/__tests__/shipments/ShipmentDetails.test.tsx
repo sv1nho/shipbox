@@ -56,9 +56,22 @@ describe('what the panel always shows', () => {
   })
 
   it('always dates the shipment, even one that never moved', () => {
-    renderDetails({ status: 'pending', createdAt: '2026-06-01T10:00:00.000Z' })
+    renderDetails({ status: 'pending', requestedDate: '2026-06-01' })
 
-    expect(valueOf('Added')).toBe('01/06/2026')
+    expect(valueOf('Return requested')).toBe('01/06/2026')
+  })
+
+  it('stays quiet about the day it entered ShipBox when that is the request day', () => {
+    renderDetails({ requestedDate: '2026-06-01', createdAt: '2026-06-01T10:00:00.000Z' })
+
+    expect(screen.queryByText('Added to ShipBox')).not.toBeInTheDocument()
+  })
+
+  it('shows both days on a back-filled return, where they tell different things', () => {
+    renderDetails({ requestedDate: '2025-11-20', createdAt: '2026-06-01T10:00:00.000Z' })
+
+    expect(valueOf('Return requested')).toBe('20/11/2025')
+    expect(valueOf('Added to ShipBox')).toBe('01/06/2026')
   })
 
   it('says whether the pdf can still be rebuilt', () => {
@@ -167,47 +180,62 @@ describe('closing', () => {
 
 describe('correcting the dates', () => {
   it('shows every date as a field, including the steps that were skipped', async () => {
-    renderDetails({ status: 'refunded', decisionDate: '2026-06-09' })
+    renderDetails({ status: 'refunded', requestedDate: '2026-06-01', decisionDate: '2026-06-09' })
     await startEditing()
 
+    expect(screen.getByLabelText('Return requested')).toHaveValue('2026-06-01')
     expect(screen.getByLabelText('Dropped off')).toHaveValue('')
     expect(screen.getByLabelText('Received')).toHaveValue('')
     expect(screen.getByLabelText('Decided')).toHaveValue('2026-06-09')
   })
 
-  it('never lets a date be set in the future', async () => {
-    renderDetails()
+  it('bounds each field by its neighbours, so no order can be typed in', async () => {
+    renderDetails({ status: 'refunded', requestedDate: '2026-06-01', decisionDate: '2026-06-09' })
     await startEditing()
 
-    expect(screen.getByLabelText('Received')).toHaveAttribute('max', today())
+    expect(screen.getByLabelText('Return requested')).not.toHaveAttribute('min')
+    expect(screen.getByLabelText('Return requested')).toHaveAttribute('max', '2026-06-09')
+    expect(screen.getByLabelText('Received')).toHaveAttribute('min', '2026-06-01')
+    expect(screen.getByLabelText('Received')).toHaveAttribute('max', '2026-06-09')
+    expect(screen.getByLabelText('Decided')).toHaveAttribute('max', today())
   })
 
   it('fills a gap the direct recording left behind', async () => {
-    const { onSave } = renderDetails({ status: 'refunded', decisionDate: '2026-06-09' })
+    const { onSave } = renderDetails({
+      status: 'refunded',
+      requestedDate: '2026-06-01',
+      decisionDate: '2026-06-09',
+    })
     await startEditing()
 
     await userEvent.type(screen.getByLabelText('Received'), '2026-06-05')
     await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
 
     expect(onSave).toHaveBeenCalledWith({
-      dropoffDate: null,
+      requestedDate: '2026-06-01',
       receivedDate: '2026-06-05',
       decisionDate: '2026-06-09',
     })
   })
 
-  it('clears a date that was recorded by mistake', async () => {
+  it('sends nothing for a step that never happened, rather than a null', async () => {
+    const { onSave } = renderDetails({ status: 'pending', requestedDate: '2026-06-01' })
+    await startEditing()
+
+    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
+
+    expect(onSave).toHaveBeenCalledWith({ requestedDate: '2026-06-01' })
+  })
+
+  it('refuses to erase a date already recorded, pointing at the undo instead', async () => {
     const { onSave } = renderDetails({ status: 'dropped_off', dropoffDate: '2026-06-03' })
     await startEditing()
 
     await userEvent.clear(screen.getByLabelText('Dropped off'))
-    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
 
-    expect(onSave).toHaveBeenCalledWith({
-      dropoffDate: null,
-      receivedDate: null,
-      decisionDate: null,
-    })
+    expect(screen.getByText(/cannot be removed here. Undo the step instead/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /save the dates/i })).toBeDisabled()
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('refuses an order the api would reject, before asking it', async () => {
@@ -229,7 +257,6 @@ describe('correcting the dates', () => {
     const { onSave } = renderDetails({ status: 'dropped_off', dropoffDate: '2026-06-03' })
     await startEditing()
 
-    await userEvent.clear(screen.getByLabelText('Dropped off'))
     await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
 
     expect(onSave).not.toHaveBeenCalled()

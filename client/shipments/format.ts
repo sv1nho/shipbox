@@ -16,7 +16,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
 }
 
 const STATE_DATE: Record<ShipmentStatus, { label: string; field: DateField | null }> = {
-  pending: { label: 'Added', field: null },
+  pending: { label: 'Requested', field: null },
   dropped_off: { label: 'Dropped off', field: 'dropoffDate' },
   received: { label: 'Received', field: 'receivedDate' },
   refunded: { label: 'Decided', field: 'decisionDate' },
@@ -24,13 +24,13 @@ const STATE_DATE: Record<ShipmentStatus, { label: string; field: DateField | nul
 }
 
 type DelayField =
-  | 'daysSinceCreated'
+  | 'daysSinceRequested'
   | 'daysSinceDropoff'
   | 'daysSinceReceived'
   | 'decisionDelayDays'
 
 const STATE_DELAY: Record<ShipmentStatus, { label: string; field: DelayField }> = {
-  pending: { label: 'Waiting', field: 'daysSinceCreated' },
+  pending: { label: 'Waiting', field: 'daysSinceRequested' },
   dropped_off: { label: 'Waiting', field: 'daysSinceDropoff' },
   received: { label: 'Waiting', field: 'daysSinceReceived' },
   refunded: { label: 'Took', field: 'decisionDelayDays' },
@@ -67,7 +67,7 @@ export function statusDate (shipment: ShipmentDto): { label: string; date: IsoDa
   const { label, field } = STATE_DATE[shipment.status]
   const date = field === null ? null : shipment[field]
 
-  return date === null ? { label: 'Added', date: zonedDate(shipment.createdAt) } : { label, date }
+  return date === null ? { label: 'Requested', date: shipment.requestedDate } : { label, date }
 }
 
 export function delayInfo (shipment: ShipmentDto): { label: string; days: number } | null {
@@ -87,11 +87,11 @@ export function alertMessage (shipment: ShipmentDto): string | null {
   }
 
   if (shipment.labelExpiring) {
-    return `The label was made ${days(shipment.daysSinceCreated)} ago and is about to expire. Drop the parcel off now.`
+    return `The label was made ${days(shipment.daysSinceRequested)} ago and is about to expire. Drop the parcel off now.`
   }
 
   if (shipment.shouldDropOff) {
-    return `The label was made ${days(shipment.daysSinceCreated)} ago and the parcel has not been dropped off.`
+    return `The label was made ${days(shipment.daysSinceRequested)} ago and the parcel has not been dropped off.`
   }
 
   return null

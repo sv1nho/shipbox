@@ -4,7 +4,7 @@ import { getTrackingUrl, isCarrierId } from '../../../shared/carriers.js'
 import { isShipmentStatus } from '../../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
 import type { CarrierId } from '../../../shared/carriers.js'
-import { toIsoDate, toIsoDateInZone } from './dates.js'
+import { toIsoDate } from './dates.js'
 import type { IsoDate } from './dates.js'
 import { computeDerived } from './status.js'
 import type { ShipmentState } from './status.js'
@@ -20,6 +20,7 @@ export type ShipmentRow = {
   amountCents: number
   currency: string
   store: string
+  requestedDate: Date
   dropoffDate: Date | null
   receivedDate: Date | null
   decisionDate: Date | null
@@ -51,6 +52,7 @@ const asStatus = (value: string): ShipmentStatus => {
 export function toShipmentState (row: ShipmentRow): ShipmentState {
   return {
     status: asStatus(row.status),
+    requestedDate: toIsoDate(row.requestedDate),
     dropoffDate: asIsoDate(row.dropoffDate),
     receivedDate: asIsoDate(row.receivedDate),
     decisionDate: asIsoDate(row.decisionDate),
@@ -59,18 +61,10 @@ export function toShipmentState (row: ShipmentRow): ShipmentState {
 
 export function toShipmentDto (row: ShipmentRow, today: IsoDate): ShipmentDto {
   const carrier = asCarrier(row.carrier)
-  const { status, dropoffDate, receivedDate, decisionDate } = toShipmentState(row)
+  const state = toShipmentState(row)
+  const { status, requestedDate, dropoffDate, receivedDate, decisionDate } = state
 
-  const derived = computeDerived(
-    {
-      status,
-      dropoffDate,
-      receivedDate,
-      decisionDate,
-      createdDate: toIsoDateInZone(row.createdAt),
-    },
-    today
-  )
+  const derived = computeDerived(state, today)
 
   return {
     id: row.id,
@@ -82,6 +76,7 @@ export function toShipmentDto (row: ShipmentRow, today: IsoDate): ShipmentDto {
     amountCents: row.amountCents,
     currency: row.currency,
     store: row.store,
+    requestedDate,
     dropoffDate,
     receivedDate,
     decisionDate,

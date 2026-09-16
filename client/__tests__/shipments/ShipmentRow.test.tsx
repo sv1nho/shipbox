@@ -74,10 +74,10 @@ describe('what the row shows', () => {
 })
 
 describe('the date the row shows', () => {
-  it('dates a pending shipment by the day it was added, never leaving the column empty', () => {
-    renderRow({ status: 'pending', createdAt: '2026-06-01T10:00:00.000Z' })
+  it('dates a pending shipment by its request, never leaving the column empty', () => {
+    renderRow({ status: 'pending', requestedDate: '2026-06-01' })
 
-    expect(screen.getByText('Added 01/06/2026')).toBeInTheDocument()
+    expect(screen.getByText('Requested 01/06/2026')).toBeInTheDocument()
   })
 
   it.each([
@@ -91,7 +91,7 @@ describe('the date the row shows', () => {
   })
 
   it.each([
-    ['pending', { daysSinceCreated: 4 }, 'Waiting 4 days'],
+    ['pending', { daysSinceRequested: 4 }, 'Waiting 4 days'],
     ['dropped_off', { daysSinceDropoff: 5 }, 'Waiting 5 days'],
     ['received', { daysSinceReceived: 12 }, 'Waiting 12 days'],
     ['refunded', { decisionDelayDays: 6 }, 'Took 6 days'],
@@ -178,7 +178,7 @@ describe('the chained action button', () => {
 describe('the alert', () => {
   it.each([
     ['the store is sitting on the parcel', { status: 'received', needsAction: true, daysSinceReceived: 21 }],
-    ['the parcel was never dropped off', { shouldDropOff: true, daysSinceCreated: 9 }],
+    ['the parcel was never dropped off', { shouldDropOff: true, daysSinceRequested: 9 }],
   ] as [string, Partial<ShipmentDto>][])('flags the count when %s', (_case, overrides) => {
     renderRow(overrides)
 

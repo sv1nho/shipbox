@@ -16,6 +16,7 @@ const TODAY = '2026-06-15'
 
 const state = (overrides: Partial<ShipmentState> = {}): ShipmentState => ({
   status: 'pending',
+  requestedDate: '2026-06-01',
   dropoffDate: null,
   receivedDate: null,
   decisionDate: null,
@@ -252,36 +253,44 @@ describe('planRevert', () => {
 })
 
 describe('assertChronology', () => {
+  const dated = (overrides: Partial<ShipmentState> = {}) => ({
+    requestedDate: '2026-06-01',
+    dropoffDate: null,
+    receivedDate: null,
+    decisionDate: null,
+    ...overrides,
+  })
+
   it('accepts dates in order', () => {
     expect(() => {
-      assertChronology({ dropoffDate: '2026-06-01', receivedDate: '2026-06-05', decisionDate: '2026-06-10' })
+      assertChronology(dated({ dropoffDate: '2026-06-02', receivedDate: '2026-06-05', decisionDate: '2026-06-10' }))
     }).not.toThrow()
   })
 
   it('accepts a gap left by a skipped step', () => {
     expect(() => {
-      assertChronology({ dropoffDate: '2026-06-01', receivedDate: null, decisionDate: '2026-06-10' })
+      assertChronology(dated({ dropoffDate: '2026-06-02', decisionDate: '2026-06-10' }))
     }).not.toThrow()
   })
 
-  it('accepts an empty set', () => {
-    expect(() => {
-      assertChronology({ dropoffDate: null, receivedDate: null, decisionDate: null })
-    }).not.toThrow()
+  it('accepts a shipment where nothing has happened since the request', () => {
+    expect(() => { assertChronology(dated()) }).not.toThrow()
   })
 
   it.each([
-    ['a reception before the drop-off', { dropoffDate: '2026-06-05', receivedDate: '2026-06-01', decisionDate: null }],
-    ['a decision before the reception', { dropoffDate: null, receivedDate: '2026-06-05', decisionDate: '2026-06-01' }],
-    ['a decision before the drop-off with the reception skipped', { dropoffDate: '2026-06-05', receivedDate: null, decisionDate: '2026-06-01' }],
-  ])('refuses %s', (_label, dates) => {
-    expect(codeOf(() => { assertChronology(dates) })).toBe('VALIDATION_ERROR')
+    ['a reception before the drop-off', { dropoffDate: '2026-06-05', receivedDate: '2026-06-02' }],
+    ['a decision before the reception', { receivedDate: '2026-06-05', decisionDate: '2026-06-02' }],
+    ['a decision before the drop-off with the reception skipped', { dropoffDate: '2026-06-05', decisionDate: '2026-06-02' }],
+    ['a drop-off before the return was even requested', { dropoffDate: '2026-05-20' }],
+    ['a reception before the request, with the drop-off skipped', { receivedDate: '2026-05-20' }],
+  ])('refuses %s', (_label, overrides) => {
+    expect(codeOf(() => { assertChronology(dated(overrides)) })).toBe('VALIDATION_ERROR')
   })
 })
 
 describe('computeDerived', () => {
-  const derived = (overrides: Partial<ShipmentState> & { createdDate?: string } = {}) =>
-    computeDerived({ ...state(), createdDate: '2026-06-01', ...overrides }, TODAY)
+  const derived = (overrides: Partial<ShipmentState> = {}) =>
+    computeDerived({ ...state(), ...overrides }, TODAY)
 
   describe('delays, counted in calendar days', () => {
     it('measures the store decision delay from the reception', () => {
@@ -301,7 +310,7 @@ describe('computeDerived', () => {
     })
 
     it('counts the days since the shipment was created', () => {
-      expect(derived({ createdDate: '2026-06-10' }).daysSinceCreated).toBe(5)
+      expect(derived({ requestedDate: '2026-06-10' }).daysSinceRequested).toBe(5)
     })
 
     it('counts the weekend too, a friday to monday delay is three days', () => {
@@ -366,19 +375,19 @@ describe('computeDerived', () => {
       ['2026-06-09', 6, false],
       ['2026-06-08', 7, true],
       ['2026-06-07', 8, true],
-    ])('created on %s, that is %i days ago', (createdDate, _days, expected) => {
-      expect(derived({ status: 'pending', createdDate }).shouldDropOff).toBe(expected)
+    ])('requested on %s, that is %i days ago', (requestedDate, _days, expected) => {
+      expect(derived({ status: 'pending', requestedDate }).shouldDropOff).toBe(expected)
     })
 
     it('fires exactly on the seventh day, the threshold is inclusive', () => {
-      expect(derived({ status: 'pending', createdDate: '2026-06-08' }).daysSinceCreated).toBe(7)
-      expect(derived({ status: 'pending', createdDate: '2026-06-08' }).shouldDropOff).toBe(true)
+      expect(derived({ status: 'pending', requestedDate: '2026-06-08' }).daysSinceRequested).toBe(7)
+      expect(derived({ status: 'pending', requestedDate: '2026-06-08' }).shouldDropOff).toBe(true)
     })
 
     it.each(SHIPMENT_STATUSES.filter((s) => s !== 'pending'))(
       'stays false for a %s shipment however old',
       (status) => {
-        expect(derived({ status, createdDate: '2026-01-01' }).shouldDropOff).toBe(false)
+        expect(derived({ status, requestedDate: '2026-01-01' }).shouldDropOff).toBe(false)
       }
     )
   })
@@ -405,18 +414,18 @@ describe('computeDerived', () => {
       ['2026-05-24', 22, false],
       ['2026-05-23', 23, true],
       ['2026-05-22', 24, true],
-    ])('created on %s, that is %i days ago', (createdDate, _days, expected) => {
-      expect(derived({ status: 'pending', createdDate }).labelExpiring).toBe(expected)
+    ])('requested on %s, that is %i days ago', (requestedDate, _days, expected) => {
+      expect(derived({ status: 'pending', requestedDate }).labelExpiring).toBe(expected)
     })
 
     it('warns a week before the thirty days are up', () => {
-      expect(derived({ status: 'pending', createdDate: '2026-05-23' }).daysSinceCreated).toBe(23)
+      expect(derived({ status: 'pending', requestedDate: '2026-05-23' }).daysSinceRequested).toBe(23)
     })
 
     it.each(SHIPMENT_STATUSES.filter((s) => s !== 'pending'))(
       'stays false for a %s shipment however old',
       (status) => {
-        expect(derived({ status, createdDate: '2026-01-01' }).labelExpiring).toBe(false)
+        expect(derived({ status, requestedDate: '2026-01-01' }).labelExpiring).toBe(false)
       }
     )
   })

@@ -5,6 +5,12 @@ export type DateField = 'dropoffDate' | 'receivedDate' | 'decisionDate'
 
 export const ORDERED_DATE_FIELDS: DateField[] = ['dropoffDate', 'receivedDate', 'decisionDate']
 
+export type DatedField = 'requestedDate' | DateField
+
+export const ORDERED_DATED_FIELDS: DatedField[] = ['requestedDate', ...ORDERED_DATE_FIELDS]
+
+export type ShipmentTimeline = Record<DateField, string | null> & { requestedDate: string }
+
 export const TRANSITIONS = {
   drop_off: { target: 'dropped_off', dateField: 'dropoffDate', label: 'Dropped off', path: 'drop-off' },
   receive: { target: 'received', dateField: 'receivedDate', label: 'Received', path: 'receive' },
@@ -80,14 +86,33 @@ export function menuSteps (from: ShipmentStatus): NextStep[] {
   ]
 }
 
-export function earliestDateFor (
-  dates: Record<DateField, string | null>,
-  action: TransitionAction
-): string | null {
+type OrderBreak = { field: DatedField; previous: DatedField }
+
+export function findOrderBreak (
+  timeline: Partial<Record<DatedField, string | null>>
+): OrderBreak | null {
+  const filled = ORDERED_DATED_FIELDS
+    .map((field) => ({ field, value: timeline[field] }))
+    .filter((entry): entry is { field: DatedField; value: string } =>
+      entry.value !== null && entry.value !== undefined && entry.value !== '')
+
+  for (let index = 1; index < filled.length; index += 1) {
+    const previous = filled[index - 1]
+    const current = filled[index]
+
+    if (current.value < previous.value) {
+      return { field: current.field, previous: previous.field }
+    }
+  }
+
+  return null
+}
+
+export function earliestDateFor (timeline: ShipmentTimeline, action: TransitionAction): string {
   const index = ORDERED_DATE_FIELDS.indexOf(TRANSITIONS[action].dateField)
 
-  return ORDERED_DATE_FIELDS.slice(0, index).reduce<string | null>(
-    (latest, field) => dates[field] ?? latest,
-    null
+  return ORDERED_DATE_FIELDS.slice(0, index).reduce<string>(
+    (latest, field) => timeline[field] ?? latest,
+    timeline.requestedDate
   )
 }

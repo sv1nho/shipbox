@@ -8,6 +8,7 @@ const COLUMNS = [
   'amountCents',
   'currency',
   'orderNumber',
+  'requestedDate',
   'dropoffDate',
   'receivedDate',
   'decisionDate',

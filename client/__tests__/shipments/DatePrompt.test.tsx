@@ -7,14 +7,20 @@ import { today } from '../../../shared/time.js'
 
 type Options = {
   actions?: NextStep['actions']
-  earliest?: string | null
-  reception?: { earliest: string | null } | null
+  earliest?: string
+  reception?: { earliest: string } | null
   busy?: boolean
   error?: string | null
 }
 
 const renderPrompt = (
-  { actions = ['drop_off'], earliest = null, reception = null, busy = false, error = null }: Options = {}
+  {
+    actions = ['drop_off'],
+    earliest = '2026-01-01',
+    reception = null,
+    busy = false,
+    error = null,
+  }: Options = {}
 ) => {
   const onCancel = vi.fn()
   const onConfirm = vi.fn()
@@ -55,10 +61,10 @@ describe('the day it proposes', () => {
     expect(dateInput()).toHaveAttribute('min', '2026-06-10')
   })
 
-  it('imposes no lower bound when no step came before', () => {
-    renderPrompt()
+  it('falls back to the day the return was requested when no step came before', () => {
+    renderPrompt({ earliest: '2025-11-20' })
 
-    expect(dateInput()).not.toHaveAttribute('min')
+    expect(dateInput()).toHaveAttribute('min', '2025-11-20')
   })
 })
 
@@ -199,7 +205,7 @@ describe('choosing the outcome', () => {
 })
 
 describe('a decision that skips the reception', () => {
-  const decide = (earliest: string | null = null) =>
+  const decide = (earliest = '2026-01-01') =>
     renderPrompt({ actions: ['refund', 'reject'], reception: { earliest } })
 
   const receptionInput = () => screen.getByLabelText(/when did the store receive it/i)

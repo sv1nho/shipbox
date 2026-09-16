@@ -24,6 +24,7 @@ const input = (overrides: Partial<CreateShipmentInput> = {}): CreateShipmentInpu
   recipientCountry: 'BE',
   amountCents: 4999,
   store: 'Zalando',
+  requestedDate: '2026-01-01',
   ...overrides,
 })
 
@@ -79,15 +80,23 @@ afterAll(async () => {
 
 describe('create', () => {
   it('stores a pending shipment with its derived fields', async () => {
-    const created = await shipments.create(OWNER, input())
+    const created = await shipments.create(OWNER, input({ requestedDate: today() }))
 
     expect(created.status).toBe('pending')
     expect(created.hasLabel).toBe(false)
     expect(created.archivedAt).toBeNull()
     expect(created.currency).toBe('EUR')
     expect(created.trackingUrl).toContain('https://')
+    expect(created.daysSinceRequested).toBe(0)
     expect(created.needsAction).toBe(false)
     expect(created.shouldDropOff).toBe(false)
+    expect(created.labelExpiring).toBe(false)
+  })
+
+  it('dates the request today when the caller does not say', async () => {
+    const created = await shipments.create(OWNER, input({ requestedDate: undefined }))
+
+    expect(created.requestedDate).toBe(today())
   })
 
   it('normalises what it is given', async () => {
@@ -378,11 +387,11 @@ describe('update', () => {
       .toBe('1101CM')
   })
 
-  it('refuses to leave a status without its date', async () => {
+  it('refuses a request date later than a step already recorded', async () => {
     const created = await shipments.create(OWNER, input())
-    await shipments.transition(OWNER, created.id, 'receive', today())
+    await shipments.transition(OWNER, created.id, 'drop_off', today())
 
-    expect(await codeOf(() => shipments.update(OWNER, created.id, { receivedDate: null })))
+    expect(await codeOf(() => shipments.update(OWNER, created.id, { requestedDate: '2099-01-01' })))
       .toBe('VALIDATION_ERROR')
   })
 
