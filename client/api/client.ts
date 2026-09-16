@@ -26,6 +26,11 @@ export class ApiError extends Error {
   }
 }
 
+export const errorMessage = (cause: unknown): string =>
+  cause instanceof ApiError
+    ? cause.message
+    : 'The server could not be reached. Check your connection and try again.'
+
 type ErrorBody = {
   error?: { code?: unknown; message?: unknown; details?: unknown }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { ApiError, buildUrl, request } from '../../api/client.js'
+import { ApiError, buildUrl, errorMessage, request } from '../../api/client.js'
 
 const respondWith = (status: number, body?: unknown, ok = status < 400) => {
   const response = {
@@ -155,5 +155,19 @@ describe('request, when the api refuses', () => {
 
     expect(error.isUnauthorized).toBe(false)
     expect(error.isConflict).toBe(false)
+  })
+})
+
+describe('errorMessage', () => {
+  it('shows what the api said, which is written for the user', () => {
+    expect(errorMessage(new ApiError(404, 'NOT_FOUND', 'Shipment not found.', null)))
+      .toBe('Shipment not found.')
+  })
+
+  it.each([
+    ['a network failure', new TypeError('Failed to fetch')],
+    ['something thrown that is not an error', 'boom'],
+  ])('falls back to a connection message on %s', (_case, cause) => {
+    expect(errorMessage(cause)).toContain('could not be reached')
   })
 })

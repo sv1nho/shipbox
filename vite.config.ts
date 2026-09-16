@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
             name: 'client',
             environment: 'happy-dom',
             include: ['client/**/*.{test,spec}.{ts,tsx}'],
+            setupFiles: ['client/__tests__/setup.ts'],
           },
         },
         {
@@ -54,10 +55,12 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: 'coverage',
         include: [
           'client/api/**/*.ts',
+          'client/shipments/**/*.{ts,tsx}',
           'client/utils/**/*.ts',
+          'client/pages/Shipments.tsx',
           'server/**/*.ts',
           'shared/**/*.ts',
-          // Add 'client/**/*.tsx' once React components have tests.
+          // Add the label form, the layout and the auth pages once they have tests.
         ],
         exclude: [
           ...coverageConfigDefaults.exclude,

@@ -50,3 +50,15 @@ const NEXT_ACTIONS: Record<ShipmentStatus, TransitionAction[]> = {
 export function nextActions (from: ShipmentStatus): TransitionAction[] {
   return NEXT_ACTIONS[from]
 }
+
+export function earliestDateFor (
+  dates: Record<DateField, string | null>,
+  action: TransitionAction
+): string | null {
+  const index = ORDERED_DATE_FIELDS.indexOf(TRANSITIONS[action].dateField)
+
+  return ORDERED_DATE_FIELDS.slice(0, index).reduce<string | null>(
+    (latest, field) => dates[field] ?? latest,
+    null
+  )
+}

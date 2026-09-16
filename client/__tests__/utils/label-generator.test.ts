@@ -11,33 +11,11 @@ import {
   obfuscateTracking,
   buildLabelSvg,
 } from '../../utils/label-generator.js'
-import type { Carrier, Country, LabelPayload } from '../../types/index.js'
+import { makeLabelPayload as makePayload } from '../fixtures.js'
+import type { Carrier, Country } from '../../types/index.js'
 
 afterEach(() => {
   vi.restoreAllMocks()
-})
-
-const makePayload = (overrides: Partial<LabelPayload> = {}): LabelPayload => ({
-  sender_firstname: 'Jean',
-  sender_lastname: 'Dupont',
-  sender_company: '',
-  sender_isCompany: false,
-  sender_address: 'Rue de la Paix 1',
-  sender_postal: '1000',
-  sender_city: 'Bruxelles',
-  sender_country: 'BE',
-  recipient_firstname: 'Marie',
-  recipient_lastname: 'Martin',
-  recipient_company: '',
-  recipient_isCompany: false,
-  recipient_address: 'Avenue Centrale 45',
-  recipient_postal: '4000',
-  recipient_city: 'Liège',
-  recipient_country: 'BE',
-  carrier: 'bpost',
-  tracking_number: '323200000000000000004050',
-  label_language: 'fr',
-  ...overrides,
 })
 
 const SVG_TEMPLATE = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'

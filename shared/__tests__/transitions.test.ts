@@ -4,10 +4,11 @@ import {
   TRANSITIONS,
   TRANSITION_ACTIONS,
   allowedActions,
+  earliestDateFor,
   isTransitionAllowed,
   nextActions,
 } from '../transitions.js'
-import type { TransitionAction } from '../transitions.js'
+import type { DateField, TransitionAction } from '../transitions.js'
 import { SHIPMENT_STATUSES } from '../shipment-status.js'
 import type { ShipmentStatus } from '../shipment-status.js'
 
@@ -115,5 +116,44 @@ describe('nextActions, the single chained button', () => {
     }
 
     expect(nextActions('received')).toHaveLength(2)
+  })
+})
+
+describe('earliestDateFor, the floor the date picker imposes', () => {
+  const dates = (
+    overrides: Partial<Record<DateField, string>> = {}
+  ): Record<DateField, string | null> => ({
+    dropoffDate: null,
+    receivedDate: null,
+    decisionDate: null,
+    ...overrides,
+  })
+
+  it('leaves the drop-off day free, since nothing happened before it', () => {
+    expect(earliestDateFor(dates({ dropoffDate: '2026-06-01' }), 'drop_off')).toBeNull()
+  })
+
+  it('stops a reception from landing before the drop-off', () => {
+    expect(earliestDateFor(dates({ dropoffDate: '2026-06-01' }), 'receive')).toBe('2026-06-01')
+  })
+
+  it.each(['refund', 'reject'] as TransitionAction[])(
+    'stops a %s from landing before the reception',
+    (action) => {
+      expect(earliestDateFor(dates({ dropoffDate: '2026-06-01', receivedDate: '2026-06-04' }), action))
+        .toBe('2026-06-04')
+    }
+  )
+
+  it('falls back to the drop-off when a decision skips the reception', () => {
+    expect(earliestDateFor(dates({ dropoffDate: '2026-06-01' }), 'refund')).toBe('2026-06-01')
+  })
+
+  it('imposes nothing when every earlier step was skipped', () => {
+    expect(earliestDateFor(dates(), 'refund')).toBeNull()
+  })
+
+  it('ignores a decision already recorded, which a new decision replaces', () => {
+    expect(earliestDateFor(dates({ decisionDate: '2026-06-10' }), 'reject')).toBeNull()
   })
 })

@@ -1,0 +1,57 @@
+import type { ShipmentDto } from '../../shared/shipment.js'
+import { formatAmount } from './format.js'
+
+type DeleteDialogProps = {
+  shipment: ShipmentDto
+  busy: boolean
+  onCancel: () => void
+  onConfirm: () => void
+}
+
+export function DeleteDialog ({ shipment, busy, onCancel, onConfirm }: DeleteDialogProps) {
+  return (
+    <div
+      className='modal-backdrop'
+      role='dialog'
+      aria-modal='true'
+      aria-labelledby='delete-dialog-title'
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCancel()
+      }}
+    >
+      <div className='modal-box'>
+        <div className='modal-header'>
+          <h2 className='modal-title' id='delete-dialog-title'>Delete this shipment for good?</h2>
+        </div>
+
+        <div className='modal-body space-y-3'>
+          <p className='card-text'>
+            <strong>{shipment.store}</strong> — {shipment.trackingNumber} —{' '}
+            {formatAmount(shipment.amountCents, shipment.currency)}
+          </p>
+
+          <p className='card-text'>This cannot be undone. You will lose:</p>
+
+          <ul className='consequence-list'>
+            <li>the shipment and everything you recorded about it</li>
+            <li>its drop-off, reception and decision dates</li>
+            {shipment.hasLabel && <li>its stored label, so the PDF can never be downloaded again</li>}
+          </ul>
+
+          <p className='card-text'>
+            To take it out of your list without losing any of that, archive it instead.
+          </p>
+        </div>
+
+        <div className='modal-footer'>
+          <button type='button' className='btn btn-ghost' onClick={onCancel} disabled={busy}>
+            Cancel
+          </button>
+          <button type='button' className='btn btn-danger' onClick={onConfirm} disabled={busy}>
+            {busy ? 'Deleting…' : 'Delete for good'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
