@@ -1,17 +1,10 @@
-import { TIMEZONE } from '../../config/constants.js'
+export { toIsoDateInZone, today } from '../../../shared/time.js'
 
 export type { IsoDate } from '../../../shared/shipment.js'
 
 type IsoDate = string
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
-
-const zoned = new Intl.DateTimeFormat('sv-SE', {
-  timeZone: TIMEZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
 
 export function isIsoDate (value: unknown): value is IsoDate {
   if (typeof value !== 'string' || !ISO_DATE.test(value)) return false
@@ -28,14 +21,6 @@ export function isIsoDate (value: unknown): value is IsoDate {
 
 export function toIsoDate (value: Date): IsoDate {
   return value.toISOString().slice(0, 10)
-}
-
-export function toIsoDateInZone (value: Date): IsoDate {
-  return zoned.format(value)
-}
-
-export function today (now: Date = new Date()): IsoDate {
-  return toIsoDateInZone(now)
 }
 
 export function toUtcDate (value: IsoDate): Date {

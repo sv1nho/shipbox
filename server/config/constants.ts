@@ -1,5 +1,3 @@
-export const TIMEZONE = 'Europe/Brussels'
-
 export const HOME_COUNTRY = 'BE'
 
 export const TRACKING_LANG = 'fr'
