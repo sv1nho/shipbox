@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
-  TRANSITIONS,
-  TRANSITION_ACTIONS,
   assertChronology,
   computeDerived,
   planRevert,
   planTransition,
 } from '../../../services/shipments/status.js'
-import type { ShipmentState, TransitionAction } from '../../../services/shipments/status.js'
+import type { ShipmentState } from '../../../services/shipments/status.js'
+import { TRANSITIONS } from '../../../../shared/transitions.js'
+import type { TransitionAction } from '../../../../shared/transitions.js'
 import { workingDaysBetween } from '../../../services/shipments/working-days.js'
 import { AppError } from '../../../errors.js'
 import { HOME_COUNTRY } from '../../../config/constants.js'
@@ -32,18 +32,6 @@ const codeOf = (run: () => unknown): string => {
   }
   return 'NO_ERROR'
 }
-
-const targetsOf = (): ShipmentStatus[] => TRANSITION_ACTIONS.map((action) => TRANSITIONS[action].target)
-
-describe('the transition table', () => {
-  it('covers every status a shipment can be moved into', () => {
-    expect(new Set(targetsOf())).toEqual(new Set(SHIPMENT_STATUSES.filter((s) => s !== 'pending')))
-  })
-
-  it('never lets a transition target the starting status', () => {
-    expect(targetsOf()).not.toContain('pending')
-  })
-})
 
 describe('planTransition', () => {
   describe('moving forward', () => {

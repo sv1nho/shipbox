@@ -1,6 +1,8 @@
 import { TIMEZONE } from '../../config/constants.js'
 
-export type IsoDate = string
+export type { IsoDate } from '../../../shared/shipment.js'
+
+type IsoDate = string
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 

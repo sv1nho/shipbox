@@ -53,6 +53,7 @@ export default defineConfig(({ mode }) => {
       coverage: {
         reportsDirectory: 'coverage',
         include: [
+          'client/api/**/*.ts',
           'client/utils/**/*.ts',
           'server/**/*.ts',
           'shared/**/*.ts',
@@ -66,6 +67,7 @@ export default defineConfig(({ mode }) => {
           'server/index.ts',
           'server/prisma.ts',
           'server/prisma-client.ts',
+          'server/services/shipments/types.ts',
           'server/env.ts',
           'server/auth/auth.ts',
           // Drop this entry once Supertest covers the routes.

@@ -3,35 +3,19 @@ import { RECEPTION_ALERT_DAYS, PENDING_ALERT_DAYS, HOME_COUNTRY } from '../../co
 import { diffDays, isIsoDate } from './dates.js'
 import type { IsoDate } from './dates.js'
 import { workingDaysBetween } from './working-days.js'
-import { isDecisionStatus } from '../../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
-
-type DateField = 'dropoffDate' | 'receivedDate' | 'decisionDate'
+import {
+  ORDERED_DATE_FIELDS,
+  STATUS_RANK,
+  TRANSITIONS,
+  isTransitionAllowed,
+} from '../../../shared/transitions.js'
+import type { DateField, TransitionAction } from '../../../shared/transitions.js'
+import type { DerivedFields } from '../../../shared/shipment.js'
 
 export type ShipmentDates = Record<DateField, IsoDate | null>
 
 export type ShipmentState = ShipmentDates & { status: ShipmentStatus }
-
-export const TRANSITIONS = {
-  drop_off: { target: 'dropped_off', dateField: 'dropoffDate' },
-  receive: { target: 'received', dateField: 'receivedDate' },
-  refund: { target: 'refunded', dateField: 'decisionDate' },
-  reject: { target: 'rejected', dateField: 'decisionDate' },
-} as const satisfies Record<string, { target: ShipmentStatus; dateField: DateField }>
-
-export type TransitionAction = keyof typeof TRANSITIONS
-
-export const TRANSITION_ACTIONS = Object.keys(TRANSITIONS) as TransitionAction[]
-
-const STATUS_RANK: Record<ShipmentStatus, number> = {
-  pending: 0,
-  dropped_off: 1,
-  received: 2,
-  refunded: 3,
-  rejected: 3,
-}
-
-const ORDERED_DATE_FIELDS: DateField[] = ['dropoffDate', 'receivedDate', 'decisionDate']
 
 const dateFieldRank = (field: DateField): number => ORDERED_DATE_FIELDS.indexOf(field) + 1
 
@@ -99,10 +83,7 @@ export function planTransition (
 ): ShipmentState {
   const { target, dateField } = TRANSITIONS[action]
 
-  const changesDecision =
-    isDecisionStatus(state.status) && isDecisionStatus(target) && target !== state.status
-
-  if (!changesDecision && STATUS_RANK[target] <= STATUS_RANK[state.status]) {
+  if (!isTransitionAllowed(state.status, action)) {
     throw new AppError(
       'ILLEGAL_TRANSITION',
       `A shipment that is ${state.status} cannot move to ${target}.`,
@@ -147,15 +128,6 @@ export function planRevert (state: ShipmentState): ShipmentState {
         : 'pending'
 
   return { ...cleared, status }
-}
-
-export type DerivedFields = {
-  daysSinceCreated: number | null
-  daysSinceReceived: number | null
-  decisionDelayDays: number | null
-  totalDelayDays: number | null
-  needsAction: boolean
-  shouldDropOff: boolean
 }
 
 type DerivedInput = ShipmentState & { createdDate: IsoDate }

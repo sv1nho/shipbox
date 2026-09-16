@@ -9,7 +9,8 @@ import {
   planRevert,
   planTransition,
 } from './status.js'
-import type { ShipmentDates, ShipmentState, TransitionAction } from './status.js'
+import type { ShipmentDates, ShipmentState } from './status.js'
+import type { TransitionAction } from '../../../shared/transitions.js'
 import { normalizeCountry, normalizePostalCode, normalizeStore, normalizeTrackingNumber } from './normalize.js'
 import { toShipmentDto, toShipmentState } from './mapper.js'
 import type { ShipmentRow } from './mapper.js'

@@ -3,6 +3,7 @@ import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import type { CarrierId } from '../../shared/carriers.js'
 import { SHIPMENT_STATUSES } from '../../shared/shipment-status.js'
 import { COUNTRIES, LANGUAGES } from '../../shared/label-payload.js'
+import { SORT_KEYS } from '../../shared/shipment.js'
 import { normalizeTrackingNumber } from '../services/shipments/normalize.js'
 
 const asTuple = <T extends string>(values: readonly T[]): [T, ...T[]] =>
@@ -129,18 +130,7 @@ export const listQuerySchema = z.object({
   store: z.string().min(1).max(120).optional(),
   search: z.string().min(1).max(120).optional(),
   archived: z.enum(['exclude', 'only', 'include']).optional(),
-  sort: z
-    .enum([
-      'createdAt',
-      'updatedAt',
-      'dropoffDate',
-      'receivedDate',
-      'decisionDate',
-      'amountCents',
-      'store',
-      'waitingDays',
-    ])
-    .optional(),
+  sort: z.enum(asTuple(SORT_KEYS)).optional(),
   direction: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().min(1).optional(),
   pageSize: z.coerce.number().int().min(1).max(100).optional(),
