@@ -16,13 +16,9 @@ type SeedShipment = {
   carrier: 'bpost' | 'postnl'
   recipientPostalCode: string
   recipientCountry: string
-  status: 'pending' | 'dropped_off' | 'received' | 'refunded' | 'rejected'
   amountCents: number
   store: string
   createdAgo: number
-  dropoffAgo?: number
-  receivedAgo?: number
-  decisionAgo?: number
   orderNumber?: string
   note?: string
 }
@@ -34,10 +30,9 @@ const SHIPMENTS: SeedShipment[] = [
     carrier: 'bpost',
     recipientPostalCode: '2000',
     recipientCountry: 'BE',
-    status: 'pending',
     amountCents: 4999,
     store: 'Zalando',
-    createdAgo: 2,
+    createdAgo: 0,
     orderNumber: 'ZAL-2026-0001',
   },
   {
@@ -46,11 +41,9 @@ const SHIPMENTS: SeedShipment[] = [
     carrier: 'postnl',
     recipientPostalCode: '5145RC',
     recipientCountry: 'NL',
-    status: 'pending',
     amountCents: 2350,
     store: 'Zalando BE',
-    createdAgo: 16,
-    note: 'Waiting for a free afternoon to drop it off.',
+    createdAgo: 2,
   },
   {
     id: id(3),
@@ -58,11 +51,10 @@ const SHIPMENTS: SeedShipment[] = [
     carrier: 'bpost',
     recipientPostalCode: '1000',
     recipientCountry: 'BE',
-    status: 'dropped_off',
     amountCents: 1999,
     store: 'H&M',
-    createdAgo: 6,
-    dropoffAgo: 3,
+    createdAgo: 5,
+    orderNumber: 'HM-55120',
   },
   {
     id: id(4),
@@ -70,12 +62,10 @@ const SHIPMENTS: SeedShipment[] = [
     carrier: 'postnl',
     recipientPostalCode: '1101CM',
     recipientCountry: 'NL',
-    status: 'dropped_off',
     amountCents: 8990,
     store: 'Zara',
-    createdAgo: 24,
-    dropoffAgo: 20,
-    orderNumber: 'ZR-884512',
+    createdAgo: 8,
+    note: 'Waiting for a free afternoon to drop it off.',
   },
   {
     id: id(5),
@@ -83,12 +73,10 @@ const SHIPMENTS: SeedShipment[] = [
     carrier: 'bpost',
     recipientPostalCode: '9000',
     recipientCountry: 'BE',
-    status: 'received',
     amountCents: 12500,
     store: 'Decathlon',
-    createdAgo: 40,
-    dropoffAgo: 34,
-    receivedAgo: 28,
+    createdAgo: 15,
+    orderNumber: 'DK-2026-77431',
   },
   {
     id: id(6),
@@ -96,12 +84,9 @@ const SHIPMENTS: SeedShipment[] = [
     carrier: 'bpost',
     recipientPostalCode: '4000',
     recipientCountry: 'BE',
-    status: 'received',
     amountCents: 7499,
     store: 'Nike',
-    createdAgo: 8,
-    dropoffAgo: 5,
-    receivedAgo: 2,
+    createdAgo: 23,
   },
   {
     id: id(7),
@@ -109,60 +94,25 @@ const SHIPMENTS: SeedShipment[] = [
     carrier: 'postnl',
     recipientPostalCode: '3011AA',
     recipientCountry: 'NL',
-    status: 'refunded',
     amountCents: 5999,
-    store: 'Zalando',
-    createdAgo: 45,
-    dropoffAgo: 40,
-    receivedAgo: 35,
-    decisionAgo: 30,
+    store: 'Bol.com',
+    createdAgo: 26,
+    note: 'Keeps slipping down the list.',
   },
   {
     id: id(8),
-    trackingNumber: '323200000000000000000008',
-    carrier: 'bpost',
-    recipientPostalCode: '8000',
-    recipientCountry: 'BE',
-    status: 'refunded',
-    amountCents: 3450,
-    store: 'Bol.com',
-    createdAgo: 20,
-    dropoffAgo: 15,
-    decisionAgo: 10,
-    note: 'Entered after the fact, the reception date was never known.',
-  },
-  {
-    id: id(9),
-    trackingNumber: '3SDDRL000000409',
-    carrier: 'postnl',
-    recipientPostalCode: '5145RC',
-    recipientCountry: 'NL',
-    status: 'rejected',
-    amountCents: 6790,
-    store: 'Zara',
-    createdAgo: 35,
-    dropoffAgo: 30,
-    receivedAgo: 25,
-    decisionAgo: 18,
-    note: 'Refused: worn item according to the store.',
-  },
-  {
-    id: id(10),
-    trackingNumber: '329900000000000000000010',
+    trackingNumber: '329900000000000000000008',
     carrier: 'bpost',
     recipientPostalCode: '2600',
     recipientCountry: 'BE',
-    status: 'rejected',
-    amountCents: 2999,
-    store: 'H&M',
-    createdAgo: 16,
-    dropoffAgo: 12,
-    decisionAgo: 5,
-    note: 'Refused, returned outside the 30 day window.',
+    amountCents: 3450,
+    store: 'Snipes',
+    createdAgo: 29,
+    orderNumber: 'SNP-0099',
   },
 ]
 
-const LABELLED = new Set([id(1), id(5), id(7)])
+const LABELLED = new Set([id(1), id(5), id(8)])
 
 const payloadFor = (shipment: SeedShipment): LabelPayload => ({
   sender_firstname: 'Alex',
@@ -202,45 +152,44 @@ if (users.length > 1) {
 
 const owner = users[0]
 
+const removed = await prisma.shipment.deleteMany({ where: { userId: owner.id } })
+
 for (const shipment of SHIPMENTS) {
-  const data = {
-    userId: owner.id,
-    trackingNumber: shipment.trackingNumber,
-    carrier: shipment.carrier,
-    recipientPostalCode: shipment.recipientPostalCode,
-    recipientCountry: shipment.recipientCountry,
-    status: shipment.status,
-    amountCents: shipment.amountCents,
-    store: shipment.store,
-    createdAt: MIDNIGHT_UTC(shipment.createdAgo),
-    dropoffDate: shipment.dropoffAgo === undefined ? null : MIDNIGHT_UTC(shipment.dropoffAgo),
-    receivedDate: shipment.receivedAgo === undefined ? null : MIDNIGHT_UTC(shipment.receivedAgo),
-    decisionDate: shipment.decisionAgo === undefined ? null : MIDNIGHT_UTC(shipment.decisionAgo),
-    orderNumber: shipment.orderNumber ?? null,
-    note: shipment.note ?? null,
-    archivedAt: null,
-  }
-
-  await prisma.shipment.upsert({
-    where: { id: shipment.id },
-    create: { id: shipment.id, ...data },
-    update: data,
+  await prisma.shipment.create({
+    data: {
+      id: shipment.id,
+      userId: owner.id,
+      trackingNumber: shipment.trackingNumber,
+      carrier: shipment.carrier,
+      recipientPostalCode: shipment.recipientPostalCode,
+      recipientCountry: shipment.recipientCountry,
+      status: 'pending',
+      amountCents: shipment.amountCents,
+      store: shipment.store,
+      createdAt: MIDNIGHT_UTC(shipment.createdAgo),
+      dropoffDate: null,
+      receivedDate: null,
+      decisionDate: null,
+      orderNumber: shipment.orderNumber ?? null,
+      note: shipment.note ?? null,
+      archivedAt: null,
+      ...(LABELLED.has(shipment.id)
+        ? {
+            label: {
+              create: {
+                payload: payloadFor(shipment),
+                payloadVersion: CURRENT_PAYLOAD_VERSION,
+              },
+            },
+          }
+        : {}),
+    },
   })
-
-  if (LABELLED.has(shipment.id)) {
-    const label = {
-      payload: payloadFor(shipment),
-      payloadVersion: CURRENT_PAYLOAD_VERSION,
-    }
-
-    await prisma.label.upsert({
-      where: { shipmentId: shipment.id },
-      create: { shipmentId: shipment.id, ...label },
-      update: label,
-    })
-  }
 }
 
-console.log(`Seeded ${String(SHIPMENTS.length)} shipments and ${String(LABELLED.size)} labels for ${owner.email}`)
+console.log(
+  `Replaced ${String(removed.count)} shipments with ${String(SHIPMENTS.length)} pending ones ` +
+  `and ${String(LABELLED.size)} labels for ${owner.email}`
+)
 
 await prisma.$disconnect()
