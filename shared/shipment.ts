@@ -5,7 +5,7 @@ import type { ShipmentStatus } from './shipment-status.js'
 export type IsoDate = string
 
 export type DerivedFields = {
-  daysSinceCreated: number | null
+  daysSinceCreated: number
   daysSinceReceived: number | null
   decisionDelayDays: number | null
   totalDelayDays: number | null

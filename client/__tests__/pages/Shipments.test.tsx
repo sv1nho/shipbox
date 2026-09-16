@@ -11,6 +11,7 @@ vi.mock('../../api/shipments.js', () => ({
   revertShipment: vi.fn(),
   deleteShipment: vi.fn(),
   getLabelPayload: vi.fn(),
+  updateShipment: vi.fn(),
   exportUrl: vi.fn(() => '/api/shipments/export?format=csv'),
 }))
 
@@ -25,6 +26,7 @@ import {
   listShipments,
   revertShipment,
   unarchiveShipment,
+  updateShipment,
 } from '../../api/shipments.js'
 import { regenerateLabel } from '../../shipments/regenerate-label.js'
 import { ApiError } from '../../api/client.js'
@@ -200,7 +202,7 @@ describe('recording a step', () => {
   const openPrompt = async () => {
     renderPage()
     await screen.findByText('Zalando')
-    await userEvent.click(screen.getByRole('button', { name: 'Dropped off' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
   }
 
   it('asks for the day instead of assuming it', async () => {
@@ -263,7 +265,7 @@ describe('recording a step', () => {
 
     renderPage()
     await screen.findByText('Zalando')
-    await userEvent.click(screen.getByRole('button', { name: 'Received' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Receive' }))
 
     expect(screen.getByLabelText(/which day/i)).toHaveAttribute('min', '2026-06-10')
   })
@@ -308,7 +310,7 @@ describe('the other row actions', () => {
 
     renderPage()
     await screen.findByText('Zalando')
-    await chooseFromMenu(/record refunded directly/i)
+    await chooseFromMenu(/record decision directly/i)
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
 
     await waitFor(() => {
@@ -356,6 +358,166 @@ describe('the other row actions', () => {
     await chooseFromMenu(/download the label again/i)
 
     await waitFor(() => { expect(regenerateLabel).toHaveBeenCalledWith(payload) })
+  })
+})
+
+describe('the extra menu', () => {
+  const rows = () => [
+    makeShipment({ id: 'a', trackingNumber: '323200000000000000000001', hasLabel: true }),
+    makeShipment({ id: 'b', trackingNumber: '323200000000000000000002' }),
+  ]
+
+  const openMenuOf = async (trackingNumber: string) => {
+    await userEvent.click(screen.getByRole('button', { name: new RegExp(`more actions for ${trackingNumber}`, 'i') }))
+  }
+
+  it('closes the menu already open when another row is opened', async () => {
+    vi.mocked(listShipments).mockResolvedValue(listed(rows()))
+
+    renderPage()
+    await screen.findAllByText('Zalando')
+
+    await openMenuOf('323200000000000000000001')
+    await openMenuOf('323200000000000000000002')
+
+    expect(screen.getAllByRole('menu')).toHaveLength(1)
+  })
+
+  it('closes on a second click of the same button', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+
+    await openMenuOf('323200000000000000000001')
+    await openMenuOf('323200000000000000000001')
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('closes when the user clicks anywhere else', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+
+    await openMenuOf('323200000000000000000001')
+    await userEvent.click(screen.getByRole('searchbox'))
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('closes once an entry is chosen', async () => {
+    vi.mocked(listShipments).mockResolvedValue(listed([makeShipment({ hasLabel: true })]))
+    vi.mocked(getLabelPayload).mockResolvedValue({ payload: makeLabelPayload(), payloadVersion: 1 })
+
+    renderPage()
+    await screen.findByText('Zalando')
+
+    await openMenuOf('323200000000000000000001')
+    await userEvent.click(screen.getByRole('menuitem', { name: /download the label again/i }))
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+})
+
+describe('a decision that skips the reception', () => {
+  it('records the reception first, so the store delay is never lost', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'dropped_off', dropoffDate: '2026-06-03' })])
+    )
+    vi.mocked(applyTransition).mockResolvedValue(makeShipment({ status: 'refunded' }))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /more actions/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /record decision directly/i }))
+
+    const reception = screen.getByLabelText(/when did the store receive it/i)
+    await userEvent.clear(reception)
+    await userEvent.type(reception, '2026-06-05')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    await waitFor(() => { expect(applyTransition).toHaveBeenCalledTimes(2) })
+
+    expect(vi.mocked(applyTransition).mock.calls[0]).toEqual([
+      '11111111-1111-4111-8111-111111111111', 'receive', '2026-06-05',
+    ])
+    expect(vi.mocked(applyTransition).mock.calls[1]).toEqual([
+      '11111111-1111-4111-8111-111111111111', 'refund', today(), undefined,
+    ])
+  })
+
+  it('asks nothing extra when the reception is already recorded', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'received', receivedDate: '2026-06-05' })])
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: 'Decide' }))
+
+    expect(screen.queryByLabelText(/when did the store receive it/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('the details panel', () => {
+  it('opens on the information button and shows what the row could not fit', async () => {
+    vi.mocked(listShipments).mockResolvedValue(listed([makeShipment({ note: 'Bought on sale' })]))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /details for/i }))
+
+    expect(within(screen.getByRole('dialog')).getByText('Bought on sale')).toBeInTheDocument()
+  })
+
+  it('saves a corrected date and shows the shipment the api sent back', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'refunded', decisionDate: '2026-06-09' })])
+    )
+    vi.mocked(updateShipment).mockResolvedValue(
+      makeShipment({ status: 'refunded', decisionDate: '2026-06-09', receivedDate: '2026-06-05', decisionDelayDays: 2 })
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /details for/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit the dates/i }))
+    await userEvent.type(screen.getByLabelText('Received'), '2026-06-05')
+    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
+
+    await waitFor(() => {
+      expect(updateShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', {
+        dropoffDate: null,
+        receivedDate: '2026-06-05',
+        decisionDate: '2026-06-09',
+      })
+    })
+
+    expect(await screen.findByText('2 working days')).toBeInTheDocument()
+    expect(listShipments).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the panel open and explains when the api refuses the dates', async () => {
+    vi.mocked(updateShipment).mockRejectedValue(
+      new ApiError(422, 'VALIDATION_ERROR', 'receivedDate cannot be earlier than dropoffDate.', null)
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /details for/i }))
+    await userEvent.click(screen.getByRole('button', { name: /edit the dates/i }))
+    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
+
+    expect(await screen.findByText('receivedDate cannot be earlier than dropoffDate.')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('changes nothing, it only reads', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /details for/i }))
+    await userEvent.click(screen.getByRole('button', { name: /close/i }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(listShipments).toHaveBeenCalledOnce()
   })
 })
 

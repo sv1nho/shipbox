@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { errorMessage } from '../api/client.js'
 import {
@@ -8,20 +8,25 @@ import {
   getLabelPayload,
   revertShipment,
   unarchiveShipment,
+  updateShipment,
 } from '../api/shipments.js'
 import { DatePrompt } from '../shipments/DatePrompt.js'
 import { DeleteDialog } from '../shipments/DeleteDialog.js'
 import { FilterBar } from '../shipments/FilterBar.js'
+import { ShipmentDetails } from '../shipments/ShipmentDetails.js'
 import { ShipmentRow } from '../shipments/ShipmentRow.js'
 import type { RowHandlers } from '../shipments/ShipmentRow.js'
 import { filtersFromSearch, hasActiveFilters, searchFromFilters } from '../shipments/filters.js'
 import { regenerateLabel } from '../shipments/regenerate-label.js'
 import { useShipmentList } from '../shipments/useShipmentList.js'
 import { earliestDateFor } from '../../shared/transitions.js'
-import type { TransitionAction } from '../../shared/transitions.js'
-import type { ListParams, ShipmentDto } from '../../shared/shipment.js'
+import type { NextStep } from '../../shared/transitions.js'
+import { isDecisionStatus } from '../../shared/shipment-status.js'
+import { TRANSITIONS } from '../../shared/transitions.js'
+import type { PromptResult } from '../shipments/DatePrompt.js'
+import type { ListParams, ShipmentDto, UpdateShipmentInput } from '../../shared/shipment.js'
 
-type Prompt = { shipment: ShipmentDto; action: TransitionAction }
+type Prompt = { shipment: ShipmentDto; actions: NextStep['actions'] }
 
 export function Shipments () {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -32,8 +37,22 @@ export function Shipments () {
 
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [deleting, setDeleting] = useState<ShipmentDto | null>(null)
+  const [details, setDetails] = useState<ShipmentDto | null>(null)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (openMenu === null) return
+
+    const dismiss = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof Element) || target.closest('.row-menu') === null) setOpenMenu(null)
+    }
+
+    document.addEventListener('pointerdown', dismiss)
+    return () => { document.removeEventListener('pointerdown', dismiss) }
+  }, [openMenu])
 
   const apply = (patch: ListParams) => {
     setSearchParams(searchFromFilters({ ...filters, ...patch, page: patch.page ?? 1 }))
@@ -42,6 +61,7 @@ export function Shipments () {
   const run = async (operation: () => Promise<unknown>): Promise<boolean> => {
     setBusy(true)
     setActionError(null)
+    setOpenMenu(null)
 
     try {
       await operation()
@@ -55,9 +75,24 @@ export function Shipments () {
     }
   }
 
-  const confirmTransition = async (active: Prompt, date: string, note?: string) => {
-    const done = await run(() => applyTransition(active.shipment.id, active.action, date, note))
+  const confirmTransition = async (active: Prompt, result: PromptResult) => {
+    const done = await run(async () => {
+      if (result.receivedDate !== undefined) {
+        await applyTransition(active.shipment.id, 'receive', result.receivedDate)
+      }
+
+      await applyTransition(active.shipment.id, result.action, result.date, result.note)
+    })
+
     if (done) setPrompt(null)
+  }
+
+  const saveDates = async (shipment: ShipmentDto, patch: UpdateShipmentInput) => {
+    let saved: ShipmentDto | null = null
+
+    const done = await run(async () => { saved = await updateShipment(shipment.id, patch) })
+
+    if (done && saved !== null) setDetails(saved)
   }
 
   const confirmDelete = async (shipment: ShipmentDto) => {
@@ -66,11 +101,17 @@ export function Shipments () {
   }
 
   const handlers: RowHandlers = {
-    onTransition: (shipment, action) => { setActionError(null); setPrompt({ shipment, action }) },
+    onTransition: (shipment, actions) => {
+      setOpenMenu(null)
+      setActionError(null)
+      setPrompt({ shipment, actions })
+    },
     onRevert: (shipment) => { void run(() => revertShipment(shipment.id)) },
     onArchive: (shipment) => { void run(() => archiveShipment(shipment.id)) },
     onUnarchive: (shipment) => { void run(() => unarchiveShipment(shipment.id)) },
-    onDelete: (shipment) => { setActionError(null); setDeleting(shipment) },
+    onDelete: (shipment) => { setOpenMenu(null); setActionError(null); setDeleting(shipment) },
+    onShowDetails: (shipment) => { setActionError(null); setDetails(shipment) },
+    onToggleMenu: (shipment) => { setOpenMenu((open) => (open === shipment.id ? null : shipment.id)) },
     onDownloadLabel: (shipment) => {
       void run(async () => {
         const { payload } = await getLabelPayload(shipment.id)
@@ -97,7 +138,9 @@ export function Shipments () {
       <div className='space-y-4'>
         <FilterBar filters={filters} onChange={apply} />
 
-        {actionError !== null && prompt === null && <div className='alert-error'>{actionError}</div>}
+        {actionError !== null && prompt === null && details === null && (
+          <div className='alert-error'>{actionError}</div>
+        )}
 
         {error !== null && (
           <div className='alert-error'>
@@ -121,7 +164,12 @@ export function Shipments () {
         {items.length > 0 && (
           <div className={busy ? 'shipment-list shipment-list-busy' : 'shipment-list'}>
             {items.map((shipment) => (
-              <ShipmentRow key={shipment.id} shipment={shipment} handlers={handlers} />
+              <ShipmentRow
+                key={shipment.id}
+                shipment={shipment}
+                handlers={handlers}
+                menuOpen={openMenu === shipment.id}
+              />
             ))}
           </div>
         )}
@@ -151,13 +199,29 @@ export function Shipments () {
 
       {prompt !== null && (
         <DatePrompt
-          key={`${prompt.shipment.id}-${prompt.action}`}
-          action={prompt.action}
-          earliest={earliestDateFor(prompt.shipment, prompt.action)}
+          key={`${prompt.shipment.id}-${prompt.actions.join('-')}`}
+          actions={prompt.actions}
+          earliest={earliestDateFor(prompt.shipment, prompt.actions[0])}
           busy={busy}
           error={actionError}
           onCancel={() => { setPrompt(null); setActionError(null) }}
-          onConfirm={(date, note) => { void confirmTransition(prompt, date, note) }}
+          reception={
+            isDecisionStatus(TRANSITIONS[prompt.actions[0]].target) &&
+            prompt.shipment.receivedDate === null
+              ? { earliest: prompt.shipment.dropoffDate }
+              : null
+          }
+          onConfirm={(result) => { void confirmTransition(prompt, result) }}
+        />
+      )}
+
+      {details !== null && (
+        <ShipmentDetails
+          shipment={details}
+          busy={busy}
+          error={actionError}
+          onClose={() => { setDetails(null); setActionError(null) }}
+          onSave={(patch) => { void saveDates(details, patch) }}
         />
       )}
 

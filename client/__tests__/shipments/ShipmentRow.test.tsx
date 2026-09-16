@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -5,7 +6,7 @@ import { ShipmentRow } from '../../shipments/ShipmentRow.js'
 import type { RowHandlers } from '../../shipments/ShipmentRow.js'
 import { makeShipment } from '../fixtures.js'
 import { SHIPMENT_STATUSES } from '../../../shared/shipment-status.js'
-import { TRANSITIONS, allowedActions, nextActions } from '../../../shared/transitions.js'
+import { menuSteps, nextStep } from '../../../shared/transitions.js'
 import type { ShipmentDto } from '../../../shared/shipment.js'
 
 const handlers = (): RowHandlers => ({
@@ -15,12 +16,31 @@ const handlers = (): RowHandlers => ({
   onUnarchive: vi.fn(),
   onDelete: vi.fn(),
   onDownloadLabel: vi.fn(),
+  onShowDetails: vi.fn(),
+  onToggleMenu: vi.fn(),
 })
 
 const renderRow = (overrides: Partial<ShipmentDto> = {}) => {
   const shipment = makeShipment(overrides)
   const spies = handlers()
-  render(<ShipmentRow shipment={shipment} handlers={spies} />)
+
+  const Harness = () => {
+    const [open, setOpen] = useState(false)
+
+    return (
+      <ShipmentRow
+        shipment={shipment}
+        menuOpen={open}
+        handlers={{
+          ...spies,
+          onToggleMenu: (target) => { spies.onToggleMenu(target); setOpen(!open) },
+        }}
+      />
+    )
+  }
+
+  render(<Harness />)
+
   return { shipment, spies }
 }
 
@@ -53,56 +73,123 @@ describe('what the row shows', () => {
   })
 })
 
-describe('the chained action button', () => {
-  it.each(SHIPMENT_STATUSES)('offers exactly what comes next after %s', (status) => {
-    renderRow({ status })
+describe('the date the row shows', () => {
+  it('dates a pending shipment by the day it was added, never leaving the column empty', () => {
+    renderRow({ status: 'pending', createdAt: '2026-06-01T10:00:00.000Z' })
 
-    for (const action of nextActions(status)) {
-      expect(screen.getByRole('button', { name: TRANSITIONS[action].label })).toBeInTheDocument()
-    }
+    expect(screen.getByText('Added 01/06/2026')).toBeInTheDocument()
   })
 
-  it.each(['refunded', 'rejected'] as const)('offers nothing once %s', (status) => {
-    renderRow({ status, decisionDate: '2026-06-03' })
+  it.each([
+    ['dropped_off', 'Dropped off 03/06/2026'],
+    ['received', 'Received 05/06/2026'],
+    ['refunded', 'Decided 09/06/2026'],
+  ] as const)('dates a %s shipment by the step it reached', (status, expected) => {
+    renderRow({ status, dropoffDate: '2026-06-03', receivedDate: '2026-06-05', decisionDate: '2026-06-09' })
 
-    for (const action of Object.values(TRANSITIONS)) {
-      expect(screen.queryByRole('button', { name: action.label })).not.toBeInTheDocument()
-    }
+    expect(screen.getByText(expected)).toBeInTheDocument()
+  })
+
+  it('says how long it has been waiting', () => {
+    renderRow({ status: 'received', daysSinceReceived: 12 })
+
+    expect(screen.getByText('Waiting 12 working days')).toBeInTheDocument()
+  })
+
+  it('says how long the whole return took once it is over', () => {
+    renderRow({ status: 'refunded', decisionDate: '2026-06-09', totalDelayDays: 18 })
+
+    expect(screen.getByText('Took 18 working days')).toBeInTheDocument()
+  })
+
+  it('shows no dash when the figure cannot be derived', () => {
+    renderRow({ status: 'refunded', decisionDate: '2026-06-09', totalDelayDays: null })
+
+    expect(screen.queryByText('—')).not.toBeInTheDocument()
+  })
+})
+
+describe('the information button', () => {
+  it('is offered on every row, whatever the status', () => {
+    renderRow({ status: 'refunded', decisionDate: '2026-06-09', archivedAt: '2026-06-10T00:00:00.000Z' })
+
+    expect(screen.getByRole('button', { name: /details for 323200000000000000000001/i })).toBeInTheDocument()
+  })
+
+  it('hands the shipment to the page rather than opening anything itself', async () => {
+    const { shipment, spies } = renderRow()
+
+    await userEvent.click(screen.getByRole('button', { name: /details for/i }))
+
+    expect(spies.onShowDetails).toHaveBeenCalledWith(shipment)
+  })
+
+  it('stays apart from the warning, which describes and never acts', () => {
+    renderRow({ status: 'received', needsAction: true, daysSinceReceived: 21 })
+
+    expect(screen.getByRole('img', { name: /needs attention/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /details for/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /needs attention/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('the chained action button', () => {
+  it.each(SHIPMENT_STATUSES)('offers one button, and only one, after %s', (status) => {
+    renderRow({ status })
+
+    const step = nextStep(status)
+    const offered = SHIPMENT_STATUSES
+      .map((candidate) => nextStep(candidate)?.label)
+      .filter((label) => label !== undefined)
+      .filter((label) => screen.queryByRole('button', { name: label }) !== null)
+
+    expect(offered).toEqual(step === null ? [] : [step.label])
+  })
+
+  it('names the step to take, not the state it lands in', () => {
+    renderRow({ status: 'pending' })
+
+    expect(screen.getByRole('button', { name: 'Drop off' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dropped off' })).not.toBeInTheDocument()
+  })
+
+  it('hands over every outcome the step allows, so the prompt can ask', async () => {
+    const { shipment, spies } = renderRow({ status: 'received', receivedDate: '2026-06-02' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Decide' }))
+
+    expect(spies.onTransition).toHaveBeenCalledWith(shipment, ['refund', 'reject'])
   })
 
   it('asks the page to run the transition when clicked', async () => {
     const { shipment, spies } = renderRow({ status: 'pending' })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Dropped off' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
 
-    expect(spies.onTransition).toHaveBeenCalledWith(shipment, 'drop_off')
+    expect(spies.onTransition).toHaveBeenCalledWith(shipment, ['drop_off'])
   })
 
-  it('offers both decisions when the parcel has arrived', () => {
-    renderRow({ status: 'received', receivedDate: '2026-06-02' })
-
-    expect(screen.getByRole('button', { name: 'Refunded' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Rejected' })).toBeInTheDocument()
-  })
-
-  it('hides the chained buttons on an archived shipment', () => {
+  it('hides the chained button on an archived shipment', () => {
     renderRow({ status: 'pending', archivedAt: '2026-06-05T00:00:00.000Z' })
 
-    expect(screen.queryByRole('button', { name: 'Dropped off' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Drop off' })).not.toBeInTheDocument()
   })
 })
 
 describe('the alert', () => {
-  it('shows a described icon when the store is sitting on the parcel', () => {
-    renderRow({ status: 'received', needsAction: true, daysSinceReceived: 21 })
+  it.each([
+    ['the store is sitting on the parcel', { status: 'received', needsAction: true, daysSinceReceived: 21 }],
+    ['the parcel was never dropped off', { shouldDropOff: true, daysSinceCreated: 9 }],
+  ] as [string, Partial<ShipmentDto>][])('flags the count when %s', (_case, overrides) => {
+    renderRow(overrides)
 
-    expect(screen.getByRole('img', { name: /21 working days/ })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /needs attention/i })).toBeInTheDocument()
   })
 
-  it('shows a described icon when the parcel was never dropped off', () => {
-    renderRow({ shouldDropOff: true, daysSinceCreated: 9 })
+  it('carries no tooltip, since the panel holds the explanation', () => {
+    renderRow({ status: 'received', needsAction: true, daysSinceReceived: 21 })
 
-    expect(screen.getByRole('img', { name: /dropped off/ })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /needs attention/i })).not.toHaveAttribute('title')
   })
 
   it('shows nothing when there is nothing to flag', () => {
@@ -113,6 +200,14 @@ describe('the alert', () => {
 })
 
 describe('the extra menu', () => {
+  it('leaves the page to decide which menu is open', async () => {
+    const { shipment, spies } = renderRow()
+
+    await openMenu()
+
+    expect(spies.onToggleMenu).toHaveBeenCalledWith(shipment)
+  })
+
   it('stays closed until asked', () => {
     renderRow()
 
@@ -127,25 +222,41 @@ describe('the extra menu', () => {
     expect(screen.getByRole('button', { name: /more actions/i })).toHaveAttribute('aria-expanded', 'true')
   })
 
-  it('offers the skipped transitions, never the one already on the row', async () => {
+  it('offers the skipped steps, never the one already on the row', async () => {
     renderRow({ status: 'pending' })
     await openMenu()
 
-    expect(screen.queryByRole('menuitem', { name: /record dropped off directly/i })).not.toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /record refunded directly/i })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /record drop off directly/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /record received directly/i })).toBeInTheDocument()
   })
 
-  it.each(SHIPMENT_STATUSES)('never offers from %s an action the api would refuse', async (status) => {
+  it('folds the two decisions into one entry, which opens the same choice', async () => {
+    const { shipment, spies } = renderRow({ status: 'dropped_off', dropoffDate: '2026-06-01' })
+    await openMenu()
+
+    expect(screen.queryByRole('menuitem', { name: /record refunded directly/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /record rejected directly/i })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('menuitem', { name: /record decision directly/i }))
+
+    expect(spies.onTransition).toHaveBeenCalledWith(shipment, ['refund', 'reject'])
+  })
+
+  it('keeps a lone decision named after itself', async () => {
+    renderRow({ status: 'refunded', decisionDate: '2026-06-03' })
+    await openMenu()
+
+    expect(screen.getByRole('menuitem', { name: /record rejected directly/i })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /record decision directly/i })).not.toBeInTheDocument()
+  })
+
+  it.each(SHIPMENT_STATUSES)('offers from %s exactly what the api would accept', async (status) => {
     renderRow({ status, dropoffDate: '2026-06-01', receivedDate: '2026-06-02', decisionDate: '2026-06-03' })
     await openMenu()
 
-    const refused = Object.entries(TRANSITIONS)
-      .filter(([action]) => !allowedActions(status).includes(action as keyof typeof TRANSITIONS))
-      .map(([, config]) => config.label.toLowerCase())
-
-    for (const label of refused) {
-      expect(screen.queryByRole('menuitem', { name: new RegExp(`record ${label} directly`, 'i') }))
-        .not.toBeInTheDocument()
+    for (const entry of menuSteps(status)) {
+      expect(screen.getByRole('menuitem', { name: new RegExp(`record ${entry.label} directly`, 'i') }))
+        .toBeInTheDocument()
     }
   })
 
@@ -196,14 +307,5 @@ describe('the extra menu', () => {
     await userEvent.click(screen.getByRole('menuitem', { name: /delete for good/i }))
 
     expect(spies.onDelete).toHaveBeenCalledWith(shipment)
-  })
-
-  it('closes once an entry is chosen', async () => {
-    renderRow({ hasLabel: true })
-    await openMenu()
-
-    await userEvent.click(screen.getByRole('menuitem', { name: /download the label again/i }))
-
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 })

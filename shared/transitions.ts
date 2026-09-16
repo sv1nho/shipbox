@@ -39,16 +39,45 @@ export function allowedActions (from: ShipmentStatus): TransitionAction[] {
   return TRANSITION_ACTIONS.filter((action) => isTransitionAllowed(from, action))
 }
 
-const NEXT_ACTIONS: Record<ShipmentStatus, TransitionAction[]> = {
-  pending: ['drop_off'],
-  dropped_off: ['receive'],
-  received: ['refund', 'reject'],
-  refunded: [],
-  rejected: [],
+export type NextStep = {
+  label: string
+  actions: [TransitionAction, ...TransitionAction[]]
+}
+
+const NEXT_STEP: Record<ShipmentStatus, NextStep | null> = {
+  pending: { label: 'Drop off', actions: ['drop_off'] },
+  dropped_off: { label: 'Receive', actions: ['receive'] },
+  received: { label: 'Decide', actions: ['refund', 'reject'] },
+  refunded: null,
+  rejected: null,
+}
+
+export function nextStep (from: ShipmentStatus): NextStep | null {
+  return NEXT_STEP[from]
 }
 
 export function nextActions (from: ShipmentStatus): TransitionAction[] {
-  return NEXT_ACTIONS[from]
+  return NEXT_STEP[from]?.actions ?? []
+}
+
+const DECISION_ACTIONS: TransitionAction[] = ['refund', 'reject']
+
+const singleStep = (action: TransitionAction): NextStep => ({
+  label: TRANSITIONS[action].label,
+  actions: [action],
+})
+
+export function menuSteps (from: ShipmentStatus): NextStep[] {
+  const chained = nextActions(from)
+  const rest = allowedActions(from).filter((action) => !chained.includes(action))
+  const decisions = rest.filter((action) => DECISION_ACTIONS.includes(action))
+
+  if (decisions.length < 2) return rest.map(singleStep)
+
+  return [
+    ...rest.filter((action) => !DECISION_ACTIONS.includes(action)).map(singleStep),
+    { label: 'Decision', actions: ['refund', 'reject'] },
+  ]
 }
 
 export function earliestDateFor (

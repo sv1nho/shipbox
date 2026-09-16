@@ -60,12 +60,20 @@ describe('the urls each call builds', () => {
     ['unarchiveShipment', () => api.unarchiveShipment('abc'), 'POST', '/api/shipments/abc/unarchive'],
     ['deleteShipment', () => api.deleteShipment('abc'), 'DELETE', '/api/shipments/abc'],
     ['getLabelPayload', () => api.getLabelPayload('abc'), 'GET', '/api/shipments/abc/label'],
+    ['updateShipment', () => api.updateShipment('abc', { store: 'Zalando' }), 'PATCH', '/api/shipments/abc'],
   ])('%s calls %s %s', async (_name, run, method, url) => {
     const mock = fetchMock()
     await run()
 
     expect(calledWith(mock).url).toBe(url)
     expect(calledWith(mock).init.method).toBe(method)
+  })
+
+  it('sends the patch as the body, so a null clears a date', async () => {
+    const mock = fetchMock()
+    await api.updateShipment('abc', { receivedDate: '2026-06-05', dropoffDate: null })
+
+    expect(calledWith(mock).init.body).toBe('{"receivedDate":"2026-06-05","dropoffDate":null}')
   })
 
   it('asks the exists route with both parameters', async () => {

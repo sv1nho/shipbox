@@ -1,150 +1,174 @@
-import { useState } from 'react'
 import type { ShipmentDto } from '../../shared/shipment.js'
-import { TRANSITIONS, allowedActions, nextActions } from '../../shared/transitions.js'
-import type { TransitionAction } from '../../shared/transitions.js'
+import { TRANSITIONS, menuSteps, nextStep } from '../../shared/transitions.js'
+import type { NextStep } from '../../shared/transitions.js'
 import { CARRIERS } from '../../shared/carriers.js'
-import { alertMessage, formatAmount, formatDate, statusLabel, workingDays } from './format.js'
+import { alertMessage, delayInfo, formatAmount, formatDate, statusDate, workingDays } from './format.js'
+import { StatusPill } from './StatusPill.js'
 
 export type RowHandlers = {
-  onTransition: (shipment: ShipmentDto, action: TransitionAction) => void
+  onTransition: (shipment: ShipmentDto, actions: NextStep['actions']) => void
   onRevert: (shipment: ShipmentDto) => void
   onArchive: (shipment: ShipmentDto) => void
   onUnarchive: (shipment: ShipmentDto) => void
   onDelete: (shipment: ShipmentDto) => void
   onDownloadLabel: (shipment: ShipmentDto) => void
+  onShowDetails: (shipment: ShipmentDto) => void
+  onToggleMenu: (shipment: ShipmentDto) => void
 }
 
-const lastStep = (shipment: ShipmentDto): string | null =>
-  shipment.decisionDate ?? shipment.receivedDate ?? shipment.dropoffDate
+const stepClass = (step: NextStep): string =>
+  step.actions.length === 1
+    ? `status-btn-${TRANSITIONS[step.actions[0]].target}`
+    : 'status-btn-choice'
 
-export function ShipmentRow ({ shipment, handlers }: { shipment: ShipmentDto; handlers: RowHandlers }) {
-  const [menuOpen, setMenuOpen] = useState(false)
+type RowProps = {
+  shipment: ShipmentDto
+  handlers: RowHandlers
+  menuOpen: boolean
+}
 
+export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
   const alert = alertMessage(shipment)
-  const chained = nextActions(shipment.status)
+  const step = nextStep(shipment.status)
   const archived = shipment.archivedAt !== null
-
-  const close = () => { setMenuOpen(false) }
+  const state = statusDate(shipment)
+  const delay = delayInfo(shipment)
 
   return (
     <article className={archived ? 'shipment-row shipment-row-archived' : 'shipment-row'}>
-      <div className='shipment-main'>
-        <span className={`status-pill status-${shipment.status}`}>{statusLabel(shipment.status)}</span>
+      <StatusPill status={shipment.status} />
 
-        <div className='shipment-identity'>
-          <a
-            className='shipment-tracking'
-            href={shipment.trackingUrl}
-            target='_blank'
-            rel='noreferrer'
-          >
-            {shipment.trackingNumber}
-          </a>
-          <span className='shipment-carrier'>{CARRIERS[shipment.carrier].label}</span>
-        </div>
+      <div className='shipment-identity'>
+        <a
+          className='shipment-tracking'
+          href={shipment.trackingUrl}
+          target='_blank'
+          rel='noreferrer'
+        >
+          {shipment.trackingNumber}
+        </a>
+        <span className='shipment-carrier'>{CARRIERS[shipment.carrier].label}</span>
+      </div>
 
-        <span className='shipment-store'>{shipment.store}</span>
-        <span className='shipment-amount'>{formatAmount(shipment.amountCents, shipment.currency)}</span>
+      <span className='shipment-store' title={shipment.store}>{shipment.store}</span>
+      <span className='shipment-amount'>{formatAmount(shipment.amountCents, shipment.currency)}</span>
 
-        <span className='shipment-dates'>
-          <span title='Last recorded step'>{formatDate(lastStep(shipment))}</span>
-          <span className='shipment-delay'>{workingDays(shipment.decisionDelayDays)}</span>
-        </span>
-
-        {alert !== null && (
-          <span className='shipment-alert' role='img' aria-label={alert} title={alert}>
-            !
+      <span className='shipment-dates'>
+        <span className='shipment-date'>{state.label} {formatDate(state.date)}</span>
+        {delay !== null && (
+          <span className={alert === null ? 'shipment-delay' : 'shipment-delay shipment-delay-alert'}>
+            {alert !== null && (
+              <svg
+                className='delay-warning'
+                viewBox='0 0 16 16'
+                width='14'
+                height='14'
+                role='img'
+                aria-label='Needs attention'
+              >
+                <path
+                  fill='currentColor'
+                  fillRule='evenodd'
+                  d='M8 1L15.5 14.5H0.5ZM6.9 5.4h2.2v4.4H6.9zM6.9 10.9h2.2v2H6.9z'
+                />
+              </svg>
+            )}
+            {delay.label} {workingDays(delay.days)}
           </span>
+        )}
+      </span>
+
+      <div className='shipment-transitions'>
+        {!archived && step !== null && (
+          <button
+            type='button'
+            className={`btn status-btn ${stepClass(step)}`}
+            onClick={() => { handlers.onTransition(shipment, step.actions) }}
+          >
+            {step.label}
+          </button>
         )}
       </div>
 
-      <div className='shipment-actions'>
-        {!archived &&
-          chained.map((action) => (
-            <button
-              key={action}
-              type='button'
-              className='btn btn-primary text-xs px-2.5 py-1'
-              onClick={() => { handlers.onTransition(shipment, action) }}
-            >
-              {TRANSITIONS[action].label}
-            </button>
-          ))}
+      <button
+        type='button'
+        className='icon-btn icon-btn-info'
+        aria-label={`Details for ${shipment.trackingNumber}`}
+        onClick={() => { handlers.onShowDetails(shipment) }}
+      >
+        i
+      </button>
 
-        <div className='row-menu'>
-          <button
-            type='button'
-            className='btn btn-ghost text-xs px-2.5 py-1'
-            aria-label={`More actions for ${shipment.trackingNumber}`}
-            aria-expanded={menuOpen}
-            onClick={() => { setMenuOpen(!menuOpen) }}
-          >
-            ⋯
-          </button>
+      <div className='row-menu'>
+        <button
+          type='button'
+          className='icon-btn'
+          aria-label={`More actions for ${shipment.trackingNumber}`}
+          aria-expanded={menuOpen}
+          onClick={() => { handlers.onToggleMenu(shipment) }}
+        >
+          ⋯
+        </button>
 
-          {menuOpen && (
-            <div className='row-menu-items' role='menu'>
-              {!archived &&
-                allowedActions(shipment.status)
-                  .filter((action) => !chained.includes(action))
-                  .map((action) => (
-                    <button
-                      key={action}
-                      type='button'
-                      role='menuitem'
-                      className='row-menu-item'
-                      onClick={() => { close(); handlers.onTransition(shipment, action) }}
-                    >
-                      Record {TRANSITIONS[action].label.toLowerCase()} directly
-                    </button>
-                  ))}
-
-              {shipment.status !== 'pending' && (
+        {menuOpen && (
+          <div className='row-menu-items' role='menu'>
+            {!archived &&
+              menuSteps(shipment.status).map((entry) => (
                 <button
+                  key={entry.label}
                   type='button'
                   role='menuitem'
                   className='row-menu-item'
-                  onClick={() => { close(); handlers.onRevert(shipment) }}
+                  onClick={() => { handlers.onTransition(shipment, entry.actions) }}
                 >
-                  Undo the last step
+                  Record {entry.label.toLowerCase()} directly
                 </button>
-              )}
+              ))}
 
-              {shipment.hasLabel && (
-                <button
-                  type='button'
-                  role='menuitem'
-                  className='row-menu-item'
-                  onClick={() => { close(); handlers.onDownloadLabel(shipment) }}
-                >
-                  Download the label again
-                </button>
-              )}
-
+            {shipment.status !== 'pending' && (
               <button
                 type='button'
                 role='menuitem'
                 className='row-menu-item'
-                onClick={() => {
-                  close()
-                  if (archived) handlers.onUnarchive(shipment)
-                  else handlers.onArchive(shipment)
-                }}
+                onClick={() => { handlers.onRevert(shipment) }}
               >
-                {archived ? 'Put back in the list' : 'Archive'}
+                Undo the last step
               </button>
+            )}
 
+            {shipment.hasLabel && (
               <button
                 type='button'
                 role='menuitem'
-                className='row-menu-item row-menu-item-danger'
-                onClick={() => { close(); handlers.onDelete(shipment) }}
+                className='row-menu-item'
+                onClick={() => { handlers.onDownloadLabel(shipment) }}
               >
-                Delete for good
+                Download the label again
               </button>
-            </div>
-          )}
-        </div>
+            )}
+
+            <button
+              type='button'
+              role='menuitem'
+              className='row-menu-item'
+              onClick={() => {
+                if (archived) handlers.onUnarchive(shipment)
+                else handlers.onArchive(shipment)
+              }}
+            >
+              {archived ? 'Put back in the list' : 'Archive'}
+            </button>
+
+            <button
+              type='button'
+              role='menuitem'
+              className='row-menu-item row-menu-item-danger'
+              onClick={() => { handlers.onDelete(shipment) }}
+            >
+              Delete for good
+            </button>
+          </div>
+        )}
       </div>
     </article>
   )

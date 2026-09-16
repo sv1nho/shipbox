@@ -9,6 +9,7 @@ import type {
   ListParams,
   ListResult,
   ShipmentDto,
+  UpdateShipmentInput,
 } from '../../shared/shipment.js'
 import type { CarrierId } from '../../shared/carriers.js'
 
@@ -31,6 +32,9 @@ export const listShipments = (params: ListParams = {}, signal?: AbortSignal): Pr
 
 export const createShipment = (input: CreateShipmentInput): Promise<ShipmentDto> =>
   request<ShipmentDto>(BASE, { method: 'POST', body: input })
+
+export const updateShipment = (id: string, patch: UpdateShipmentInput): Promise<ShipmentDto> =>
+  request<ShipmentDto>(`${BASE}/${id}`, { method: 'PATCH', body: patch })
 
 export const applyTransition = (
   id: string,

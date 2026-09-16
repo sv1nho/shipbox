@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { alertMessage, formatAmount, formatDate, statusLabel, workingDays } from '../../shipments/format.js'
+import {
+  alertMessage,
+  delayInfo,
+  formatAmount,
+  formatDate,
+  statusDate,
+  statusLabel,
+  workingDays,
+  zonedDate,
+} from '../../shipments/format.js'
 import { SHIPMENT_STATUSES } from '../../../shared/shipment-status.js'
 import { makeShipment as shipment } from '../fixtures.js'
 
@@ -24,16 +33,22 @@ describe('formatAmount', () => {
 })
 
 describe('formatDate', () => {
-  it('reads a stored date without shifting it by a timezone', () => {
-    expect(formatDate('2026-06-15')).toBe('15 Jun 2026')
+  it('writes the day first, the way a belgian date is read', () => {
+    expect(formatDate('2026-06-15')).toBe('15/06/2026')
   })
 
-  it('reads the first day of the year, the one a timezone shift would break', () => {
-    expect(formatDate('2026-01-01')).toBe('01 Jan 2026')
+  it('keeps the leading zeroes so every date is the same width', () => {
+    expect(formatDate('2026-01-01')).toBe('01/01/2026')
+  })
+})
+
+describe('zonedDate', () => {
+  it('reads a timestamp as the day it was in Brussels, not in utc', () => {
+    expect(zonedDate('2026-06-01T23:30:00.000Z')).toBe('2026-06-02')
   })
 
-  it('shows a dash rather than an empty cell when there is no date', () => {
-    expect(formatDate(null)).toBe('—')
+  it('keeps the day when the two zones agree', () => {
+    expect(zonedDate('2026-06-01T09:00:00.000Z')).toBe('2026-06-01')
   })
 })
 
@@ -57,9 +72,53 @@ describe('workingDays', () => {
   ])('says %i as %s', (count, expected) => {
     expect(workingDays(count)).toBe(expected)
   })
+})
 
-  it('shows a dash when the count could not be derived', () => {
-    expect(workingDays(null)).toBe('—')
+describe('statusDate, the day the pill is about', () => {
+  it('shows the day it was added while nothing has happened', () => {
+    expect(statusDate(shipment({ status: 'pending', createdAt: '2026-06-01T10:00:00.000Z' })))
+      .toEqual({ label: 'Added', date: '2026-06-01' })
+  })
+
+  it.each([
+    ['dropped_off', 'Dropped off', '2026-06-03'],
+    ['received', 'Received', '2026-06-05'],
+    ['refunded', 'Decided', '2026-06-09'],
+    ['rejected', 'Decided', '2026-06-09'],
+  ] as const)('shows the %s day', (status, label, date) => {
+    const dated = shipment({
+      status,
+      dropoffDate: '2026-06-03',
+      receivedDate: '2026-06-05',
+      decisionDate: '2026-06-09',
+    })
+
+    expect(statusDate(dated)).toEqual({ label, date })
+  })
+
+  it('falls back to the day it was added rather than showing nothing', () => {
+    expect(statusDate(shipment({ status: 'received', receivedDate: null })))
+      .toEqual({ label: 'Added', date: '2026-06-01' })
+  })
+})
+
+describe('delayInfo, the figure next to the date', () => {
+  it.each(['pending', 'dropped_off'] as const)('counts from the day it was added when %s', (status) => {
+    expect(delayInfo(shipment({ status, daysSinceCreated: 4 }))).toEqual({ label: 'Waiting', days: 4 })
+  })
+
+  it('counts from the reception while the store decides', () => {
+    expect(delayInfo(shipment({ status: 'received', daysSinceReceived: 12 })))
+      .toEqual({ label: 'Waiting', days: 12 })
+  })
+
+  it.each(['refunded', 'rejected'] as const)('reports how long the whole return took once %s', (status) => {
+    expect(delayInfo(shipment({ status, totalDelayDays: 18 }))).toEqual({ label: 'Took', days: 18 })
+  })
+
+  it('reports nothing rather than a dash when the figure cannot be derived', () => {
+    expect(delayInfo(shipment({ status: 'refunded', totalDelayDays: null }))).toBeNull()
+    expect(delayInfo(shipment({ status: 'received', daysSinceReceived: null }))).toBeNull()
   })
 })
 
@@ -88,5 +147,13 @@ describe('alertMessage', () => {
     )
 
     expect(message).toContain('chase')
+  })
+
+  it('never invents a count the api did not send', () => {
+    const message = alertMessage(
+      shipment({ needsAction: true, daysSinceReceived: null, shouldDropOff: true, daysSinceCreated: 9 })
+    )
+
+    expect(message).toContain('dropped off')
   })
 })

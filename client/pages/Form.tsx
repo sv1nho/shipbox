@@ -84,18 +84,18 @@ const PartyFieldset = ({
     | 'recipient_isCompany'
 
   const toggle = (
-    <div className='party-toggle'>
+    <div className='segmented'>
       <button
         type='button'
         onClick={() => setValue(isCompanyKey, false)}
-        className={!isCompany ? 'party-toggle-btn party-toggle-btn-active' : 'party-toggle-btn'}
+        className={!isCompany ? 'segmented-btn segmented-btn-active' : 'segmented-btn'}
       >
         Individual
       </button>
       <button
         type='button'
         onClick={() => setValue(isCompanyKey, true)}
-        className={isCompany ? 'party-toggle-btn party-toggle-btn-active' : 'party-toggle-btn'}
+        className={isCompany ? 'segmented-btn segmented-btn-active' : 'segmented-btn'}
       >
         Company
       </button>

@@ -6,7 +6,9 @@ import {
   allowedActions,
   earliestDateFor,
   isTransitionAllowed,
+  menuSteps,
   nextActions,
+  nextStep,
 } from '../transitions.js'
 import type { DateField, TransitionAction } from '../transitions.js'
 import { SHIPMENT_STATUSES } from '../shipment-status.js'
@@ -155,5 +157,76 @@ describe('earliestDateFor, the floor the date picker imposes', () => {
 
   it('ignores a decision already recorded, which a new decision replaces', () => {
     expect(earliestDateFor(dates({ decisionDate: '2026-06-10' }), 'reject')).toBeNull()
+  })
+})
+
+describe('nextStep, the single button a row may offer', () => {
+  it.each([
+    ['pending', 'Drop off'],
+    ['dropped_off', 'Receive'],
+    ['received', 'Decide'],
+  ] as [ShipmentStatus, string][])('labels %s with the step to take, not the state reached', (from, label) => {
+    expect(nextStep(from)?.label).toBe(label)
+  })
+
+  it.each(['refunded', 'rejected'] as ShipmentStatus[])('offers no step once %s', (from) => {
+    expect(nextStep(from)).toBeNull()
+  })
+
+  it('carries both decisions on a single step, so the row keeps one button', () => {
+    expect(nextStep('received')?.actions).toEqual(['refund', 'reject'])
+  })
+
+  it.each(SHIPMENT_STATUSES)('never names a step the api would refuse, from %s', (from) => {
+    for (const action of nextStep(from)?.actions ?? []) {
+      expect(isTransitionAllowed(from, action)).toBe(true)
+    }
+  })
+
+  it.each(SHIPMENT_STATUSES)('agrees with nextActions for %s', (from) => {
+    expect(nextActions(from)).toEqual(nextStep(from)?.actions ?? [])
+  })
+})
+
+describe('menuSteps, what the extra menu may offer', () => {
+  const labels = (from: ShipmentStatus): string[] => menuSteps(from).map((entry) => entry.label)
+
+  it('never repeats the step the row already shows as a button', () => {
+    expect(labels('pending')).not.toContain('Drop off')
+    expect(labels('dropped_off')).not.toContain('Receive')
+  })
+
+  it('folds the two decisions into a single entry', () => {
+    expect(labels('pending')).toEqual(['Received', 'Decision'])
+    expect(labels('dropped_off')).toEqual(['Decision'])
+  })
+
+  it('carries both outcomes on that entry, so the prompt can ask', () => {
+    expect(menuSteps('dropped_off')[0].actions).toEqual(['refund', 'reject'])
+  })
+
+  it.each([
+    ['refunded', 'Rejected'],
+    ['rejected', 'Refunded'],
+  ] as [ShipmentStatus, string][])('names a lone decision after itself, from %s', (from, label) => {
+    expect(labels(from)).toEqual([label])
+  })
+
+  it('offers nothing extra once the decision is the only thing left', () => {
+    expect(labels('received')).toEqual([])
+  })
+
+  it.each(SHIPMENT_STATUSES)('never offers from %s an action the api would refuse', (from) => {
+    for (const entry of menuSteps(from)) {
+      for (const action of entry.actions) {
+        expect(isTransitionAllowed(from, action)).toBe(true)
+      }
+    }
+  })
+
+  it.each(SHIPMENT_STATUSES)('covers every allowed action from %s, chained or not', (from) => {
+    const offered = [...nextActions(from), ...menuSteps(from).flatMap((entry) => entry.actions)]
+
+    expect(new Set(offered)).toEqual(new Set(allowedActions(from)))
   })
 })
