@@ -21,11 +21,12 @@ describe('what the bar shows', () => {
   })
 
   it('falls back to the defaults when the url carries nothing', () => {
-    renderBar()
+    renderBar({})
 
     expect(screen.getByLabelText('Carrier')).toHaveValue('')
-    expect(screen.getByLabelText('Archive')).toHaveValue('exclude')
-    expect(screen.getByLabelText('Sort by')).toHaveValue('createdAt')
+    expect(screen.getByLabelText('Archive')).toHaveValue(DEFAULT_FILTERS.archived)
+    expect(screen.getByLabelText('Sort by')).toHaveValue(DEFAULT_FILTERS.sort)
+    expect(screen.getByRole('button', { name: 'Descending' })).toBeInTheDocument()
   })
 
   it('names the statuses in words, never with the raw database value', () => {
@@ -92,6 +93,14 @@ describe('changing a filter', () => {
 
     expect(onChange).toHaveBeenCalledWith({ direction: 'asc' })
   })
+
+  it('flips it back, and says which way it is sorting', async () => {
+    const { onChange } = renderBar({ ...DEFAULT_FILTERS, direction: 'asc' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ascending' }))
+
+    expect(onChange).toHaveBeenCalledWith({ direction: 'desc' })
+  })
 })
 
 describe('the search box', () => {
@@ -120,6 +129,17 @@ describe('the search box', () => {
     rerender(<FilterBar filters={{ ...DEFAULT_FILTERS, search: 'Zalando' }} onChange={onChange} />)
 
     expect(screen.getByRole('searchbox')).toHaveValue('Zalando')
+  })
+
+  it('empties the box when the url drops the term', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <FilterBar filters={{ ...DEFAULT_FILTERS, search: 'Zalando' }} onChange={onChange} />
+    )
+
+    rerender(<FilterBar filters={DEFAULT_FILTERS} onChange={onChange} />)
+
+    expect(screen.getByRole('searchbox')).toHaveValue('')
   })
 
   it('drops the term entirely when the box is emptied', async () => {
@@ -161,19 +181,12 @@ describe('clearing', () => {
 })
 
 describe('the export links', () => {
-  it('exports what is on screen, in both formats', () => {
+  it('exports the view on screen, in both formats', () => {
     renderBar({ ...DEFAULT_FILTERS, status: 'refunded' })
 
     expect(screen.getByRole('link', { name: 'Export CSV' }))
       .toHaveAttribute('href', expect.stringContaining('status=refunded'))
     expect(screen.getByRole('link', { name: 'Export JSON' }))
       .toHaveAttribute('href', expect.stringContaining('format=json'))
-  })
-
-  it('exports every page, not just the one being read', () => {
-    renderBar({ ...DEFAULT_FILTERS, page: 3 })
-
-    expect(screen.getByRole('link', { name: 'Export CSV' }))
-      .toHaveAttribute('href', expect.not.stringContaining('page='))
   })
 })

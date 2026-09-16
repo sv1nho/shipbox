@@ -59,13 +59,14 @@ describe('the day it proposes', () => {
 })
 
 describe('picking another day', () => {
-  it('keeps what the user typed', async () => {
-    renderPrompt()
+  it('confirms the day the user picked, not the one it proposed', async () => {
+    const { onConfirm } = renderPrompt()
 
     await userEvent.clear(dateInput())
     await userEvent.type(dateInput(), '2026-06-12')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
 
-    expect(dateInput()).toHaveValue('2026-06-12')
+    expect(onConfirm).toHaveBeenCalledWith('2026-06-12', undefined)
   })
 
   it('explains and blocks a day that lands before the previous step', async () => {
