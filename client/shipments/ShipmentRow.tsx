@@ -2,7 +2,7 @@ import type { ShipmentDto } from '../../shared/shipment.js'
 import { TRANSITIONS, menuSteps, nextStep } from '../../shared/transitions.js'
 import type { NextStep } from '../../shared/transitions.js'
 import { CARRIERS } from '../../shared/carriers.js'
-import { alertMessage, delayInfo, formatAmount, formatDate, statusDate, workingDays } from './format.js'
+import { alertMessage, days, delayInfo, formatAmount, formatDate, statusDate } from './format.js'
 import { StatusPill } from './StatusPill.js'
 
 export type RowHandlers = {
@@ -73,7 +73,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 />
               </svg>
             )}
-            {delay.label} {workingDays(delay.days)}
+            {delay.label} {days(delay.days)}
           </span>
         )}
       </span>

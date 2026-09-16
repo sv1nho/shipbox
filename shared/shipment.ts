@@ -6,10 +6,13 @@ export type IsoDate = string
 
 export type DerivedFields = {
   daysSinceCreated: number
+  daysSinceDropoff: number | null
   daysSinceReceived: number | null
   decisionDelayDays: number | null
   totalDelayDays: number | null
   needsAction: boolean
+  shippingLate: boolean
+  labelExpiring: boolean
   shouldDropOff: boolean
 }
 

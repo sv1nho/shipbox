@@ -90,20 +90,19 @@ describe('the date the row shows', () => {
     expect(screen.getByText(expected)).toBeInTheDocument()
   })
 
-  it('says how long it has been waiting', () => {
-    renderRow({ status: 'received', daysSinceReceived: 12 })
+  it.each([
+    ['pending', { daysSinceCreated: 4 }, 'Waiting 4 days'],
+    ['dropped_off', { daysSinceDropoff: 5 }, 'Waiting 5 days'],
+    ['received', { daysSinceReceived: 12 }, 'Waiting 12 days'],
+    ['refunded', { decisionDelayDays: 6 }, 'Took 6 days'],
+  ] as const)('counts what the %s status is waiting on', (status, fields, expected) => {
+    renderRow({ status, decisionDate: '2026-06-09', ...fields })
 
-    expect(screen.getByText('Waiting 12 working days')).toBeInTheDocument()
-  })
-
-  it('says how long the whole return took once it is over', () => {
-    renderRow({ status: 'refunded', decisionDate: '2026-06-09', totalDelayDays: 18 })
-
-    expect(screen.getByText('Took 18 working days')).toBeInTheDocument()
+    expect(screen.getByText(expected)).toBeInTheDocument()
   })
 
   it('shows no dash when the figure cannot be derived', () => {
-    renderRow({ status: 'refunded', decisionDate: '2026-06-09', totalDelayDays: null })
+    renderRow({ status: 'refunded', decisionDate: '2026-06-09', decisionDelayDays: null })
 
     expect(screen.queryByText('—')).not.toBeInTheDocument()
   })

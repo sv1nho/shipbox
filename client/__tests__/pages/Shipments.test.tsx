@@ -258,6 +258,38 @@ describe('recording a step', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('never lets a step predate the label this app made', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'pending', hasLabel: true, createdAt: '2026-06-01T10:00:00.000Z' })])
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
+
+    expect(screen.getByLabelText(/which day/i)).toHaveAttribute('min', '2026-06-01')
+  })
+
+  it('imposes no floor on a shipment added by hand, which may be an old return', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'pending', hasLabel: false, createdAt: '2026-06-01T10:00:00.000Z' })])
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
+
+    expect(screen.getByLabelText(/which day/i)).not.toHaveAttribute('min')
+  })
+
+  it('never lets a day be recorded in the future', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: 'Drop off' }))
+
+    expect(screen.getByLabelText(/which day/i)).toHaveAttribute('max', today())
+  })
+
   it('forbids a reception dated before the drop-off', async () => {
     vi.mocked(listShipments).mockResolvedValue(
       listed([makeShipment({ status: 'dropped_off', dropoffDate: '2026-06-10' })])
@@ -444,6 +476,20 @@ describe('a decision that skips the reception', () => {
     ])
   })
 
+  it('floors the reception at the label when there is no drop-off to floor it at', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'pending', hasLabel: true, createdAt: '2026-06-01T10:00:00.000Z' })])
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /more actions/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /record decision directly/i }))
+
+    expect(screen.getByLabelText(/when did the store receive it/i))
+      .toHaveAttribute('min', '2026-06-01')
+  })
+
   it('asks nothing extra when the reception is already recorded', async () => {
     vi.mocked(listShipments).mockResolvedValue(
       listed([makeShipment({ status: 'received', receivedDate: '2026-06-05' })])
@@ -491,7 +537,7 @@ describe('the details panel', () => {
       })
     })
 
-    expect(await screen.findByText('2 working days')).toBeInTheDocument()
+    expect(await screen.findByText('2 days')).toBeInTheDocument()
     expect(listShipments).toHaveBeenCalledTimes(2)
   })
 

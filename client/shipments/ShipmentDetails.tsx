@@ -5,7 +5,7 @@ import { CARRIERS } from '../../shared/carriers.js'
 import { ORDERED_DATE_FIELDS } from '../../shared/transitions.js'
 import type { DateField } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
-import { alertMessage, formatAmount, formatDate, workingDays, zonedDate } from './format.js'
+import { alertMessage, days, formatAmount, formatDate, zonedDate } from './format.js'
 import { StatusPill } from './StatusPill.js'
 import { Modal } from './Modal.js'
 
@@ -104,17 +104,20 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               </Field>
             ))}
 
-          <Field label='Since it was added'>{workingDays(shipment.daysSinceCreated)}</Field>
+          <Field label='Since it was added'>{days(shipment.daysSinceCreated)}</Field>
+          {shipment.daysSinceDropoff !== null && (
+            <Field label='Since the drop-off'>{days(shipment.daysSinceDropoff)}</Field>
+          )}
           {shipment.daysSinceReceived !== null && (
             <Field label='Since the store received it'>
-              {workingDays(shipment.daysSinceReceived)}
+              {days(shipment.daysSinceReceived)}
             </Field>
           )}
           {shipment.decisionDelayDays !== null && (
-            <Field label='The store took'>{workingDays(shipment.decisionDelayDays)}</Field>
+            <Field label='The store took'>{days(shipment.decisionDelayDays)}</Field>
           )}
           {shipment.totalDelayDays !== null && (
-            <Field label='The whole return took'>{workingDays(shipment.totalDelayDays)}</Field>
+            <Field label='The whole return took'>{days(shipment.totalDelayDays)}</Field>
           )}
 
           {shipment.note !== null && <Field label='Note'>{shipment.note}</Field>}

@@ -72,8 +72,8 @@ describe('the document itself', () => {
     expect(openApiDocument.openapi).toBe('3.1.0')
   })
 
-  it('warns that day counts are working days, not calendar days', () => {
-    expect(openApiDocument.info.description).toContain('working days')
+  it('says what unit the day counts are in', () => {
+    expect(openApiDocument.info.description).toContain('calendar days')
   })
 
   it('describes the request body of the create route from the zod schema', () => {

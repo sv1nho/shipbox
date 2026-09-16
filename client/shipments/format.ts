@@ -23,14 +23,18 @@ const STATE_DATE: Record<ShipmentStatus, { label: string; field: DateField | nul
   rejected: { label: 'Decided', field: 'decisionDate' },
 }
 
-type DelayField = 'daysSinceCreated' | 'daysSinceReceived' | 'totalDelayDays'
+type DelayField =
+  | 'daysSinceCreated'
+  | 'daysSinceDropoff'
+  | 'daysSinceReceived'
+  | 'decisionDelayDays'
 
 const STATE_DELAY: Record<ShipmentStatus, { label: string; field: DelayField }> = {
   pending: { label: 'Waiting', field: 'daysSinceCreated' },
-  dropped_off: { label: 'Waiting', field: 'daysSinceCreated' },
+  dropped_off: { label: 'Waiting', field: 'daysSinceDropoff' },
   received: { label: 'Waiting', field: 'daysSinceReceived' },
-  refunded: { label: 'Took', field: 'totalDelayDays' },
-  rejected: { label: 'Took', field: 'totalDelayDays' },
+  refunded: { label: 'Took', field: 'decisionDelayDays' },
+  rejected: { label: 'Took', field: 'decisionDelayDays' },
 }
 
 export function formatAmount (amountCents: number, currency: string): string {
@@ -55,8 +59,8 @@ export function statusLabel (status: ShipmentStatus): string {
   return STATUS_LABELS[status]
 }
 
-export function workingDays (count: number): string {
-  return count === 1 ? '1 working day' : `${String(count)} working days`
+export function days (count: number): string {
+  return count === 1 ? '1 day' : `${String(count)} days`
 }
 
 export function statusDate (shipment: ShipmentDto): { label: string; date: IsoDate } {
@@ -68,18 +72,26 @@ export function statusDate (shipment: ShipmentDto): { label: string; date: IsoDa
 
 export function delayInfo (shipment: ShipmentDto): { label: string; days: number } | null {
   const { label, field } = STATE_DELAY[shipment.status]
-  const days = shipment[field]
+  const count = shipment[field]
 
-  return days === null ? null : { label, days }
+  return count === null ? null : { label, days: count }
 }
 
 export function alertMessage (shipment: ShipmentDto): string | null {
   if (shipment.needsAction && shipment.daysSinceReceived !== null) {
-    return `The store has had this parcel for ${workingDays(shipment.daysSinceReceived)} without deciding. Time to chase them.`
+    return `The store has had this parcel for ${days(shipment.daysSinceReceived)} without deciding. Time to chase them.`
+  }
+
+  if (shipment.shippingLate && shipment.daysSinceDropoff !== null) {
+    return `The parcel was dropped off ${days(shipment.daysSinceDropoff)} ago and the store has still not received it. Time to contact them.`
+  }
+
+  if (shipment.labelExpiring) {
+    return `The label was made ${days(shipment.daysSinceCreated)} ago and is about to expire. Drop the parcel off now.`
   }
 
   if (shipment.shouldDropOff) {
-    return `The label was made ${workingDays(shipment.daysSinceCreated)} ago and the parcel has not been dropped off.`
+    return `The label was made ${days(shipment.daysSinceCreated)} ago and the parcel has not been dropped off.`
   }
 
   return null

@@ -69,8 +69,7 @@ export const openApiDocument = {
     version: '1.0.0',
     description:
       'Every route requires a session cookie and only ever sees the shipments of the signed-in user. ' +
-      'Day counts (daysSinceReceived, decisionDelayDays, totalDelayDays) are working days on the ' +
-      'Belgian calendar, weekends and public holidays excluded, not calendar days.',
+      'Day counts are calendar days, and the derived ones are null when a source date is missing.',
   },
   tags: [{ name: 'shipments' }],
   paths: {

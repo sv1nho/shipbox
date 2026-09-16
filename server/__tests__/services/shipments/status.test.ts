@@ -8,9 +8,7 @@ import {
 import type { ShipmentState } from '../../../services/shipments/status.js'
 import { TRANSITIONS } from '../../../../shared/transitions.js'
 import type { TransitionAction } from '../../../../shared/transitions.js'
-import { workingDaysBetween } from '../../../services/shipments/working-days.js'
 import { AppError } from '../../../errors.js'
-import { HOME_COUNTRY } from '../../../config/constants.js'
 import { SHIPMENT_STATUSES } from '../../../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../../../shared/shipment-status.js'
 
@@ -285,31 +283,33 @@ describe('computeDerived', () => {
   const derived = (overrides: Partial<ShipmentState> & { createdDate?: string } = {}) =>
     computeDerived({ ...state(), createdDate: '2026-06-01', ...overrides }, TODAY)
 
-  describe('delays, counted in working days', () => {
+  describe('delays, counted in calendar days', () => {
     it('measures the store decision delay from the reception', () => {
-      expect(derived({ receivedDate: '2026-06-01', decisionDate: '2026-06-15' }).decisionDelayDays).toBe(10)
+      expect(derived({ receivedDate: '2026-06-01', decisionDate: '2026-06-15' }).decisionDelayDays).toBe(14)
     })
 
     it('measures the total delay from the drop-off', () => {
-      expect(derived({ dropoffDate: '2026-05-29', decisionDate: '2026-06-15' }).totalDelayDays).toBe(11)
+      expect(derived({ dropoffDate: '2026-05-29', decisionDate: '2026-06-15' }).totalDelayDays).toBe(17)
+    })
+
+    it('counts the days since the drop-off', () => {
+      expect(derived({ dropoffDate: '2026-06-10' }).daysSinceDropoff).toBe(5)
     })
 
     it('counts the days since the reception', () => {
-      expect(derived({ receivedDate: '2026-06-10' }).daysSinceReceived).toBe(3)
+      expect(derived({ receivedDate: '2026-06-10' }).daysSinceReceived).toBe(5)
     })
 
     it('counts the days since the shipment was created', () => {
-      expect(derived({ createdDate: '2026-06-10' }).daysSinceCreated).toBe(3)
+      expect(derived({ createdDate: '2026-06-10' }).daysSinceCreated).toBe(5)
     })
 
-    it('skips the weekend, so a friday to monday delay is one day', () => {
-      expect(derived({ receivedDate: '2026-06-05', decisionDate: '2026-06-08' }).decisionDelayDays).toBe(1)
+    it('counts the weekend too, a friday to monday delay is three days', () => {
+      expect(derived({ receivedDate: '2026-06-05', decisionDate: '2026-06-08' }).decisionDelayDays).toBe(3)
     })
 
-    it('uses the home calendar, since the staff deciding the refund work where the user shops', () => {
-      expect(derived({ receivedDate: '2026-07-17', decisionDate: '2026-07-24' }).decisionDelayDays).toBe(4)
-      expect(workingDaysBetween('2026-07-17', '2026-07-24', HOME_COUNTRY)).toBe(4)
-      expect(workingDaysBetween('2026-07-17', '2026-07-24', 'NL')).toBe(5)
+    it('counts a public holiday like any other day', () => {
+      expect(derived({ receivedDate: '2026-07-17', decisionDate: '2026-07-24' }).decisionDelayDays).toBe(7)
     })
   })
 
@@ -333,20 +333,24 @@ describe('computeDerived', () => {
     it('has no days since reception without a reception date', () => {
       expect(derived().daysSinceReceived).toBeNull()
     })
+
+    it('has no days since drop-off without a drop-off date', () => {
+      expect(derived().daysSinceDropoff).toBeNull()
+    })
   })
 
   describe('needsAction, the parcel arrived and no decision came', () => {
     it.each([
-      ['2026-05-27', 13, false],
-      ['2026-05-26', 14, true],
-      ['2026-05-25', 15, true],
-    ])('received on %s, that is %i working days ago', (receivedDate, _days, expected) => {
+      ['2026-06-02', 13, false],
+      ['2026-06-01', 14, true],
+      ['2026-05-31', 15, true],
+    ])('received on %s, that is %i days ago', (receivedDate, _days, expected) => {
       expect(derived({ status: 'received', receivedDate }).needsAction).toBe(expected)
     })
 
-    it('fires exactly on the fourteenth working day, the threshold is inclusive', () => {
-      expect(derived({ status: 'received', receivedDate: '2026-05-26' }).daysSinceReceived).toBe(14)
-      expect(derived({ status: 'received', receivedDate: '2026-05-26' }).needsAction).toBe(true)
+    it('fires exactly on the fourteenth day, the threshold is inclusive', () => {
+      expect(derived({ status: 'received', receivedDate: '2026-06-01' }).daysSinceReceived).toBe(14)
+      expect(derived({ status: 'received', receivedDate: '2026-06-01' }).needsAction).toBe(true)
     })
 
     it.each(SHIPMENT_STATUSES.filter((s) => s !== 'received'))(
@@ -359,22 +363,60 @@ describe('computeDerived', () => {
 
   describe('shouldDropOff, the label was made and the parcel never left', () => {
     it.each([
-      ['2026-06-05', 6, false],
-      ['2026-06-04', 7, true],
-      ['2026-06-03', 8, true],
-    ])('created on %s, that is %i working days ago', (createdDate, _days, expected) => {
+      ['2026-06-09', 6, false],
+      ['2026-06-08', 7, true],
+      ['2026-06-07', 8, true],
+    ])('created on %s, that is %i days ago', (createdDate, _days, expected) => {
       expect(derived({ status: 'pending', createdDate }).shouldDropOff).toBe(expected)
     })
 
-    it('fires exactly on the seventh working day, the threshold is inclusive', () => {
-      expect(derived({ status: 'pending', createdDate: '2026-06-04' }).daysSinceCreated).toBe(7)
-      expect(derived({ status: 'pending', createdDate: '2026-06-04' }).shouldDropOff).toBe(true)
+    it('fires exactly on the seventh day, the threshold is inclusive', () => {
+      expect(derived({ status: 'pending', createdDate: '2026-06-08' }).daysSinceCreated).toBe(7)
+      expect(derived({ status: 'pending', createdDate: '2026-06-08' }).shouldDropOff).toBe(true)
     })
 
     it.each(SHIPMENT_STATUSES.filter((s) => s !== 'pending'))(
       'stays false for a %s shipment however old',
       (status) => {
         expect(derived({ status, createdDate: '2026-01-01' }).shouldDropOff).toBe(false)
+      }
+    )
+  })
+
+  describe('shippingLate, the parcel left and never arrived', () => {
+    it.each([
+      ['2026-06-02', 13, false],
+      ['2026-06-01', 14, true],
+      ['2026-05-31', 15, true],
+    ])('dropped off on %s, that is %i days ago', (dropoffDate, _days, expected) => {
+      expect(derived({ status: 'dropped_off', dropoffDate }).shippingLate).toBe(expected)
+    })
+
+    it.each(SHIPMENT_STATUSES.filter((s) => s !== 'dropped_off'))(
+      'stays false for a %s shipment however old',
+      (status) => {
+        expect(derived({ status, dropoffDate: '2026-01-01' }).shippingLate).toBe(false)
+      }
+    )
+  })
+
+  describe('labelExpiring, the label is about to be worthless', () => {
+    it.each([
+      ['2026-05-24', 22, false],
+      ['2026-05-23', 23, true],
+      ['2026-05-22', 24, true],
+    ])('created on %s, that is %i days ago', (createdDate, _days, expected) => {
+      expect(derived({ status: 'pending', createdDate }).labelExpiring).toBe(expected)
+    })
+
+    it('warns a week before the thirty days are up', () => {
+      expect(derived({ status: 'pending', createdDate: '2026-05-23' }).daysSinceCreated).toBe(23)
+    })
+
+    it.each(SHIPMENT_STATUSES.filter((s) => s !== 'pending'))(
+      'stays false for a %s shipment however old',
+      (status) => {
+        expect(derived({ status, createdDate: '2026-01-01' }).labelExpiring).toBe(false)
       }
     )
   })

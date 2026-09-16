@@ -1,8 +1,13 @@
 import { AppError } from '../../errors.js'
-import { RECEPTION_ALERT_DAYS, PENDING_ALERT_DAYS, HOME_COUNTRY } from '../../config/constants.js'
+import {
+  LABEL_EXPIRY_WARNING_DAYS,
+  LABEL_VALIDITY_DAYS,
+  PENDING_ALERT_DAYS,
+  RECEPTION_ALERT_DAYS,
+  SHIPPING_ALERT_DAYS,
+} from '../../config/constants.js'
 import { diffDays, isIsoDate } from './dates.js'
 import type { IsoDate } from './dates.js'
-import { workingDaysBetween } from './working-days.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
 import {
   ORDERED_DATE_FIELDS,
@@ -133,25 +138,31 @@ export function planRevert (state: ShipmentState): ShipmentState {
 type DerivedInput = ShipmentState & { createdDate: IsoDate }
 
 export function computeDerived (shipment: DerivedInput, today: IsoDate): DerivedFields {
-  const daysSinceCreated = workingDaysBetween(shipment.createdDate, today, HOME_COUNTRY)
+  const daysSinceCreated = diffDays(shipment.createdDate, today)
+
+  const daysSinceDropoff =
+    shipment.dropoffDate === null
+      ? null
+      : diffDays(shipment.dropoffDate, today)
 
   const daysSinceReceived =
     shipment.receivedDate === null
       ? null
-      : workingDaysBetween(shipment.receivedDate, today, HOME_COUNTRY)
+      : diffDays(shipment.receivedDate, today)
 
   const decisionDelayDays =
     shipment.receivedDate === null || shipment.decisionDate === null
       ? null
-      : workingDaysBetween(shipment.receivedDate, shipment.decisionDate, HOME_COUNTRY)
+      : diffDays(shipment.receivedDate, shipment.decisionDate)
 
   const totalDelayDays =
     shipment.dropoffDate === null || shipment.decisionDate === null
       ? null
-      : workingDaysBetween(shipment.dropoffDate, shipment.decisionDate, HOME_COUNTRY)
+      : diffDays(shipment.dropoffDate, shipment.decisionDate)
 
   return {
     daysSinceCreated,
+    daysSinceDropoff,
     daysSinceReceived,
     decisionDelayDays,
     totalDelayDays,
@@ -159,6 +170,13 @@ export function computeDerived (shipment: DerivedInput, today: IsoDate): Derived
       shipment.status === 'received' &&
       daysSinceReceived !== null &&
       daysSinceReceived >= RECEPTION_ALERT_DAYS,
+    shippingLate:
+      shipment.status === 'dropped_off' &&
+      daysSinceDropoff !== null &&
+      daysSinceDropoff >= SHIPPING_ALERT_DAYS,
+    labelExpiring:
+      shipment.status === 'pending' &&
+      daysSinceCreated >= LABEL_VALIDITY_DAYS - LABEL_EXPIRY_WARNING_DAYS,
     shouldDropOff: shipment.status === 'pending' && daysSinceCreated >= PENDING_ALERT_DAYS,
   }
 }

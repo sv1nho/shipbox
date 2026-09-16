@@ -84,6 +84,7 @@ describe('what it leaves out', () => {
     expect(screen.queryByText('The store took')).not.toBeInTheDocument()
     expect(screen.queryByText('The whole return took')).not.toBeInTheDocument()
     expect(screen.queryByText('Since the store received it')).not.toBeInTheDocument()
+    expect(screen.queryByText('Since the drop-off')).not.toBeInTheDocument()
   })
 
   it('hides an empty order number and an empty note', () => {
@@ -107,6 +108,7 @@ describe('the full history of a finished return', () => {
       dropoffDate: '2026-06-03',
       receivedDate: '2026-06-05',
       decisionDate: '2026-06-09',
+      daysSinceDropoff: 6,
       daysSinceReceived: 4,
       decisionDelayDays: 2,
       totalDelayDays: 4,
@@ -117,8 +119,9 @@ describe('the full history of a finished return', () => {
     expect(valueOf('Dropped off')).toBe('03/06/2026')
     expect(valueOf('Received')).toBe('05/06/2026')
     expect(valueOf('Decided')).toBe('09/06/2026')
-    expect(valueOf('The store took')).toBe('2 working days')
-    expect(valueOf('The whole return took')).toBe('4 working days')
+    expect(valueOf('Since the drop-off')).toBe('6 days')
+    expect(valueOf('The store took')).toBe('2 days')
+    expect(valueOf('The whole return took')).toBe('4 days')
     expect(valueOf('Note')).toBe('Refunded in full')
     expect(valueOf('Archived')).toBe('10/06/2026')
   })
@@ -128,7 +131,7 @@ describe('the warning', () => {
   it('repeats the alert the row could only show as an icon', () => {
     renderDetails({ status: 'received', needsAction: true, daysSinceReceived: 21 })
 
-    expect(screen.getByText(/has had this parcel for 21 working days/i)).toBeInTheDocument()
+    expect(screen.getByText(/has had this parcel for 21 days/i)).toBeInTheDocument()
   })
 
   it('stays out of the way when nothing is late', () => {

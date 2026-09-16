@@ -23,10 +23,13 @@ export function makeShipment (overrides: Partial<ShipmentDto> = {}): ShipmentDto
     trackingUrl: 'https://track.bpost.cloud/btr/web/#/search?lang=fr',
     hasLabel: false,
     daysSinceCreated: 0,
+    daysSinceDropoff: null,
     daysSinceReceived: null,
     decisionDelayDays: null,
     totalDelayDays: null,
     needsAction: false,
+    shippingLate: false,
+    labelExpiring: false,
     shouldDropOff: false,
     ...overrides,
   }
