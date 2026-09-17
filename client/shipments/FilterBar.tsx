@@ -8,9 +8,9 @@ import { DEFAULT_FILTERS, hasActiveFilters } from './filters.js'
 import { statusLabel } from './format.js'
 
 const ARCHIVED_LABELS: Record<ArchivedFilter, string> = {
-  exclude: 'Active only',
-  only: 'Archived only',
-  include: 'Active and archived',
+  exclude: 'Active',
+  only: 'Archived',
+  include: 'All',
 }
 
 const SORT_LABELS: Record<SortKey, string> = {
@@ -62,6 +62,24 @@ export function FilterBar ({ filters, onChange }: FilterBarProps) {
         <button type='submit' className='btn btn-ghost'>Search</button>
       </form>
 
+      <div className='segmented' role='group' aria-label='Archive'>
+        {Object.entries(ARCHIVED_LABELS).map(([value, label]) => (
+          <button
+            key={value}
+            type='button'
+            className={
+              value === (filters.archived ?? DEFAULT_FILTERS.archived)
+                ? 'segmented-btn segmented-btn-active'
+                : 'segmented-btn'
+            }
+            aria-pressed={value === (filters.archived ?? DEFAULT_FILTERS.archived)}
+            onClick={() => { onChange({ archived: value as ArchivedFilter }) }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className='filter-selects'>
         <label className='sr-only' htmlFor='filter-carrier'>Carrier</label>
         <select
@@ -92,18 +110,6 @@ export function FilterBar ({ filters, onChange }: FilterBarProps) {
           <option value=''>All statuses</option>
           {SHIPMENT_STATUSES.map((status) => (
             <option key={status} value={status}>{statusLabel(status)}</option>
-          ))}
-        </select>
-
-        <label className='sr-only' htmlFor='filter-archived'>Archive</label>
-        <select
-          id='filter-archived'
-          className='form-select'
-          value={filters.archived ?? DEFAULT_FILTERS.archived}
-          onChange={(event) => { onChange({ archived: event.target.value as ArchivedFilter }) }}
-        >
-          {Object.entries(ARCHIVED_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
           ))}
         </select>
 

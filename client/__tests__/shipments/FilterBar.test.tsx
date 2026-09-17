@@ -24,7 +24,7 @@ describe('what the bar shows', () => {
     renderBar({})
 
     expect(screen.getByLabelText('Carrier')).toHaveValue('')
-    expect(screen.getByLabelText('Archive')).toHaveValue(DEFAULT_FILTERS.archived)
+    expect(screen.getByRole('button', { name: 'Active' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByLabelText('Sort by')).toHaveValue(DEFAULT_FILTERS.sort)
     expect(screen.getByRole('button', { name: 'Descending' })).toBeInTheDocument()
   })
@@ -78,12 +78,22 @@ describe('changing a filter', () => {
     expect(onChange).toHaveBeenCalledWith({ sort: 'amountCents' })
   })
 
-  it('reports the archive view', async () => {
+  it.each([
+    ['Archived', 'only'],
+    ['All', 'include'],
+  ] as const)('switches to the %s view in a single click', async (name, archived) => {
     const { onChange } = renderBar()
 
-    await userEvent.selectOptions(screen.getByLabelText('Archive'), 'only')
+    await userEvent.click(screen.getByRole('button', { name }))
 
-    expect(onChange).toHaveBeenCalledWith({ archived: 'only' })
+    expect(onChange).toHaveBeenCalledWith({ archived })
+  })
+
+  it('shows which archive view is on without opening anything', () => {
+    renderBar({ ...DEFAULT_FILTERS, archived: 'only' })
+
+    expect(screen.getByRole('button', { name: 'Archived' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Active' })).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('flips the direction on the toggle', async () => {
