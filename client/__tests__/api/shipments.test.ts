@@ -61,12 +61,20 @@ describe('the urls each call builds', () => {
     ['deleteShipment', () => api.deleteShipment('abc'), 'DELETE', '/api/shipments/abc'],
     ['getLabelPayload', () => api.getLabelPayload('abc'), 'GET', '/api/shipments/abc/label'],
     ['updateShipment', () => api.updateShipment('abc', { store: 'Zalando' }), 'PATCH', '/api/shipments/abc'],
+    ['importShipments', () => api.importShipments([{ store: 'Zalando' }]), 'POST', '/api/shipments/import'],
   ])('%s calls %s %s', async (_name, run, method, url) => {
     const mock = fetchMock()
     await run()
 
     expect(calledWith(mock).url).toBe(url)
     expect(calledWith(mock).init.method).toBe(method)
+  })
+
+  it('wraps the imported rows in a shipments list', async () => {
+    const mock = fetchMock()
+    await api.importShipments([{ store: 'Zalando' }])
+
+    expect(calledWith(mock).init.body).toBe('{"shipments":[{"store":"Zalando"}]}')
   })
 
   it('sends the patch as the body', async () => {

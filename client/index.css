@@ -649,6 +649,13 @@ html, body {
   .form-input-invalid,
   .form-input-invalid:hover { border-color: var(--color-danger); }
 
+  .import-help {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .import-help summary { cursor: pointer; }
+
   .combobox { position: relative; }
 
   .combobox-list {

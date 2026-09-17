@@ -153,6 +153,10 @@ export const existsQuerySchema = z.object({
   trackingNumber: trackingNumberSchema,
 })
 
+export const importShipmentsSchema = z.object({
+  shipments: z.array(z.unknown()).min(1).max(500),
+})
+
 export const storesQuerySchema = z.object({
   q: z.string().max(120).optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),

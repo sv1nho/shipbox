@@ -724,6 +724,79 @@ describe('list', () => {
   })
 })
 
+describe('importMany', () => {
+  let counter = 0
+
+  const row = (overrides: Partial<CreateShipmentInput> = {}): { row: number; input: CreateShipmentInput } => {
+    counter += 1
+
+    return { row: counter, input: input(overrides) }
+  }
+
+  const importRows = (...rows: { row: number; input: CreateShipmentInput }[]) =>
+    shipments.importMany(shipments.create, OWNER, rows)
+
+  it('imports every row it is given', async () => {
+    const outcome = await importRows(row(), row(), row())
+
+    expect(outcome).toEqual({ imported: 3, failures: [] })
+    expect((await shipments.list(OWNER, {})).total).toBe(3)
+  })
+
+  it('takes the good rows and reports the bad ones by their own number', async () => {
+    const taken = uniqueTracking()
+    await shipments.create(OWNER, input({ trackingNumber: taken }))
+
+    const outcome = await importRows(row(), { row: 7, input: input({ trackingNumber: taken }) }, row())
+
+    expect(outcome.imported).toBe(2)
+    expect(outcome.failures).toHaveLength(1)
+    expect(outcome.failures[0].row).toBe(7)
+    expect(outcome.failures[0].message).toContain('already registered')
+  })
+
+  it('reports a row whose dates are out of order', async () => {
+    const outcome = await importRows(
+      row({ status: 'received', dropoffDate: '2026-02-10', receivedDate: '2026-02-01' })
+    )
+
+    expect(outcome.failures[0].message).toContain('earlier than')
+  })
+
+  it('creates each store once, however many rows name it', async () => {
+    await importRows(row({ store: 'Snipes' }), row({ store: 'Snipes' }))
+
+    expect(await prisma.store.count({ where: { userId: OWNER, name: 'Snipes' } })).toBe(1)
+  })
+
+  it('carries the customer service address a file gives', async () => {
+    await importRows(row({ store: 'Snipes', storeSupportEmail: 'support@snipes.com' }))
+
+    expect((await shipments.searchStores(OWNER, 'Snipes'))[0].supportEmail)
+      .toBe('support@snipes.com')
+  })
+
+  it('imports a finished return, which is what a history is made of', async () => {
+    const outcome = await importRows(row({
+      status: 'refunded',
+      dropoffDate: '2026-01-03',
+      receivedDate: '2026-01-06',
+      decisionDate: '2026-01-10',
+    }))
+
+    expect(outcome.imported).toBe(1)
+    expect((await shipments.list(OWNER, {})).items[0].decisionDelayDays).toBe(4)
+  })
+
+  it('lets an unexpected failure through instead of filing it as a row problem', async () => {
+    const boom = new Error('the database went away')
+
+    await expect(
+      shipments.importMany(() => Promise.reject(boom), OWNER, [row()])
+    ).rejects.toThrow(boom)
+  })
+})
+
 describe('searchStores', () => {
   const stores = ['Zalando', 'Zalando BE', 'Décathlon', 'Zara', 'Nike']
 

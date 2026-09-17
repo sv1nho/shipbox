@@ -4,6 +4,7 @@ import type { TransitionAction } from '../../shared/transitions.js'
 import type {
   CreateShipmentInput,
   ExistsResult,
+  ImportOutcome,
   IsoDate,
   LabelResult,
   ListParams,
@@ -36,6 +37,9 @@ export const createShipment = (input: CreateShipmentInput): Promise<ShipmentDto>
 
 export const updateShipment = (id: string, patch: UpdateShipmentInput): Promise<ShipmentDto> =>
   request<ShipmentDto>(`${BASE}/${id}`, { method: 'PATCH', body: patch })
+
+export const importShipments = (shipments: Record<string, unknown>[]): Promise<ImportOutcome> =>
+  request<ImportOutcome>(`${BASE}/import`, { method: 'POST', body: { shipments } })
 
 export const applyTransition = (
   id: string,

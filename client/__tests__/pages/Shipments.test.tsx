@@ -13,6 +13,7 @@ vi.mock('../../api/shipments.js', () => ({
   getLabelPayload: vi.fn(),
   updateShipment: vi.fn(),
   createShipment: vi.fn(),
+  importShipments: vi.fn(),
   searchStores: vi.fn(),
   exportUrl: vi.fn(() => '/api/shipments/export?format=csv'),
 }))
@@ -24,6 +25,7 @@ import {
   applyTransition,
   archiveShipment,
   createShipment,
+  importShipments,
   searchStores,
   deleteShipment,
   getLabelPayload,
@@ -612,6 +614,95 @@ describe('adding a return by hand', () => {
 
     expect(await screen.findByText('already used')).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+})
+
+describe('importing a file', () => {
+  const openImport = async () => {
+    await userEvent.click(screen.getByRole('button', { name: 'Import' }))
+  }
+
+  const chooseFile = async (...lines: string[]) => {
+    const content = lines.join(String.fromCharCode(13, 10))
+    await userEvent.upload(screen.getByLabelText('File'), new File([content], 'returns.csv'))
+  }
+
+  const confirmImport = async () => {
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^import$/i }))
+  }
+
+  it('is offered from the header', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+
+    await openImport()
+
+    expect(screen.getByRole('heading', { name: /import returns/i })).toBeInTheDocument()
+  })
+
+  it('sends the rows and refreshes the list with what landed', async () => {
+    vi.mocked(importShipments).mockResolvedValue({ imported: 2, failures: [] })
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await openImport()
+    await chooseFile('store,amount', 'Zalando,49.99', 'Zara,20')
+    await screen.findByText(/2 returns/)
+
+    await confirmImport()
+
+    await waitFor(() => { expect(importShipments).toHaveBeenCalledOnce() })
+    expect(await screen.findByText(/Imported/)).toBeInTheDocument()
+    expect(listShipments).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the window open on the refusals, so they can be read', async () => {
+    vi.mocked(importShipments).mockResolvedValue({
+      imported: 1,
+      failures: [{ row: 2, message: 'trackingNumber: required' }],
+    })
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await openImport()
+    await chooseFile('store', 'Zalando', 'Zara')
+    await screen.findByText(/2 returns/)
+
+    await confirmImport()
+
+    expect(await screen.findByText(/Row 2: trackingNumber/)).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('reports a failure that took the whole request down', async () => {
+    vi.mocked(importShipments).mockRejectedValue(new TypeError('Failed to fetch'))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await openImport()
+    await chooseFile('store', 'Zalando')
+    await screen.findByText(/1 return/)
+
+    await confirmImport()
+
+    expect(await screen.findByText(/could not be reached/i)).toBeInTheDocument()
+  })
+
+  it('forgets the outcome when the window is opened again', async () => {
+    vi.mocked(importShipments).mockResolvedValue({ imported: 1, failures: [] })
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await openImport()
+    await chooseFile('store', 'Zalando')
+    await screen.findByText(/1 return/)
+    await confirmImport()
+    await screen.findByText(/Imported/)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+    await openImport()
+
+    expect(screen.queryByText(/Imported/)).not.toBeInTheDocument()
   })
 })
 

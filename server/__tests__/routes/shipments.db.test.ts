@@ -165,6 +165,70 @@ describe('the routes that must be declared before /:id', () => {
     expect(response.body).toEqual({ exists: true, id: created.id, archived: false })
   })
 
+  it('reaches the import route rather than reading import as an id', async () => {
+    const response = await request(app)
+      .post('/api/shipments/import')
+      .send({ shipments: [validBody()] })
+      .expect(200)
+
+    expect(bodyOf<{ imported: number }>(response).imported).toBe(1)
+  })
+
+  it('answers 422 on an import with no rows at all', async () => {
+    await request(app).post('/api/shipments/import').send({ shipments: [] }).expect(422)
+  })
+
+  it('names the row a file got wrong, alongside the ones it took', async () => {
+    const response = await request(app)
+      .post('/api/shipments/import')
+      .send({ shipments: [validBody(), { store: 'Zalando' }, validBody()] })
+      .expect(200)
+
+    const outcome = bodyOf<{ imported: number; failures: { row: number; message: string }[] }>(response)
+
+    expect(outcome.imported).toBe(2)
+    expect(outcome.failures).toHaveLength(1)
+    expect(outcome.failures[0].row).toBe(2)
+    expect(outcome.failures[0].message).toContain('trackingNumber')
+  })
+
+  it('reports the refusals in file order, whichever layer refused them', async () => {
+    const taken = uniqueTracking()
+    await createShipment({ trackingNumber: taken })
+
+    const response = await request(app)
+      .post('/api/shipments/import')
+      .send({
+        shipments: [
+          validBody({ trackingNumber: taken }),
+          { store: 'Zalando' },
+          validBody(),
+        ],
+      })
+      .expect(200)
+
+    const outcome = bodyOf<{ imported: number; failures: { row: number }[] }>(response)
+
+    expect(outcome.imported).toBe(1)
+    expect(outcome.failures.map((failure) => failure.row)).toEqual([1, 2])
+  })
+
+  it('drops the derived columns an export writes back, rather than refusing the row', async () => {
+    const response = await request(app)
+      .post('/api/shipments/import')
+      .send({
+        shipments: [{
+          ...validBody(),
+          decisionDelayDays: 4,
+          totalDelayDays: 9,
+          trackingUrl: 'https://example.test',
+        }],
+      })
+      .expect(200)
+
+    expect(bodyOf<{ imported: number }>(response).imported).toBe(1)
+  })
+
   it('reaches the stores route', async () => {
     await createShipment({ store: 'Decathlon', storeSupportEmail: 'contact@decathlon.be' })
 

@@ -7,6 +7,7 @@ import {
   createShipment,
   deleteShipment,
   getLabelPayload,
+  importShipments,
   revertShipment,
   unarchiveShipment,
   updateShipment,
@@ -15,6 +16,7 @@ import { AddShipmentDialog } from '../shipments/AddShipmentDialog.js'
 import { DatePrompt } from '../shipments/DatePrompt.js'
 import { DeleteDialog } from '../shipments/DeleteDialog.js'
 import { FilterBar } from '../shipments/FilterBar.js'
+import { ImportDialog } from '../shipments/ImportDialog.js'
 import { ShipmentDetails } from '../shipments/ShipmentDetails.js'
 import { ShipmentRow } from '../shipments/ShipmentRow.js'
 import type { RowHandlers } from '../shipments/ShipmentRow.js'
@@ -28,6 +30,7 @@ import { TRANSITIONS } from '../../shared/transitions.js'
 import type { PromptResult } from '../shipments/DatePrompt.js'
 import type {
   CreateShipmentInput,
+  ImportOutcome,
   ListParams,
   ShipmentDto,
   UpdateShipmentInput,
@@ -47,6 +50,8 @@ export function Shipments () {
   const [details, setDetails] = useState<ShipmentDto | null>(null)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [outcome, setOutcome] = useState<ImportOutcome | null>(null)
   const [refused, setRefused] = useState<ApiError | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -103,6 +108,13 @@ export function Shipments () {
 
   const confirmAdd = async (input: CreateShipmentInput) => {
     if (await run(() => createShipment(input))) setAdding(false)
+  }
+
+  const confirmImport = async (rows: Record<string, unknown>[]) => {
+    let result: ImportOutcome | null = null
+
+    await run(async () => { result = await importShipments(rows) })
+    setOutcome(result)
   }
 
   const confirmTransition = async (active: Prompt, result: PromptResult) => {
@@ -166,6 +178,13 @@ export function Shipments () {
           )}
           <button
             type='button'
+            className='btn btn-ghost text-xs px-2.5 py-1'
+            onClick={() => { setActionError(null); setOutcome(null); setImporting(true) }}
+          >
+            Import
+          </button>
+          <button
+            type='button'
             className='icon-btn icon-btn-add'
             aria-label='Track a return'
             title='Track a return'
@@ -179,7 +198,7 @@ export function Shipments () {
       <div className='space-y-4'>
         <FilterBar filters={filters} onChange={apply} />
 
-        {actionError !== null && prompt === null && details === null && !adding && (
+        {actionError !== null && prompt === null && details === null && !adding && !importing && (
           <div className='alert-error'>{actionError}</div>
         )}
 
@@ -242,6 +261,16 @@ export function Shipments () {
           </nav>
         )}
       </div>
+
+      {importing && (
+        <ImportDialog
+          busy={busy}
+          error={actionError}
+          outcome={outcome}
+          onClose={() => { setImporting(false); setActionError(null); setOutcome(null) }}
+          onImport={(rows) => { void confirmImport(rows) }}
+        />
+      )}
 
       {adding && (
         <AddShipmentDialog

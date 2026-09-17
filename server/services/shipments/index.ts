@@ -397,3 +397,4 @@ export async function getLabelPayload (
 }
 
 export { searchStores } from './stores.js'
+export { importMany } from './import.js'

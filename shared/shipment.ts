@@ -65,6 +65,15 @@ export type CreateShipmentInput = {
   label?: LabelInput
 }
 
+export const REQUIRED_CREATE_FIELDS = [
+  'trackingNumber',
+  'carrier',
+  'store',
+  'amountCents',
+  'recipientPostalCode',
+  'recipientCountry',
+] as const satisfies readonly (keyof CreateShipmentInput)[]
+
 export type UpdateShipmentInput = {
   recipientPostalCode?: string
   recipientCountry?: string
@@ -116,6 +125,11 @@ export type ListResult = {
   total: number
   page: number
   pageSize: number
+}
+
+export type ImportOutcome = {
+  imported: number
+  failures: { row: number; message: string }[]
 }
 
 export type ExistsResult = {

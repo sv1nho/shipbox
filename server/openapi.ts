@@ -9,6 +9,7 @@ import {
   receiveSchema,
   refundSchema,
   rejectSchema,
+  importShipmentsSchema,
   storesQuerySchema,
   updateShipmentSchema,
 } from './routes/schemas.js'
@@ -101,6 +102,17 @@ export const openApiDocument = {
         summary: 'Suggest stores, tolerating case, accents, substrings and typos.',
         parameters: queryParameters(storesQuerySchema),
         responses: { 200: { description: '{ stores: { name, supportEmail }[] }' }, ...errorResponses },
+      },
+    },
+    '/api/shipments/import': {
+      post: {
+        tags: ['shipments'],
+        summary: 'Import many returns at once, reporting the rows it could not take.',
+        requestBody: jsonBody(importShipmentsSchema),
+        responses: {
+          200: { description: '{ imported, failures: { row, message }[] }' },
+          ...errorResponses,
+        },
       },
     },
     '/api/shipments/export': {
