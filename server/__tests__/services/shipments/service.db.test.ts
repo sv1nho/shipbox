@@ -4,7 +4,8 @@ import * as shipments from '../../../services/shipments/index.js'
 import * as storeService from '../../../services/shipments/stores.js'
 import { today } from '../../../services/shipments/dates.js'
 import { AppError } from '../../../errors.js'
-import type { CreateShipmentInput, SortKey } from '../../../services/shipments/types.js'
+import type { CreateShipmentInput } from '../../../services/shipments/types.js'
+import { SORT_KEYS } from '../../../../shared/shipment.js'
 import type { LabelPayload } from '../../../../shared/label-payload.js'
 import type { CarrierId } from '../../../../shared/carriers.js'
 
@@ -665,7 +666,7 @@ describe('list', () => {
     expect(cheapestFirst.items.map((item) => item.amountCents)).toEqual([100, 900])
   })
 
-  it('sorts the longest wait first and pushes shipments never received to the end', async () => {
+  it('sorts by reception, which is how the longest wait for a decision is found', async () => {
     const waiting = await shipments.create(OWNER, input())
     await shipments.transition(OWNER, waiting.id, 'receive', '2026-06-01')
 
@@ -674,23 +675,12 @@ describe('list', () => {
 
     await shipments.create(OWNER, input())
 
-    const byWait = await shipments.list(OWNER, { sort: 'waitingDays', direction: 'desc' })
+    const byReception = await shipments.list(OWNER, { sort: 'receivedDate', direction: 'asc' })
 
-    expect(byWait.items[0].id).toBe(waiting.id)
-    expect(byWait.items[1].id).toBe(recent.id)
-    expect(byWait.items[2].receivedDate).toBeNull()
+    expect(byReception.items[0].id).toBe(waiting.id)
+    expect(byReception.items[1].id).toBe(recent.id)
+    expect(byReception.items[2].receivedDate).toBeNull()
   })
-
-  const SORT_KEYS: SortKey[] = [
-    'createdAt',
-    'updatedAt',
-    'dropoffDate',
-    'receivedDate',
-    'decisionDate',
-    'amountCents',
-    'store',
-    'waitingDays',
-  ]
 
   it.each(SORT_KEYS)('accepts %s as a sort key in both directions', async (sort) => {
     const first = await shipments.create(OWNER, input({ store: 'Aaa', amountCents: 100 }))

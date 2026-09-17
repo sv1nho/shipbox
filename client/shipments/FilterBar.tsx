@@ -15,13 +15,11 @@ const ARCHIVED_LABELS: Record<ArchivedFilter, string> = {
 
 const SORT_LABELS: Record<SortKey, string> = {
   createdAt: 'Date added',
-  updatedAt: 'Last updated',
   dropoffDate: 'Drop-off date',
   receivedDate: 'Reception date',
   decisionDate: 'Decision date',
   amountCents: 'Amount',
   store: 'Store',
-  waitingDays: 'Waiting time',
 }
 
 type FilterBarProps = {

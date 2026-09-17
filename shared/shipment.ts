@@ -97,13 +97,11 @@ export type ArchivedFilter = 'exclude' | 'only' | 'include'
 
 export const SORT_KEYS = [
   'createdAt',
-  'updatedAt',
   'dropoffDate',
   'receivedDate',
   'decisionDate',
   'amountCents',
   'store',
-  'waitingDays',
 ] as const
 
 export type SortKey = typeof SORT_KEYS[number]

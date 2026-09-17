@@ -17,14 +17,14 @@ describe('filtersFromSearch', () => {
   })
 
   it('reads every filter the page offers', () => {
-    expect(from('carrier=postnl&status=received&store=Zalando&search=zal&archived=only&sort=waitingDays&direction=asc&page=3'))
+    expect(from('carrier=postnl&status=received&store=Zalando&search=zal&archived=only&sort=receivedDate&direction=asc&page=3'))
       .toEqual({
         carrier: 'postnl',
         status: 'received',
         store: 'Zalando',
         search: 'zal',
         archived: 'only',
-        sort: 'waitingDays',
+        sort: 'receivedDate',
         direction: 'asc',
         page: 3,
       })

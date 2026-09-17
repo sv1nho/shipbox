@@ -105,10 +105,6 @@ async function ownedRow (userId: string, id: string): Promise<ShipmentRow> {
 
 const orderByOf = (sort: SortKey, direction: 'asc' | 'desc') => {
   switch (sort) {
-    case 'waitingDays':
-      return { receivedDate: { sort: direction === 'desc' ? 'asc' : 'desc', nulls: 'last' } } as const
-    case 'updatedAt':
-      return { updatedAt: direction }
     case 'dropoffDate':
       return { dropoffDate: { sort: direction, nulls: 'last' } } as const
     case 'receivedDate':
