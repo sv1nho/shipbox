@@ -17,6 +17,8 @@ import type { StoreDto } from '../../shared/store.js'
 
 const BASE = '/api/shipments'
 
+const STORES = '/api/stores'
+
 const listQuery = (params: ListParams): Record<string, string | number | undefined> => ({
   carrier: params.carrier,
   status: params.status,
@@ -81,9 +83,10 @@ export const getLabelPayload = (id: string): Promise<LabelResult> =>
   request<LabelResult>(`${BASE}/${id}/label`)
 
 export const searchStores = (q: string, signal?: AbortSignal): Promise<StoreDto[]> =>
-  request<{ stores: StoreDto[] }>(`${BASE}/stores`, { query: { q }, signal }).then(
-    (result) => result.stores
-  )
+  request<{ stores: StoreDto[] }>(STORES, { query: { q }, signal }).then((result) => result.stores)
+
+export const addStore = (name: string, supportEmail: string): Promise<StoreDto> =>
+  request<StoreDto>(STORES, { method: 'POST', body: { name, supportEmail } })
 
 export const exportUrl = (params: ListParams, format: 'json' | 'csv'): string => {
   const query = new URLSearchParams({ format })

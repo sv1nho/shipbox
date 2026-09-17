@@ -100,10 +100,7 @@ export function StoreCombobox ({ value, invalid, onChange, onPick }: StoreCombob
               className={index === active ? 'combobox-option combobox-option-active' : 'combobox-option'}
               onMouseDown={(event) => { event.preventDefault(); pick(store) }}
             >
-              <span className='combobox-name'>{store.name}</span>
-              {store.supportEmail !== null && (
-                <span className='combobox-hint'>{store.supportEmail}</span>
-              )}
+              {store.name}
             </li>
           ))}
         </ul>

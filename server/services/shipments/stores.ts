@@ -1,4 +1,5 @@
 import { prisma } from '../../prisma.js'
+import { AppError } from '../../errors.js'
 import { normalizeStore } from '../../../shared/normalize.js'
 import type { StoreDto } from '../../../shared/store.js'
 
@@ -75,4 +76,47 @@ export async function storeIdFor (
   })
 
   return row.id
+}
+
+export async function addStore (
+  userId: string,
+  name: string,
+  supportEmail: string
+): Promise<StoreDto> {
+  const normalized = normalizeStore(name)
+
+  const existing = await prisma.$queryRaw<StoreRow[]>`
+    SELECT s.name, s.support_email
+    FROM stores s
+    WHERE s.user_id = ${userId}
+      AND lower(immutable_unaccent(s.name)) = lower(immutable_unaccent(${normalized}))
+    LIMIT 1
+  `
+
+  if (existing.length > 0) {
+    const updated = await prisma.store.update({
+      where: { userId_name: { userId, name: existing[0].name } },
+      data: { supportEmail },
+      select: { name: true, supportEmail: true },
+    })
+
+    return { name: updated.name, supportEmail: updated.supportEmail }
+  }
+
+  const near = await searchStores(userId, normalized, 1)
+
+  if (near.length > 0) {
+    throw new AppError(
+      'CONFLICT',
+      `You already track ${near[0].name}. Pick it instead of creating a near duplicate.`,
+      { existing: near[0].name }
+    )
+  }
+
+  const created = await prisma.store.create({
+    data: { userId, name: normalized, supportEmail },
+    select: { name: true, supportEmail: true },
+  })
+
+  return { name: created.name, supportEmail: created.supportEmail }
 }

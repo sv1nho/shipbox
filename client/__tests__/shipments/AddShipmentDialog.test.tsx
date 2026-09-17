@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-vi.mock('../../api/shipments.js', () => ({ searchStores: vi.fn() }))
+vi.mock('../../api/shipments.js', () => ({ searchStores: vi.fn(), addStore: vi.fn() }))
 
 import { AddShipmentDialog } from '../../shipments/AddShipmentDialog.js'
-import { searchStores } from '../../api/shipments.js'
+import { addStore, searchStores } from '../../api/shipments.js'
 import { today } from '../../../shared/time.js'
 import type { CreateShipmentInput } from '../../../shared/shipment.js'
 
@@ -234,18 +234,6 @@ describe('what it sends', () => {
     }))
   })
 
-  it('sends the customer service address given for the store', async () => {
-    const { onSubmit } = renderDialog()
-
-    await fillTheRequired()
-    await userEvent.type(screen.getByLabelText(/customer service email/i), '  service@zalando.be ')
-    await submit()
-
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
-      storeSupportEmail: 'service@zalando.be',
-    }))
-  })
-
   it('carries the country and the note when they are given', async () => {
     const { onSubmit } = renderDialog()
 
@@ -287,27 +275,54 @@ describe('what it sends', () => {
 })
 
 describe('the store suggestions', () => {
-  it('fills the address of a store that already has one', async () => {
+  it('fills the name of the store that was picked', async () => {
     vi.mocked(searchStores).mockResolvedValue([
       { name: 'Zalando', supportEmail: 'service@zalando.be' },
     ])
 
     renderDialog()
     await userEvent.click(screen.getByLabelText('Store'))
-    await userEvent.click(await screen.findByRole('option', { name: /zalando/i }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Zalando' }))
 
     expect(screen.getByLabelText('Store')).toHaveValue('Zalando')
-    expect(screen.getByLabelText(/customer service email/i)).toHaveValue('service@zalando.be')
   })
 
-  it('leaves the address empty for a store that has none', async () => {
-    vi.mocked(searchStores).mockResolvedValue([{ name: 'Snipes', supportEmail: null }])
+  it('never asks for the address here, since the store already owns it', () => {
+    renderDialog()
+
+    expect(screen.queryByLabelText(/customer service email/i)).not.toBeInTheDocument()
+  })
+
+  it('offers to add a store that does not exist yet', async () => {
+    renderDialog()
+
+    await userEvent.type(screen.getByLabelText('Store'), 'Brand new shop')
+    await userEvent.click(screen.getByRole('button', { name: /add a store/i }))
+
+    expect(screen.getByRole('heading', { name: /add a store/i })).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('Brand new shop')
+  })
+
+  it('picks the store it just added, so the form carries on', async () => {
+    vi.mocked(addStore).mockResolvedValue({ name: 'Brand new shop', supportEmail: 'a@b.test' })
 
     renderDialog()
-    await userEvent.click(screen.getByLabelText('Store'))
-    await userEvent.click(await screen.findByRole('option', { name: 'Snipes' }))
+    await userEvent.type(screen.getByLabelText('Store'), 'Brand new shop')
+    await userEvent.click(screen.getByRole('button', { name: /add a store/i }))
+    await userEvent.type(screen.getByLabelText(/customer service email/i), 'a@b.test')
+    await userEvent.click(screen.getByRole('button', { name: /add the store/i }))
 
-    expect(screen.getByLabelText(/customer service email/i)).toHaveValue('')
+    expect(await screen.findByLabelText('Store')).toHaveValue('Brand new shop')
+  })
+
+  it('comes back to the form when the store is not added after all', async () => {
+    renderDialog()
+    await userEvent.type(screen.getByLabelText('Store'), 'Brand new shop')
+    await userEvent.click(screen.getByRole('button', { name: /add a store/i }))
+
+    await userEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
+
+    expect(screen.getByRole('heading', { name: /track a return/i })).toBeInTheDocument()
   })
 })
 

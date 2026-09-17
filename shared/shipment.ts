@@ -79,7 +79,6 @@ export type UpdateShipmentInput = {
   recipientCountry?: string
   amountCents?: number
   store?: string
-  storeSupportEmail?: string | null
   orderNumber?: string | null
   note?: string | null
   requestedDate?: IsoDate

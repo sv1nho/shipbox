@@ -104,7 +104,6 @@ export const updateShipmentSchema = z
     recipientCountry: countryCodeSchema.optional(),
     amountCents: amountCentsSchema.optional(),
     store: storeSchema.optional(),
-    storeSupportEmail: supportEmailSchema,
     orderNumber: orderNumberSchema,
     note: noteSchema,
     requestedDate: isoDateSchema.optional(),
@@ -155,6 +154,11 @@ export const existsQuerySchema = z.object({
 
 export const importShipmentsSchema = z.object({
   shipments: z.array(z.unknown()).min(1).max(500),
+})
+
+export const createStoreSchema = z.object({
+  name: storeSchema,
+  supportEmail: z.email().max(320),
 })
 
 export const storesQuerySchema = z.object({

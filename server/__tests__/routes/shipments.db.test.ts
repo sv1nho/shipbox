@@ -229,25 +229,6 @@ describe('the routes that must be declared before /:id', () => {
     expect(bodyOf<{ imported: number }>(response).imported).toBe(1)
   })
 
-  it('reaches the stores route', async () => {
-    await createShipment({ store: 'Decathlon', storeSupportEmail: 'contact@decathlon.be' })
-
-    const response = await request(app).get('/api/shipments/stores?q=decath').expect(200)
-
-    expect(bodyOf<{ stores: { name: string; supportEmail: string | null }[] }>(response).stores)
-      .toEqual([{ name: 'Decathlon', supportEmail: 'contact@decathlon.be' }])
-  })
-
-  it('suggests the recent stores when the query is left out', async () => {
-    await createShipment({ store: 'Decathlon' })
-    await createShipment({ store: 'Nike' })
-
-    const response = await request(app).get('/api/shipments/stores').expect(200)
-
-    expect(bodyOf<{ stores: { name: string }[] }>(response).stores.map((store) => store.name))
-      .toEqual(expect.arrayContaining(['Decathlon', 'Nike']))
-  })
-
   it('reaches the export route', async () => {
     await createShipment()
 

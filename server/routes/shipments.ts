@@ -18,7 +18,6 @@ import {
   receiveSchema,
   refundSchema,
   rejectSchema,
-  storesQuerySchema,
   updateShipmentSchema,
 } from './schemas.js'
 
@@ -41,14 +40,6 @@ shipmentsRouter.get(
   handle(async (req, res) => {
     const query = parse(existsQuerySchema, req.query, 'query')
     res.json(await shipments.exists(userIdOf(req), query.carrier, query.trackingNumber))
-  })
-)
-
-shipmentsRouter.get(
-  '/stores',
-  handle(async (req, res) => {
-    const query = parse(storesQuerySchema, req.query, 'query')
-    res.json({ stores: await shipments.searchStores(userIdOf(req), query.q ?? '', query.limit) })
   })
 )
 

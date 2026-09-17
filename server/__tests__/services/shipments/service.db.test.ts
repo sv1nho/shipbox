@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest'
 import { prisma } from '../../../prisma.js'
 import * as shipments from '../../../services/shipments/index.js'
+import * as storeService from '../../../services/shipments/stores.js'
 import { today } from '../../../services/shipments/dates.js'
 import { AppError } from '../../../errors.js'
 import type { CreateShipmentInput, SortKey } from '../../../services/shipments/types.js'
@@ -305,7 +306,7 @@ describe('user isolation', () => {
   it('never returns another user store in the suggestions', async () => {
     await shipments.create(OTHER, input({ store: 'SecretShop' }))
 
-    expect(await shipments.searchStores(OWNER, 'Secret')).toEqual([])
+    expect(await storeService.searchStores(OWNER, 'Secret')).toEqual([])
   })
 })
 
@@ -772,7 +773,7 @@ describe('importMany', () => {
   it('carries the customer service address a file gives', async () => {
     await importRows(row({ store: 'Snipes', storeSupportEmail: 'support@snipes.com' }))
 
-    expect((await shipments.searchStores(OWNER, 'Snipes'))[0].supportEmail)
+    expect((await storeService.searchStores(OWNER, 'Snipes'))[0].supportEmail)
       .toBe('support@snipes.com')
   })
 
@@ -807,7 +808,7 @@ describe('searchStores', () => {
   }
 
   const namesOf = async (query: string, limit?: number): Promise<string[]> =>
-    (await shipments.searchStores(OWNER, query, limit)).map((store) => store.name)
+    (await storeService.searchStores(OWNER, query, limit)).map((store) => store.name)
 
   it('finds a store despite a typo', async () => {
     await seedStores()
@@ -874,7 +875,7 @@ describe('searchStores', () => {
   it('carries the customer service address of each store', async () => {
     await shipments.create(OWNER, input({ store: 'Zalando', storeSupportEmail: 'service@zalando.be' }))
 
-    expect(await shipments.searchStores(OWNER, 'Zalando'))
+    expect(await storeService.searchStores(OWNER, 'Zalando'))
       .toEqual([{ name: 'Zalando', supportEmail: 'service@zalando.be' }])
   })
 })
@@ -900,14 +901,14 @@ describe('stores as entities', () => {
     await shipments.create(OTHER, input({ store: 'Zalando' }))
 
     expect(await prisma.store.count({ where: { name: 'Zalando' } })).toBe(2)
-    expect(await shipments.searchStores(OTHER, 'Zalando')).toHaveLength(1)
+    expect(await storeService.searchStores(OTHER, 'Zalando')).toHaveLength(1)
   })
 
   it('remembers the address given with a later shipment of the same store', async () => {
     await shipments.create(OWNER, input({ store: 'Zalando' }))
     await shipments.create(OWNER, input({ store: 'Zalando', storeSupportEmail: 'service@zalando.be' }))
 
-    expect((await shipments.searchStores(OWNER, 'Zalando'))[0].supportEmail)
+    expect((await storeService.searchStores(OWNER, 'Zalando'))[0].supportEmail)
       .toBe('service@zalando.be')
   })
 

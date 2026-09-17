@@ -137,13 +137,14 @@ describe('the suggestion list', () => {
     expect(onChange).toHaveBeenCalledWith('Zara')
   })
 
-  it('shows the customer service address of a store that has one', async () => {
+  it('lists the names only, since the address is set once when the store is added', async () => {
     vi.mocked(searchStores).mockResolvedValue([store('Zalando', 'service@zalando.be')])
 
     renderCombobox('Zal')
     await userEvent.click(box())
 
-    expect(await screen.findByText('service@zalando.be')).toBeInTheDocument()
+    expect(await screen.findByRole('option', { name: 'Zalando' })).toBeInTheDocument()
+    expect(screen.queryByText('service@zalando.be')).not.toBeInTheDocument()
   })
 
   it('hands the whole store over, so its address can be reused', async () => {

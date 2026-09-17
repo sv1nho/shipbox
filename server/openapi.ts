@@ -9,6 +9,7 @@ import {
   receiveSchema,
   refundSchema,
   rejectSchema,
+  createStoreSchema,
   importShipmentsSchema,
   storesQuerySchema,
   updateShipmentSchema,
@@ -72,7 +73,7 @@ export const openApiDocument = {
       'Every route requires a session cookie and only ever sees the shipments of the signed-in user. ' +
       'Day counts are calendar days, and the derived ones are null when a source date is missing.',
   },
-  tags: [{ name: 'shipments' }],
+  tags: [{ name: 'shipments' }, { name: 'stores' }],
   paths: {
     '/api/shipments': {
       get: {
@@ -96,14 +97,6 @@ export const openApiDocument = {
         responses: { 200: { description: '{ exists, id?, archived? }' }, ...errorResponses },
       },
     },
-    '/api/shipments/stores': {
-      get: {
-        tags: ['shipments'],
-        summary: 'Suggest stores, tolerating case, accents, substrings and typos.',
-        parameters: queryParameters(storesQuerySchema),
-        responses: { 200: { description: '{ stores: { name, supportEmail }[] }' }, ...errorResponses },
-      },
-    },
     '/api/shipments/import': {
       post: {
         tags: ['shipments'],
@@ -113,6 +106,20 @@ export const openApiDocument = {
           200: { description: '{ imported, failures: { row, message }[] }' },
           ...errorResponses,
         },
+      },
+    },
+    '/api/stores': {
+      get: {
+        tags: ['stores'],
+        summary: 'Suggest stores, tolerating case, accents, substrings and typos.',
+        parameters: queryParameters(storesQuerySchema),
+        responses: { 200: { description: '{ stores: { name, supportEmail }[] }' }, ...errorResponses },
+      },
+      post: {
+        tags: ['stores'],
+        summary: 'Add a store, reusing an existing name and refusing a near duplicate.',
+        requestBody: jsonBody(createStoreSchema),
+        responses: { 201: { description: 'The store.' }, ...errorResponses },
       },
     },
     '/api/shipments/export': {

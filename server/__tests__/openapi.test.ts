@@ -1,19 +1,26 @@
 import { describe, it, expect } from 'vitest'
 import { openApiDocument } from '../openapi.js'
 import { shipmentsRouter } from '../routes/shipments.js'
+import { storesRouter } from '../routes/stores.js'
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } }
 
-const registered = (shipmentsRouter.stack as Layer[]).flatMap(({ route }) =>
-  route === undefined
-    ? []
-    : [
-        {
-          path: `/api/shipments${route.path === '/' ? '' : route.path}`.replace(/:(\w+)/g, '{$1}'),
-          method: Object.keys(route.methods)[0],
-        },
-      ]
-)
+const routesOf = (router: { stack: unknown[] }, base: string) =>
+  (router.stack as Layer[]).flatMap(({ route }) =>
+    route === undefined
+      ? []
+      : [
+          {
+            path: `${base}${route.path === '/' ? '' : route.path}`.replace(/:(\w+)/g, '{$1}'),
+            method: Object.keys(route.methods)[0],
+          },
+        ]
+  )
+
+const registered = [
+  ...routesOf(shipmentsRouter, '/api/shipments'),
+  ...routesOf(storesRouter, '/api/stores'),
+]
 
 const documented = openApiDocument.paths as Record<string, Record<string, unknown>>
 

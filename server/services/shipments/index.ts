@@ -281,7 +281,7 @@ export async function update (
       ...(patch.amountCents === undefined ? {} : { amountCents: patch.amountCents }),
       ...(patch.store === undefined
         ? {}
-        : { storeId: await storeIdFor(prisma, userId, patch.store, patch.storeSupportEmail) }),
+        : { storeId: await storeIdFor(prisma, userId, patch.store) }),
       ...(patch.orderNumber === undefined ? {} : { orderNumber: patch.orderNumber }),
       ...(patch.note === undefined ? {} : { note: patch.note }),
       requestedDate: toUtcDate(dates.requestedDate),
@@ -396,5 +396,4 @@ export async function getLabelPayload (
   }
 }
 
-export { searchStores } from './stores.js'
 export { importMany } from './import.js'

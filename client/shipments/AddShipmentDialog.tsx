@@ -13,6 +13,7 @@ import type { ShipmentStatus } from '../../shared/shipment-status.js'
 import { statusLabel } from './format.js'
 import { Modal } from './Modal.js'
 import { StoreCombobox } from './StoreCombobox.js'
+import { NewStoreDialog } from './NewStoreDialog.js'
 
 type FieldProps = {
   label: string
@@ -52,7 +53,6 @@ type Draft = {
   carrier: CarrierId
   trackingNumber: string
   store: string
-  storeSupportEmail: string
   amount: string
   recipientPostalCode: string
   recipientCountry: Country
@@ -70,7 +70,6 @@ const draftFrom = (prefill: Prefill): Draft => ({
   carrier: prefill.carrier ?? 'bpost',
   trackingNumber: prefill.trackingNumber ?? '',
   store: '',
-  storeSupportEmail: '',
   amount: '',
   recipientPostalCode: prefill.recipientPostalCode ?? '',
   recipientCountry: prefill.recipientCountry ?? 'BE',
@@ -147,9 +146,6 @@ export function check (draft: Draft, label?: LabelInput): Checked {
       ...(draft.status === 'rejected' && draft.rejectionReason.trim() !== ''
         ? { rejectionReason: draft.rejectionReason.trim() }
         : {}),
-      ...(draft.storeSupportEmail.trim() === ''
-        ? {}
-        : { storeSupportEmail: draft.storeSupportEmail.trim() }),
       ...(draft.orderNumber.trim() === '' ? {} : { orderNumber: draft.orderNumber.trim() }),
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
       ...(label === undefined ? {} : { label }),
@@ -162,6 +158,7 @@ export function AddShipmentDialog (
 ) {
   const [draft, setDraft] = useState(() => draftFrom(prefill))
   const [attempted, setAttempted] = useState(false)
+  const [addingStore, setAddingStore] = useState(false)
 
   const { problems, input } = check(draft, prefill.label)
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
@@ -170,6 +167,19 @@ export function AddShipmentDialog (
 
   const problem = (key: keyof Draft): string | undefined =>
     attempted ? problems[key] : undefined
+
+  if (addingStore) {
+    return (
+      <NewStoreDialog
+        name={draft.store}
+        onCancel={() => { setAddingStore(false) }}
+        onAdded={(store) => {
+          setDraft({ ...draft, store: store.name })
+          setAddingStore(false)
+        }}
+      />
+    )
+  }
 
   return (
     <Modal titleId='add-shipment-title' onClose={onCancel}>
@@ -214,41 +224,29 @@ export function AddShipmentDialog (
           />
         </Field>
 
-        <div className='form-row'>
-          <Field
-            label='Store'
-            htmlFor='shipment-store'
-            problem={problem('store') ?? fieldError('store')}
-          >
+        <Field
+          label='Store'
+          htmlFor='shipment-store'
+          problem={problem('store') ?? fieldError('store')}
+        >
+          <div className='combobox-row'>
             <StoreCombobox
               value={draft.store}
               invalid={problem('store') !== undefined}
               onChange={(store) => { set('store', store) }}
-              onPick={(store) => {
-                setDraft({
-                  ...draft,
-                  store: store.name,
-                  storeSupportEmail: store.supportEmail ?? '',
-                })
-              }}
+              onPick={(store) => { set('store', store.name) }}
             />
-          </Field>
-
-          <Field
-            label='Customer service email (optional)'
-            htmlFor='shipment-store-email'
-            problem={fieldError('storeSupportEmail')}
-          >
-            <input
-              id='shipment-store-email'
-              className='form-input'
-              type='email'
-              autoComplete='off'
-              value={draft.storeSupportEmail}
-              onChange={(event) => { set('storeSupportEmail', event.target.value) }}
-            />
-          </Field>
-        </div>
+            <button
+              type='button'
+              className='icon-btn icon-btn-add'
+              aria-label='Add a store'
+              title='Add a store'
+              onClick={() => { setAddingStore(true) }}
+            >
+              +
+            </button>
+          </div>
+        </Field>
 
         <div className='form-row form-row-three'>
           <Field
