@@ -286,15 +286,16 @@ describe('the transitions', () => {
       .expect(422)
   })
 
-  it('records the note that comes with a refusal', async () => {
-    const created = await createShipment()
+  it('records the reason that comes with a refusal, leaving the note alone', async () => {
+    const created = await createShipment({ note: 'Bought on sale' })
 
     const response = await request(app)
       .post(`/api/shipments/${created.id}/reject`)
-      .send({ decisionDate: todayIso(), note: 'Worn item' })
+      .send({ decisionDate: todayIso(), rejectionReason: 'Worn item' })
       .expect(200)
 
-    expect(bodyOf(response).note).toBe('Worn item')
+    expect(bodyOf(response).rejectionReason).toBe('Worn item')
+    expect(bodyOf(response).note).toBe('Bought on sale')
   })
 
   it('undoes the last step', async () => {

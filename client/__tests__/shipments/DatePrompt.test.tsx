@@ -108,7 +108,11 @@ describe('the rejection reason', () => {
     await userEvent.type(screen.getByLabelText(/why was it refused/i), '  Worn shoes  ')
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
 
-    expect(onConfirm).toHaveBeenCalledWith({ action: 'reject', date: today(), note: 'Worn shoes' })
+    expect(onConfirm).toHaveBeenCalledWith({
+      action: 'reject',
+      date: today(),
+      rejectionReason: 'Worn shoes',
+    })
   })
 
   it('stays out of the way on every other step', () => {

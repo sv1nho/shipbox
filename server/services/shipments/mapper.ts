@@ -26,6 +26,7 @@ export type ShipmentRow = {
   decisionDate: Date | null
   orderNumber: string | null
   note: string | null
+  rejectionReason: string | null
   createdAt: Date
   updatedAt: Date
   archivedAt: Date | null
@@ -56,6 +57,7 @@ export function toShipmentState (row: ShipmentRow): ShipmentState {
     dropoffDate: asIsoDate(row.dropoffDate),
     receivedDate: asIsoDate(row.receivedDate),
     decisionDate: asIsoDate(row.decisionDate),
+    rejectionReason: row.rejectionReason,
   }
 }
 
@@ -82,6 +84,7 @@ export function toShipmentDto (row: ShipmentRow, today: IsoDate): ShipmentDto {
     decisionDate,
     orderNumber: row.orderNumber,
     note: row.note,
+    rejectionReason: row.rejectionReason,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     archivedAt: row.archivedAt === null ? null : row.archivedAt.toISOString(),

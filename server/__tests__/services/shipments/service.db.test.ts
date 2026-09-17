@@ -306,12 +306,20 @@ describe('transition and revert', () => {
       .toBe('ILLEGAL_TRANSITION')
   })
 
-  it('records a note when refusing a return', async () => {
-    const created = await shipments.create(OWNER, input())
+  it('records a reason when refusing a return, without touching the note', async () => {
+    const created = await shipments.create(OWNER, input({ note: 'Bought on sale' }))
     const rejected = await shipments.transition(OWNER, created.id, 'reject', today(), 'Worn item')
 
     expect(rejected.status).toBe('rejected')
-    expect(rejected.note).toBe('Worn item')
+    expect(rejected.rejectionReason).toBe('Worn item')
+    expect(rejected.note).toBe('Bought on sale')
+  })
+
+  it('drops the reason once the refusal is undone', async () => {
+    const created = await shipments.create(OWNER, input())
+    await shipments.transition(OWNER, created.id, 'reject', today(), 'Worn item')
+
+    expect((await shipments.revert(OWNER, created.id)).rejectionReason).toBeNull()
   })
 
   it('undoes the last step and derives the status from the dates left', async () => {

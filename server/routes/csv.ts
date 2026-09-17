@@ -12,6 +12,7 @@ const COLUMNS = [
   'dropoffDate',
   'receivedDate',
   'decisionDate',
+  'rejectionReason',
   'decisionDelayDays',
   'totalDelayDays',
   'createdAt',

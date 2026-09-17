@@ -16,6 +16,7 @@ const TODAY = '2026-06-15'
 
 const state = (overrides: Partial<ShipmentState> = {}): ShipmentState => ({
   status: 'pending',
+  rejectionReason: null,
   requestedDate: '2026-06-01',
   dropoffDate: null,
   receivedDate: null,
@@ -249,6 +250,33 @@ describe('planRevert', () => {
     planRevert(current)
 
     expect(current).toEqual(state({ status: 'dropped_off', dropoffDate: '2026-06-01' }))
+  })
+})
+
+describe('the refusal reason, which belongs to the decision', () => {
+  it('is kept when the decision is a refusal', () => {
+    const next = planTransition(state({ status: 'received', receivedDate: '2026-06-05' }),
+      'reject', '2026-06-10', TODAY, 'Worn item')
+
+    expect(next.rejectionReason).toBe('Worn item')
+  })
+
+  it('is dropped when the refusal becomes a refund', () => {
+    const refused = planTransition(state({ status: 'received', receivedDate: '2026-06-05' }),
+      'reject', '2026-06-10', TODAY, 'Worn item')
+
+    expect(planTransition(refused, 'refund', '2026-06-11', TODAY).rejectionReason).toBeNull()
+  })
+
+  it('is dropped when the decision itself is undone', () => {
+    const refused = planTransition(state({ status: 'received', receivedDate: '2026-06-05' }),
+      'reject', '2026-06-10', TODAY, 'Worn item')
+
+    expect(planRevert(refused).rejectionReason).toBeNull()
+  })
+
+  it('never appears on a step that is not a refusal', () => {
+    expect(planTransition(state(), 'drop_off', '2026-06-02', TODAY).rejectionReason).toBeNull()
   })
 })
 

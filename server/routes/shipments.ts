@@ -141,7 +141,7 @@ shipmentsRouter.post(
   handle(async (req, res) => {
     const body = parse(rejectSchema, req.body, 'body')
     res.json(
-      await shipments.transition(userIdOf(req), idOf(req), 'reject', body.decisionDate, body.note)
+      await shipments.transition(userIdOf(req), idOf(req), 'reject', body.decisionDate, body.rejectionReason)
     )
   })
 )

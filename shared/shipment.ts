@@ -32,6 +32,7 @@ export type ShipmentDto = {
   decisionDate: IsoDate | null
   orderNumber: string | null
   note: string | null
+  rejectionReason: string | null
   createdAt: string
   updatedAt: string
   archivedAt: string | null

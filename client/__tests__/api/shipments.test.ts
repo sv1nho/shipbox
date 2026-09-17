@@ -124,12 +124,12 @@ describe('applyTransition', () => {
     expect(JSON.parse(init.body ?? '{}')).toEqual({ [TRANSITIONS[action].dateField]: '2026-06-10' })
   })
 
-  it('adds the note only when there is one', async () => {
+  it('adds the refusal reason only when there is one', async () => {
     const mock = fetchMock()
     await api.applyTransition('abc', 'reject', '2026-06-10', 'Worn item')
 
     expect(JSON.parse(calledWith(mock).init.body ?? '{}'))
-      .toEqual({ decisionDate: '2026-06-10', note: 'Worn item' })
+      .toEqual({ decisionDate: '2026-06-10', rejectionReason: 'Worn item' })
   })
 
   it('uses the url segment from the shared table, never a hand written one', () => {

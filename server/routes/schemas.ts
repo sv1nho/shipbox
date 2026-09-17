@@ -123,7 +123,7 @@ export const refundSchema = z.object({ decisionDate: isoDateSchema })
 
 export const rejectSchema = z.object({
   decisionDate: isoDateSchema,
-  note: z.string().max(2000).optional(),
+  rejectionReason: z.string().max(2000).optional(),
 })
 
 export const listQuerySchema = z.object({

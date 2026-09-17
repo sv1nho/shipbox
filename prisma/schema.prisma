@@ -95,6 +95,7 @@ model Shipment {
 
   orderNumber         String?   @map("order_number")
   note                String?
+  rejectionReason     String?   @map("rejection_reason")
 
   label               Label?
 

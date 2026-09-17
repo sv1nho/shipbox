@@ -56,6 +56,7 @@ type ShipmentWrite = {
   store?: string
   orderNumber?: string | null
   note?: string | null
+  rejectionReason?: string | null
   requestedDate?: Date
   dropoffDate?: Date | null
   receivedDate?: Date | null
@@ -65,6 +66,7 @@ type ShipmentWrite = {
 
 const stateWrite = (next: ShipmentState): ShipmentWrite => ({
   status: next.status,
+  rejectionReason: next.rejectionReason,
   dropoffDate: asDate(next.dropoffDate),
   receivedDate: asDate(next.receivedDate),
   decisionDate: asDate(next.decisionDate),
@@ -195,7 +197,7 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
 
   assertDates(dates, now)
   assertChronology(dates)
-  assertStatusHasItsDate({ status, ...dates })
+  assertStatusHasItsDate({ status, rejectionReason: null, ...dates })
 
   const data = {
     userId,
@@ -306,15 +308,14 @@ export async function transition (
   id: string,
   action: TransitionAction,
   date: IsoDate,
-  note?: string
+  rejectionReason?: string
 ): Promise<ShipmentDto> {
   const row = await editableRow(userId, id)
   const now = today()
-  const next = planTransition(toShipmentState(row), action, date, now)
 
   return writeOwned(
     row.id,
-    { ...stateWrite(next), ...(note === undefined ? {} : { note }) },
+    stateWrite(planTransition(toShipmentState(row), action, date, now, rejectionReason)),
     now
   )
 }

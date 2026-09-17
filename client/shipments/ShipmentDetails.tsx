@@ -129,6 +129,9 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             <Field label='The whole return took'>{days(shipment.totalDelayDays)}</Field>
           )}
 
+          {shipment.rejectionReason !== null && (
+            <Field label='Refused because'>{shipment.rejectionReason}</Field>
+          )}
           {shipment.note !== null && <Field label='Note'>{shipment.note}</Field>}
           <Field label='Stored label'>
             {shipment.hasLabel ? 'Yes, the PDF can be rebuilt' : 'No, added by hand'}

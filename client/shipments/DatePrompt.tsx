@@ -9,7 +9,7 @@ export type PromptResult = {
   action: TransitionAction
   date: IsoDate
   receivedDate?: IsoDate
-  note?: string
+  rejectionReason?: string
 }
 
 type DatePromptProps = {
@@ -28,7 +28,7 @@ export function DatePrompt (
   const [action, setAction] = useState<TransitionAction>(actions[0])
   const [received, setReceived] = useState(() => today())
   const [date, setDate] = useState(() => today())
-  const [note, setNote] = useState('')
+  const [reason, setReason] = useState('')
 
   const { label } = TRANSITIONS[action]
 
@@ -115,14 +115,14 @@ export function DatePrompt (
 
         {action === 'reject' && (
           <>
-            <label className='form-label' htmlFor='transition-note'>
+            <label className='form-label' htmlFor='transition-reason'>
               Why was it refused? (optional)
             </label>
             <input
-              id='transition-note'
+              id='transition-reason'
               className='form-input'
-              value={note}
-              onChange={(event) => { setNote(event.target.value) }}
+              value={reason}
+              onChange={(event) => { setReason(event.target.value) }}
             />
           </>
         )}
@@ -143,7 +143,7 @@ export function DatePrompt (
               action,
               date,
               ...(reception === null ? {} : { receivedDate: received }),
-              ...(note.trim() === '' ? {} : { note: note.trim() }),
+              ...(reason.trim() === '' ? {} : { rejectionReason: reason.trim() }),
             })
           }}
         >

@@ -24,7 +24,10 @@ type ShipmentDates = Record<DateField, IsoDate | null>
 
 export type DatedShipment = ShipmentDates & { requestedDate: IsoDate }
 
-export type ShipmentState = DatedShipment & { status: ShipmentStatus }
+export type ShipmentState = DatedShipment & {
+  status: ShipmentStatus
+  rejectionReason: string | null
+}
 
 const dateFieldRank = (field: DateField): number => ORDERED_DATE_FIELDS.indexOf(field) + 1
 
@@ -81,7 +84,8 @@ export function planTransition (
   state: ShipmentState,
   action: TransitionAction,
   date: IsoDate,
-  today: IsoDate
+  today: IsoDate,
+  rejectionReason?: string
 ): ShipmentState {
   const { target, dateField } = TRANSITIONS[action]
 
@@ -95,7 +99,12 @@ export function planTransition (
 
   assertDate(dateField, date, today)
 
-  const next: ShipmentState = { ...state, status: target, [dateField]: date }
+  const next: ShipmentState = {
+    ...state,
+    status: target,
+    [dateField]: date,
+    rejectionReason: action === 'reject' ? rejectionReason ?? null : null,
+  }
   assertChronology(next)
 
   return next
@@ -129,7 +138,12 @@ export function planRevert (state: ShipmentState): ShipmentState {
         ? 'dropped_off'
         : 'pending'
 
-  return { ...cleared, requestedDate: state.requestedDate, status }
+  return {
+    ...cleared,
+    requestedDate: state.requestedDate,
+    rejectionReason: null,
+    status,
+  }
 }
 
 export function computeDerived (shipment: ShipmentState, today: IsoDate): DerivedFields {

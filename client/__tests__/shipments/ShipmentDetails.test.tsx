@@ -107,6 +107,19 @@ describe('what it leaves out', () => {
     expect(screen.queryByText('Note')).not.toBeInTheDocument()
   })
 
+  it('tells the refusal reason apart from a free note', () => {
+    renderDetails({ note: 'Bought on sale', rejectionReason: 'Worn shoes' })
+
+    expect(valueOf('Refused because')).toBe('Worn shoes')
+    expect(valueOf('Note')).toBe('Bought on sale')
+  })
+
+  it('says nothing about a refusal that never happened', () => {
+    renderDetails({ rejectionReason: null })
+
+    expect(screen.queryByText('Refused because')).not.toBeInTheDocument()
+  })
+
   it('mentions the archive only once the shipment is archived', () => {
     renderDetails({ archivedAt: null })
 

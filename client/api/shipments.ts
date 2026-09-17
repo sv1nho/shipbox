@@ -40,13 +40,15 @@ export const applyTransition = (
   id: string,
   action: TransitionAction,
   date: IsoDate,
-  note?: string
+  rejectionReason?: string
 ): Promise<ShipmentDto> => {
   const { dateField, path } = TRANSITIONS[action]
 
   return request<ShipmentDto>(`${BASE}/${id}/${path}`, {
     method: 'POST',
-    body: note === undefined ? { [dateField]: date } : { [dateField]: date, note },
+    body: rejectionReason === undefined
+      ? { [dateField]: date }
+      : { [dateField]: date, rejectionReason },
   })
 }
 
