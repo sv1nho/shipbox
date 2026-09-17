@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import type { CarrierId } from '../../shared/carriers.js'
 import { COUNTRIES } from '../../shared/label-payload.js'
@@ -11,10 +12,21 @@ import { statusLabel } from './format.js'
 import { Modal } from './Modal.js'
 import { StoreCombobox } from './StoreCombobox.js'
 
-function FieldProblem ({ message }: { message: string | undefined }) {
-  if (message === undefined) return null
+type FieldProps = {
+  label: string
+  htmlFor: string
+  problem: string | undefined
+  children: ReactNode
+}
 
-  return <p className='field-error'>{message}</p>
+function Field ({ label, htmlFor, problem, children }: FieldProps) {
+  return (
+    <div className='form-field'>
+      <label className='form-label' htmlFor={htmlFor}>{label}</label>
+      {children}
+      {problem !== undefined && <p className='field-error'>{problem}</p>}
+    </div>
+  )
 }
 
 type AddShipmentDialogProps = {
@@ -167,28 +179,35 @@ export function AddShipmentDialog (
           ))}
         </div>
 
-        <label className='form-label' htmlFor='shipment-tracking'>Tracking number</label>
-        <input
-          id='shipment-tracking'
-          className='form-input'
-          autoComplete='off'
-          placeholder={CARRIERS[draft.carrier].placeholder}
-          value={draft.trackingNumber}
-          onChange={(event) => { set('trackingNumber', event.target.value) }}
-        />
-        <FieldProblem message={problem('trackingNumber') ?? fieldError('trackingNumber')} />
+        <Field
+          label='Tracking number'
+          htmlFor='shipment-tracking'
+          problem={problem('trackingNumber') ?? fieldError('trackingNumber')}
+        >
+          <input
+            id='shipment-tracking'
+            className='form-input'
+            autoComplete='off'
+            placeholder={CARRIERS[draft.carrier].placeholder}
+            value={draft.trackingNumber}
+            onChange={(event) => { set('trackingNumber', event.target.value) }}
+          />
+        </Field>
 
-        <label className='form-label' htmlFor='shipment-store'>Store</label>
-        <StoreCombobox
-          value={draft.store}
-          invalid={problem('store') !== undefined}
-          onChange={(store) => { set('store', store) }}
-        />
-        <FieldProblem message={problem('store') ?? fieldError('store')} />
+        <Field label='Store' htmlFor='shipment-store' problem={problem('store') ?? fieldError('store')}>
+          <StoreCombobox
+            value={draft.store}
+            invalid={problem('store') !== undefined}
+            onChange={(store) => { set('store', store) }}
+          />
+        </Field>
 
-        <div className='form-row'>
-          <div>
-            <label className='form-label' htmlFor='shipment-amount'>Amount</label>
+        <div className='form-row form-row-three'>
+          <Field
+            label='Amount'
+            htmlFor='shipment-amount'
+            problem={problem('amount') ?? fieldError('amountCents')}
+          >
             <input
               id='shipment-amount'
               className='form-input'
@@ -197,9 +216,13 @@ export function AddShipmentDialog (
               value={draft.amount}
               onChange={(event) => { set('amount', event.target.value) }}
             />
-          </div>
-          <div>
-            <label className='form-label' htmlFor='shipment-postal'>Postal code</label>
+          </Field>
+
+          <Field
+            label='Postal code'
+            htmlFor='shipment-postal'
+            problem={problem('recipientPostalCode') ?? fieldError('recipientPostalCode')}
+          >
             <input
               id='shipment-postal'
               className='form-input'
@@ -207,9 +230,9 @@ export function AddShipmentDialog (
               value={draft.recipientPostalCode}
               onChange={(event) => { set('recipientPostalCode', event.target.value) }}
             />
-          </div>
-          <div>
-            <label className='form-label' htmlFor='shipment-country'>Country</label>
+          </Field>
+
+          <Field label='Country' htmlFor='shipment-country' problem={undefined}>
             <select
               id='shipment-country'
               className='form-select'
@@ -218,82 +241,97 @@ export function AddShipmentDialog (
             >
               {COUNTRIES.map((code) => <option key={code} value={code}>{code}</option>)}
             </select>
-          </div>
+          </Field>
         </div>
-        <FieldProblem message={problem('amount') ?? fieldError('amountCents')} />
-        <FieldProblem message={problem('recipientPostalCode') ?? fieldError('recipientPostalCode')} />
 
-        <label className='form-label' htmlFor='shipment-requested'>Return requested on</label>
-        <input
-          id='shipment-requested'
-          type='date'
-          className='form-input'
-          value={draft.requestedDate}
-          max={today()}
-          onChange={(event) => { set('requestedDate', event.target.value) }}
-        />
-        <FieldProblem message={problem('requestedDate') ?? fieldError('requestedDate')} />
+        <div className='form-row'>
+          <Field
+            label='Return requested on'
+            htmlFor='shipment-requested'
+            problem={problem('requestedDate') ?? fieldError('requestedDate')}
+          >
+            <input
+              id='shipment-requested'
+              type='date'
+              className='form-input'
+              value={draft.requestedDate}
+              max={today()}
+              onChange={(event) => { set('requestedDate', event.target.value) }}
+            />
+          </Field>
 
-        <label className='form-label' htmlFor='shipment-status'>Where is it already?</label>
-        <select
-          id='shipment-status'
-          className='form-select'
-          value={draft.status}
-          onChange={(event) => { set('status', event.target.value as StartingStatus) }}
-        >
-          {STARTING_STATUSES.map((status) => (
-            <option key={status} value={status}>{statusLabel(status)}</option>
-          ))}
-        </select>
+          <Field label='Where is it already?' htmlFor='shipment-status' problem={undefined}>
+            <select
+              id='shipment-status'
+              className='form-select'
+              value={draft.status}
+              onChange={(event) => { set('status', event.target.value as StartingStatus) }}
+            >
+              {STARTING_STATUSES.map((status) => (
+                <option key={status} value={status}>{statusLabel(status)}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
 
         {draft.status !== 'pending' && (
-          <>
-            <label className='form-label' htmlFor='shipment-dropoff'>Dropped off on</label>
-            <input
-              id='shipment-dropoff'
-              type='date'
-              className='form-input'
-              value={draft.dropoffDate}
-              min={draft.requestedDate}
-              max={today()}
-              onChange={(event) => { set('dropoffDate', event.target.value) }}
-            />
-            <FieldProblem message={problem('dropoffDate') ?? fieldError('dropoffDate')} />
-          </>
+          <div className='form-row'>
+            <Field
+              label='Dropped off on'
+              htmlFor='shipment-dropoff'
+              problem={problem('dropoffDate') ?? fieldError('dropoffDate')}
+            >
+              <input
+                id='shipment-dropoff'
+                type='date'
+                className='form-input'
+                value={draft.dropoffDate}
+                min={draft.requestedDate}
+                max={today()}
+                onChange={(event) => { set('dropoffDate', event.target.value) }}
+              />
+            </Field>
+
+            {draft.status === 'received' && (
+              <Field
+                label='Received on'
+                htmlFor='shipment-received'
+                problem={problem('receivedDate') ?? fieldError('receivedDate')}
+              >
+                <input
+                  id='shipment-received'
+                  type='date'
+                  className='form-input'
+                  value={draft.receivedDate}
+                  min={draft.dropoffDate === '' ? draft.requestedDate : draft.dropoffDate}
+                  max={today()}
+                  onChange={(event) => { set('receivedDate', event.target.value) }}
+                />
+              </Field>
+            )}
+          </div>
         )}
 
-        {draft.status === 'received' && (
-          <>
-            <label className='form-label' htmlFor='shipment-received'>Received on</label>
+        <div className='form-row'>
+          <Field label='Order number (optional)' htmlFor='shipment-order' problem={undefined}>
             <input
-              id='shipment-received'
-              type='date'
+              id='shipment-order'
               className='form-input'
-              value={draft.receivedDate}
-              min={draft.dropoffDate === '' ? draft.requestedDate : draft.dropoffDate}
-              max={today()}
-              onChange={(event) => { set('receivedDate', event.target.value) }}
+              autoComplete='off'
+              value={draft.orderNumber}
+              onChange={(event) => { set('orderNumber', event.target.value) }}
             />
-            <FieldProblem message={problem('receivedDate') ?? fieldError('receivedDate')} />
-          </>
-        )}
+          </Field>
 
-        <label className='form-label' htmlFor='shipment-order'>Order number (optional)</label>
-        <input
-          id='shipment-order'
-          className='form-input'
-          autoComplete='off'
-          value={draft.orderNumber}
-          onChange={(event) => { set('orderNumber', event.target.value) }}
-        />
-
-        <label className='form-label' htmlFor='shipment-note'>Note (optional)</label>
-        <input
-          id='shipment-note'
-          className='form-input'
-          value={draft.note}
-          onChange={(event) => { set('note', event.target.value) }}
-        />
+          <Field label='Note (optional)' htmlFor='shipment-note' problem={undefined}>
+            <input
+              id='shipment-note'
+              className='form-input'
+              value={draft.note}
+              onChange={(event) => { set('note', event.target.value) }}
+            />
+          </Field>
+        </div>
 
         {error !== null && <div className='alert-error'>{error}</div>}
 

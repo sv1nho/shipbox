@@ -452,6 +452,9 @@ html, body {
   .modal-box {
     width: 100%;
     max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 3rem);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -459,6 +462,9 @@ html, body {
     overflow: hidden;
     animation: modal-in var(--transition) ease-out;
   }
+
+  .modal-header,
+  .modal-footer { flex: 0 0 auto; }
 
   .modal-header {
     display: flex;
@@ -477,6 +483,7 @@ html, body {
   .modal-body {
     padding: 1.25rem;
     background: var(--color-surface);
+    overflow-y: auto;
   }
 
   .modal-body iframe {
@@ -621,13 +628,22 @@ html, body {
 
   .form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 5rem;
-    gap: 0.5rem;
-    align-items: end;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 0.75rem;
+    align-items: start;
+  }
+
+  .form-row-three { grid-template-columns: 1fr 1fr 4.5rem; }
+
+  .form-field {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
   }
 
   @media (max-width: 30rem) {
-    .form-row { grid-template-columns: 1fr; }
+    .form-row,
+    .form-row-three { grid-template-columns: 1fr; }
   }
 
   .form-input-invalid,
@@ -872,6 +888,20 @@ html, body {
   .icon-btn:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+
+  .icon-btn-add {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 1.125rem;
+    font-weight: 400;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .icon-btn-add:hover {
+    background: var(--color-primary);
+    color: #ffffff;
   }
 
   .icon-btn-info {
