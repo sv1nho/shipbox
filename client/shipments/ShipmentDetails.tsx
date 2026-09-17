@@ -85,9 +85,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               <a href={`mailto:${shipment.storeSupportEmail}`}>{shipment.storeSupportEmail}</a>
             </Field>
           )}
-          {shipment.orderNumber !== null && (
-            <Field label='Order number'>{shipment.orderNumber}</Field>
-          )}
+          <Field label='Order number'>{shipment.orderNumber}</Field>
           <Field label='Amount'>{formatAmount(shipment.amountCents, shipment.currency)}</Field>
           <Field label='Sent to'>
             {shipment.recipientPostalCode} {shipment.recipientCountry}

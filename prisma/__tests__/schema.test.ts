@@ -25,6 +25,7 @@ const valid = (overrides: Record<string, unknown> = {}): Record<string, unknown>
   status: 'pending',
   amount_cents: 1000,
   store_id: ownerStoreId,
+  order_number: 'ZAL-2026-0001',
   requested_date: '2026-04-01',
   ...overrides,
 })
@@ -56,6 +57,7 @@ const createShipment = async ({ store = 'Zalando', ...overrides }: ShipmentOverr
       recipientPostalCode: '2000',
       recipientCountry: 'BE',
       amountCents: 1000,
+      orderNumber: 'ZAL-2026-0001',
       requestedDate: new Date('2026-06-01T00:00:00.000Z'),
       storeId: await storeIdOf(overrides.userId ?? OWNER, store),
       ...overrides,
@@ -128,12 +130,20 @@ describe('shipments constraints', () => {
   })
 
   describe('required values', () => {
-    it.each(['store_id', 'amount_cents', 'recipient_postal_code', 'recipient_country', 'tracking_number'])(
-      'rejects a null %s',
-      async (column) => {
-        await expect(insertRaw(valid({ [column]: null }))).rejects.toThrow()
-      }
-    )
+    it.each([
+      'store_id',
+      'amount_cents',
+      'recipient_postal_code',
+      'recipient_country',
+      'tracking_number',
+      'order_number',
+    ])('rejects a null %s', async (column) => {
+      await expect(insertRaw(valid({ [column]: null }))).rejects.toThrow()
+    })
+
+    it.each(['', '   '])('rejects %p as an order number, a blank being no reference', async (given) => {
+      await expect(insertRaw(valid({ order_number: given }))).rejects.toThrow()
+    })
   })
 
   describe('chronological order', () => {

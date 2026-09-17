@@ -25,6 +25,7 @@ const input = (overrides: Partial<CreateShipmentInput> = {}): CreateShipmentInpu
   recipientCountry: 'BE',
   amountCents: 4999,
   store: 'Zalando',
+  orderNumber: 'ZAL-2026-0001',
   requestedDate: '2026-01-01',
   ...overrides,
 })
@@ -421,13 +422,10 @@ describe('update', () => {
     })
   })
 
-  it('clears the optional fields when given null', async () => {
-    const created = await shipments.create(OWNER, input({ orderNumber: 'ORD-1', note: 'Something' }))
+  it('clears the note when given null, the one field allowed back to empty', async () => {
+    const created = await shipments.create(OWNER, input({ note: 'Something' }))
 
-    const cleared = await shipments.update(OWNER, created.id, { orderNumber: null, note: null })
-
-    expect(cleared.orderNumber).toBeNull()
-    expect(cleared.note).toBeNull()
+    expect((await shipments.update(OWNER, created.id, { note: null })).note).toBeNull()
   })
 
   it('normalises a corrected postal code', async () => {

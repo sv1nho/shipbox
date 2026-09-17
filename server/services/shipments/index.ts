@@ -58,7 +58,7 @@ type ShipmentWrite = {
   recipientCountry?: string
   amountCents?: number
   storeId?: string
-  orderNumber?: string | null
+  orderNumber?: string
   note?: string | null
   rejectionReason?: string | null
   requestedDate?: Date
@@ -217,7 +217,7 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
     dropoffDate: asDate(dates.dropoffDate),
     receivedDate: asDate(dates.receivedDate),
     decisionDate: asDate(dates.decisionDate),
-    orderNumber: input.orderNumber ?? null,
+    orderNumber: input.orderNumber,
     note: input.note ?? null,
     rejectionReason,
   }

@@ -27,7 +27,7 @@ const countryCodeSchema = z.string().length(2)
 
 const amountCentsSchema = z.int().min(0).max(100_000_000)
 
-const orderNumberSchema = z.string().max(64).nullish()
+const orderNumberSchema = z.string().trim().min(1).max(64)
 
 const noteSchema = z.string().max(2000).nullish()
 
@@ -104,7 +104,7 @@ export const updateShipmentSchema = z
     recipientCountry: countryCodeSchema.optional(),
     amountCents: amountCentsSchema.optional(),
     store: storeSchema.optional(),
-    orderNumber: orderNumberSchema,
+    orderNumber: orderNumberSchema.optional(),
     note: noteSchema,
     requestedDate: isoDateSchema.optional(),
     dropoffDate: isoDateSchema.optional(),

@@ -31,6 +31,7 @@ const fillTheRequired = async () => {
   await userEvent.type(screen.getByLabelText('Store'), 'Zalando')
   await userEvent.type(screen.getByLabelText('Amount'), '49.99')
   await userEvent.type(screen.getByLabelText('Postal code'), '2000')
+  await userEvent.type(screen.getByLabelText('Order number'), 'ZAL-2026-0001')
 }
 
 const submit = async () => {
@@ -127,9 +128,23 @@ describe('what it refuses', () => {
     await userEvent.type(screen.getByLabelText('Store'), 'Zara')
     await userEvent.type(screen.getByLabelText('Amount'), '20')
     await userEvent.type(screen.getByLabelText('Postal code'), '1101CM')
+    await userEvent.type(screen.getByLabelText('Order number'), '41028866102')
     await submit()
 
     expect(onSubmit).toHaveBeenCalledOnce()
+  })
+
+  it('refuses a return with no order number, the store searching by nothing else', async () => {
+    const { onSubmit } = renderDialog()
+
+    await userEvent.type(screen.getByLabelText('Tracking number'), '323200000000000000004050')
+    await userEvent.type(screen.getByLabelText('Store'), 'Zalando')
+    await userEvent.type(screen.getByLabelText('Amount'), '49.99')
+    await userEvent.type(screen.getByLabelText('Postal code'), '2000')
+    await submit()
+
+    expect(screen.getByText(/searches by its own order number/i)).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
   })
 
   it('asks for the decision day once a decided status is chosen', async () => {
@@ -188,6 +203,7 @@ describe('what it sends', () => {
     await userEvent.type(screen.getByLabelText('Store'), 'Zalando')
     await userEvent.type(screen.getByLabelText('Amount'), '49,99')
     await userEvent.type(screen.getByLabelText('Postal code'), '2000')
+    await userEvent.type(screen.getByLabelText('Order number'), 'ZAL-2026-0001')
     await submit()
 
     expect(onSubmit).toHaveBeenCalledWith({
@@ -197,6 +213,7 @@ describe('what it sends', () => {
       recipientCountry: 'BE',
       amountCents: 4999,
       store: 'Zalando',
+      orderNumber: 'ZAL-2026-0001',
       requestedDate: today(),
     })
   })
@@ -209,7 +226,6 @@ describe('what it sends', () => {
 
     const sent = vi.mocked(onSubmit).mock.calls[0][0]
 
-    expect(sent).not.toHaveProperty('orderNumber')
     expect(sent).not.toHaveProperty('note')
     expect(sent).not.toHaveProperty('status')
   })
@@ -243,6 +259,7 @@ describe('what it sends', () => {
     await userEvent.type(screen.getByLabelText('Amount'), '20')
     await userEvent.type(screen.getByLabelText('Postal code'), '1101CM')
     await userEvent.selectOptions(screen.getByLabelText('Country'), 'NL')
+    await userEvent.type(screen.getByLabelText('Order number'), '41028866102')
     await userEvent.type(screen.getByLabelText(/note/i), '  Gift receipt  ')
     await submit()
 
@@ -261,7 +278,8 @@ describe('what it sends', () => {
     await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'received')
     await userEvent.type(screen.getByLabelText('Dropped off on'), '2026-05-03')
     await userEvent.type(screen.getByLabelText('Received on'), '2026-05-06')
-    await userEvent.type(screen.getByLabelText(/order number/i), ' ORD-1 ')
+    await userEvent.clear(screen.getByLabelText('Order number'))
+    await userEvent.type(screen.getByLabelText('Order number'), ' ORD-1 ')
     await submit()
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({

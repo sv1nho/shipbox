@@ -110,6 +110,7 @@ describe('the writes', () => {
       recipientCountry: 'BE',
       amountCents: 4999,
       store: 'Zalando',
+      orderNumber: 'ZAL-2026-0001',
     } as const
 
     await api.createShipment(input)

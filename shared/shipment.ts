@@ -31,7 +31,7 @@ export type ShipmentDto = {
   dropoffDate: IsoDate | null
   receivedDate: IsoDate | null
   decisionDate: IsoDate | null
-  orderNumber: string | null
+  orderNumber: string
   note: string | null
   rejectionReason: string | null
   createdAt: string
@@ -53,13 +53,13 @@ export type CreateShipmentInput = {
   recipientCountry: string
   amountCents: number
   store: string
+  orderNumber: string
   storeSupportEmail?: string | null
   status?: ShipmentStatus
   requestedDate?: IsoDate
   dropoffDate?: IsoDate | null
   receivedDate?: IsoDate | null
   decisionDate?: IsoDate | null
-  orderNumber?: string | null
   note?: string | null
   rejectionReason?: string | null
   label?: LabelInput
@@ -72,6 +72,7 @@ export const REQUIRED_CREATE_FIELDS = [
   'amountCents',
   'recipientPostalCode',
   'recipientCountry',
+  'orderNumber',
 ] as const satisfies readonly (keyof CreateShipmentInput)[]
 
 export type UpdateShipmentInput = {
@@ -79,7 +80,7 @@ export type UpdateShipmentInput = {
   recipientCountry?: string
   amountCents?: number
   store?: string
-  orderNumber?: string | null
+  orderNumber?: string
   note?: string | null
   requestedDate?: IsoDate
   dropoffDate?: IsoDate

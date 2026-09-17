@@ -24,7 +24,7 @@ export type ShipmentRow = {
   dropoffDate: Date | null
   receivedDate: Date | null
   decisionDate: Date | null
-  orderNumber: string | null
+  orderNumber: string
   note: string | null
   rejectionReason: string | null
   createdAt: Date

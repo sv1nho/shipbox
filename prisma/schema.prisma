@@ -96,7 +96,7 @@ model Shipment {
   receivedDate        DateTime? @map("received_date") @db.Date
   decisionDate        DateTime? @map("decision_date") @db.Date
 
-  orderNumber         String?   @map("order_number")
+  orderNumber         String    @map("order_number")
   note                String?
   rejectionReason     String?   @map("rejection_reason")
 

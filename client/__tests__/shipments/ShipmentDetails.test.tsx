@@ -113,11 +113,16 @@ describe('what it leaves out', () => {
     expect(screen.queryByText('Since the drop-off')).not.toBeInTheDocument()
   })
 
-  it('hides an empty order number and an empty note', () => {
-    renderDetails({ orderNumber: null, note: null })
+  it('hides an empty note', () => {
+    renderDetails({ note: null })
 
-    expect(screen.queryByText('Order number')).not.toBeInTheDocument()
     expect(screen.queryByText('Note')).not.toBeInTheDocument()
+  })
+
+  it('always shows the order number, the reference the store answers to', () => {
+    renderDetails({ orderNumber: 'HM-55120' })
+
+    expect(valueOf('Order number')).toBe('HM-55120')
   })
 
   it('tells the refusal reason apart from a free note', () => {

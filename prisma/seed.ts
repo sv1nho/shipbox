@@ -19,7 +19,7 @@ type SeedShipment = {
   amountCents: number
   store: string
   createdAgo: number
-  orderNumber?: string
+  orderNumber: string
   note?: string
 }
 
@@ -44,6 +44,7 @@ const SHIPMENTS: SeedShipment[] = [
     amountCents: 2350,
     store: 'Zalando BE',
     createdAgo: 2,
+    orderNumber: 'ZAL-BE-880214',
   },
   {
     id: id(3),
@@ -65,6 +66,7 @@ const SHIPMENTS: SeedShipment[] = [
     amountCents: 8990,
     store: 'Zara',
     createdAgo: 8,
+    orderNumber: '41028866102',
     note: 'Waiting for a free afternoon to drop it off.',
   },
   {
@@ -87,6 +89,7 @@ const SHIPMENTS: SeedShipment[] = [
     amountCents: 7499,
     store: 'Nike',
     createdAgo: 23,
+    orderNumber: 'C00912447835',
   },
   {
     id: id(7),
@@ -97,6 +100,7 @@ const SHIPMENTS: SeedShipment[] = [
     amountCents: 5999,
     store: 'Bol.com',
     createdAgo: 26,
+    orderNumber: '2447-1180-9923',
     note: 'Keeps slipping down the list.',
   },
   {
@@ -189,7 +193,7 @@ for (const shipment of SHIPMENTS) {
       dropoffDate: null,
       receivedDate: null,
       decisionDate: null,
-      orderNumber: shipment.orderNumber ?? null,
+      orderNumber: shipment.orderNumber,
       note: shipment.note ?? null,
       archivedAt: null,
       ...(LABELLED.has(shipment.id)

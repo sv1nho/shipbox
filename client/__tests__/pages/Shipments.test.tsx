@@ -564,6 +564,7 @@ describe('adding a return by hand', () => {
     await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
     await userEvent.type(screen.getByLabelText('Amount'), '35')
     await userEvent.type(screen.getByLabelText('Postal code'), '2600')
+    await userEvent.type(screen.getByLabelText('Order number'), 'SNP-0099')
     await userEvent.click(screen.getByRole('button', { name: /track it/i }))
 
     await waitFor(() => {
@@ -589,6 +590,7 @@ describe('adding a return by hand', () => {
     await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
     await userEvent.type(screen.getByLabelText('Amount'), '35')
     await userEvent.type(screen.getByLabelText('Postal code'), '2600')
+    await userEvent.type(screen.getByLabelText('Order number'), 'SNP-0099')
     await userEvent.click(screen.getByRole('button', { name: /track it/i }))
 
     expect(await screen.findByText(/could not be reached/i)).toBeInTheDocument()
@@ -610,6 +612,7 @@ describe('adding a return by hand', () => {
     await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
     await userEvent.type(screen.getByLabelText('Amount'), '35')
     await userEvent.type(screen.getByLabelText('Postal code'), '2600')
+    await userEvent.type(screen.getByLabelText('Order number'), 'SNP-0099')
     await userEvent.click(screen.getByRole('button', { name: /track it/i }))
 
     expect(await screen.findByText('already used')).toBeInTheDocument()

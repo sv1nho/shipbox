@@ -17,7 +17,7 @@ export function makeShipment (overrides: Partial<ShipmentDto> = {}): ShipmentDto
     dropoffDate: null,
     receivedDate: null,
     decisionDate: null,
-    orderNumber: null,
+    orderNumber: 'ZAL-2026-0001',
     note: null,
     rejectionReason: null,
     createdAt: '2026-06-01T00:00:00.000Z',

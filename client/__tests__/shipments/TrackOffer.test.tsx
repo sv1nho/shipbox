@@ -47,6 +47,7 @@ const openForm = async () => {
 const fillAndSubmit = async () => {
   await userEvent.type(screen.getByLabelText('Store'), 'Zalando')
   await userEvent.type(screen.getByLabelText('Amount'), '49.99')
+  await userEvent.type(screen.getByLabelText('Order number'), 'ZAL-2026-0001')
   await userEvent.click(screen.getByRole('button', { name: /track it/i }))
 }
 

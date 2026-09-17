@@ -110,6 +110,9 @@ export function check (draft: Draft, label?: LabelInput): Checked {
       ? { trackingNumber: `This is not a ${CARRIERS[draft.carrier].label} number: ${patternHint}.` }
       : {}),
     ...(draft.store.trim() === '' ? { store: 'Say which store the parcel goes back to.' } : {}),
+    ...(draft.orderNumber.trim() === ''
+      ? { orderNumber: 'The store searches by its own order number, not by the tracking number.' }
+      : {}),
     ...(amountCents === null ? { amount: 'An amount like 49.99 is required.' } : {}),
     ...(draft.recipientPostalCode.trim() === ''
       ? { recipientPostalCode: 'A postal code is required.' }
@@ -138,6 +141,7 @@ export function check (draft: Draft, label?: LabelInput): Checked {
       recipientCountry: draft.recipientCountry,
       amountCents,
       store: draft.store,
+      orderNumber: draft.orderNumber.trim(),
       requestedDate: draft.requestedDate,
       ...(draft.status === 'pending' ? {} : { status: draft.status }),
       ...(draft.dropoffDate === '' ? {} : { dropoffDate: draft.dropoffDate }),
@@ -146,7 +150,6 @@ export function check (draft: Draft, label?: LabelInput): Checked {
       ...(draft.status === 'rejected' && draft.rejectionReason.trim() !== ''
         ? { rejectionReason: draft.rejectionReason.trim() }
         : {}),
-      ...(draft.orderNumber.trim() === '' ? {} : { orderNumber: draft.orderNumber.trim() }),
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
       ...(label === undefined ? {} : { label }),
     },
@@ -394,7 +397,7 @@ export function AddShipmentDialog (
         )}
 
         <div className='form-row'>
-          <Field label='Order number (optional)' htmlFor='shipment-order' problem={undefined}>
+          <Field label='Order number' htmlFor='shipment-order' problem={problem('orderNumber')}>
             <input
               id='shipment-order'
               className='form-input'

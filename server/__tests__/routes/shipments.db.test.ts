@@ -38,6 +38,7 @@ const validBody = (overrides: Record<string, unknown> = {}) => ({
   recipientCountry: 'BE',
   amountCents: 4999,
   store: 'Zalando',
+  orderNumber: 'ZAL-2026-0001',
   requestedDate: '2026-01-01',
   ...overrides,
 })
@@ -190,6 +191,20 @@ describe('the routes that must be declared before /:id', () => {
     expect(outcome.failures).toHaveLength(1)
     expect(outcome.failures[0].row).toBe(2)
     expect(outcome.failures[0].message).toContain('trackingNumber')
+  })
+
+  it('refuses a row with no order number, naming the column to fill in', async () => {
+    const { orderNumber: _missing, ...noOrder } = validBody()
+
+    const response = await request(app)
+      .post('/api/shipments/import')
+      .send({ shipments: [noOrder] })
+      .expect(200)
+
+    const outcome = bodyOf<{ imported: number; failures: { message: string }[] }>(response)
+
+    expect(outcome.imported).toBe(0)
+    expect(outcome.failures[0].message).toContain('orderNumber')
   })
 
   it('reports the refusals in file order, whichever layer refused them', async () => {
