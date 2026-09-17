@@ -36,6 +36,8 @@ export default [
         HTMLCanvasElement: "readonly",
         DOMParser: "readonly",
         URL: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
       },
     },
     plugins: { "@typescript-eslint": tsPlugin },
