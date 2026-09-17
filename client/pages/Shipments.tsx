@@ -164,8 +164,14 @@ export function Shipments () {
               {result.total === 1 ? '1 shipment' : `${String(result.total)} shipments`}
             </span>
           )}
-          <button type='button' className='btn btn-primary text-xs px-3 py-1.5' onClick={openAddForm}>
-            Track a return
+          <button
+            type='button'
+            className='icon-btn icon-btn-add'
+            aria-label='Track a return'
+            title='Track a return'
+            onClick={openAddForm}
+          >
+            +
           </button>
         </div>
       </div>
