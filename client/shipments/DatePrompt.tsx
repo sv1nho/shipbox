@@ -32,12 +32,14 @@ export function DatePrompt (
 
   const { label } = TRANSITIONS[action]
 
-  const receptionTooEarly = reception !== null && received < reception.earliest
-  const floor = reception === null ? earliest : received
-  const tooEarly = date < floor
+  const receptionMissing = reception !== null && received === ''
+  const receptionTooEarly = reception !== null && !receptionMissing && received < reception.earliest
 
-  const incomplete =
-    date === '' || tooEarly || (reception !== null && (received === '' || receptionTooEarly))
+  const floor = reception === null ? earliest : received
+  const dateMissing = date === ''
+  const tooEarly = !dateMissing && !receptionMissing && date < floor
+
+  const incomplete = dateMissing || tooEarly || receptionMissing || receptionTooEarly
 
   return (
     <Modal titleId='date-prompt-title' onClose={onCancel}>
@@ -84,6 +86,8 @@ export function DatePrompt (
               Without it the waiting time of this store cannot be measured.
             </p>
 
+            {receptionMissing && <p className='field-error'>Pick the day it was received.</p>}
+
             {receptionTooEarly && (
               <p className='field-error'>This cannot be earlier than the drop-off.</p>
             )}
@@ -102,6 +106,8 @@ export function DatePrompt (
           min={floor}
           onChange={(event) => { setDate(event.target.value) }}
         />
+
+        {dateMissing && <p className='field-error'>Pick a day.</p>}
 
         {tooEarly && (
           <p className='field-error'>This cannot be earlier than the previous step.</p>

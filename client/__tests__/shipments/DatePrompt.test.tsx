@@ -90,11 +90,13 @@ describe('picking another day', () => {
     expect(onConfirm).not.toHaveBeenCalled()
   })
 
-  it('cannot confirm an empty day', async () => {
-    renderPrompt()
+  it('says the day is missing rather than blaming the previous step', async () => {
+    renderPrompt({ earliest: '2026-06-01' })
 
     await userEvent.clear(dateInput())
 
+    expect(screen.getByText('Pick a day.')).toBeInTheDocument()
+    expect(screen.queryByText(/earlier than the previous step/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled()
   })
 })
@@ -236,11 +238,13 @@ describe('a decision that skips the reception', () => {
     })
   })
 
-  it('refuses to save without a reception date', async () => {
-    decide()
+  it('says the reception day is missing rather than blaming the drop-off', async () => {
+    decide('2026-06-01')
 
     await userEvent.clear(receptionInput())
 
+    expect(screen.getByText('Pick the day it was received.')).toBeInTheDocument()
+    expect(screen.queryByText(/earlier than the drop-off/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled()
   })
 
