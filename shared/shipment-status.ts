@@ -17,3 +17,12 @@ type DecisionStatus = typeof DECISION_STATUSES[number]
 
 export const isDecisionStatus = (value: unknown): value is DecisionStatus =>
   typeof value === 'string' && (DECISION_STATUSES as readonly string[]).includes(value)
+
+export const OPEN_STATUSES = SHIPMENT_STATUSES.filter((status) => !isDecisionStatus(status))
+
+export const STATUS_FILTERS = [...SHIPMENT_STATUSES, 'open'] as const
+
+export type StatusFilter = typeof STATUS_FILTERS[number]
+
+export const isStatusFilter = (value: unknown): value is StatusFilter =>
+  typeof value === 'string' && (STATUS_FILTERS as readonly string[]).includes(value)

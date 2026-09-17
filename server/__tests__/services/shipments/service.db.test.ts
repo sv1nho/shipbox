@@ -637,6 +637,32 @@ describe('list', () => {
     expect((await shipments.list(OWNER, { status: 'received' })).total).toBe(0)
   })
 
+  it('gathers every return still open under one filter, whatever state it sits in', async () => {
+    const dropped = await shipments.create(OWNER, input())
+    await shipments.transition(OWNER, dropped.id, 'drop_off', '2026-06-01')
+
+    const held = await shipments.create(OWNER, input())
+    await shipments.transition(OWNER, held.id, 'receive', '2026-06-02')
+
+    const closed = await shipments.create(OWNER, input())
+    await shipments.transition(OWNER, closed.id, 'refund', '2026-06-03')
+
+    await shipments.create(OWNER, input())
+
+    const open = await shipments.list(OWNER, { status: 'open' })
+
+    expect(open.total).toBe(3)
+    expect(open.items.map((item) => item.status).sort())
+      .toEqual(['dropped_off', 'pending', 'received'])
+  })
+
+  it('leaves a decided return out of the open filter, refused as much as refunded', async () => {
+    const rejected = await shipments.create(OWNER, input())
+    await shipments.transition(OWNER, rejected.id, 'reject', '2026-06-03', 'Worn shoes')
+
+    expect((await shipments.list(OWNER, { status: 'open' })).total).toBe(0)
+  })
+
   it('searches the tracking number, the store and the order number', async () => {
     await shipments.create(OWNER, input({ store: 'Decathlon', orderNumber: 'ORD-4242' }))
 

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import type { CarrierId } from '../../shared/carriers.js'
-import { SHIPMENT_STATUSES } from '../../shared/shipment-status.js'
+import { SHIPMENT_STATUSES, STATUS_FILTERS } from '../../shared/shipment-status.js'
 import { COUNTRIES, LANGUAGES } from '../../shared/label-payload.js'
 import { SORT_KEYS } from '../../shared/shipment.js'
 import { normalizeTrackingNumber } from '../../shared/normalize.js'
@@ -133,7 +133,7 @@ export const rejectSchema = z.object({
 
 export const listQuerySchema = z.object({
   carrier: carrierSchema.optional(),
-  status: statusSchema.optional(),
+  status: z.enum(asTuple(STATUS_FILTERS)).optional(),
   store: z.string().min(1).max(120).optional(),
   search: z.string().min(1).max(120).optional(),
   archived: z.enum(['exclude', 'only', 'include']).optional(),

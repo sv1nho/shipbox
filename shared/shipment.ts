@@ -1,6 +1,6 @@
 import type { CarrierId } from './carriers.js'
 import type { LabelPayload } from './label-payload.js'
-import type { ShipmentStatus } from './shipment-status.js'
+import type { ShipmentStatus, StatusFilter } from './shipment-status.js'
 
 export type IsoDate = string
 
@@ -108,7 +108,7 @@ export type SortKey = typeof SORT_KEYS[number]
 
 export type ListParams = {
   carrier?: CarrierId
-  status?: ShipmentStatus
+  status?: StatusFilter
   store?: string
   search?: string
   archived?: ArchivedFilter

@@ -12,6 +12,7 @@ import {
 import type { DatedShipment, ShipmentState } from './status.js'
 import type { TransitionAction } from '../../../shared/transitions.js'
 import { normalizeCountry, normalizePostalCode, normalizeTrackingNumber } from '../../../shared/normalize.js'
+import { OPEN_STATUSES } from '../../../shared/shipment-status.js'
 import { storeIdFor } from './stores.js'
 import { toShipmentDto, toShipmentState } from './mapper.js'
 import type { ShipmentRow } from './mapper.js'
@@ -127,7 +128,11 @@ const whereOf = (userId: string, params: ListParams) => {
   return {
     userId,
     ...(params.carrier ? { carrier: params.carrier } : {}),
-    ...(params.status ? { status: params.status } : {}),
+    ...(params.status === 'open'
+      ? { status: { in: OPEN_STATUSES } }
+      : params.status
+        ? { status: params.status }
+        : {}),
     ...(params.store ? { store: { name: params.store } } : {}),
     ...(archived === 'exclude' ? { archivedAt: null } : {}),
     ...(archived === 'only' ? { archivedAt: { not: null } } : {}),

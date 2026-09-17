@@ -70,6 +70,15 @@ describe('changing a filter', () => {
     expect(onChange).toHaveBeenCalledWith({ status: undefined })
   })
 
+  it('offers the returns still open as one choice, above the five states', async () => {
+    const { onChange } = renderBar()
+
+    await userEvent.selectOptions(screen.getByLabelText('Status'), 'open')
+
+    expect(screen.getByRole('option', { name: 'Not decided yet' })).toBeInTheDocument()
+    expect(onChange).toHaveBeenCalledWith({ status: 'open' })
+  })
+
   it('reports the sort key', async () => {
     const { onChange } = renderBar()
 

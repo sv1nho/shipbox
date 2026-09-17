@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { CARRIERS, CARRIER_IDS, isCarrierId } from '../../shared/carriers.js'
-import { SHIPMENT_STATUSES, isShipmentStatus } from '../../shared/shipment-status.js'
+import { SHIPMENT_STATUSES, isStatusFilter } from '../../shared/shipment-status.js'
 import { SORT_KEYS } from '../../shared/shipment.js'
 import type { ArchivedFilter, ListParams, SortKey } from '../../shared/shipment.js'
 import { exportUrl } from '../api/shipments.js'
@@ -102,10 +102,11 @@ export function FilterBar ({ filters, onChange }: FilterBarProps) {
           value={filters.status ?? ''}
           onChange={(event) => {
             const value = event.target.value
-            onChange({ status: isShipmentStatus(value) ? value : undefined })
+            onChange({ status: isStatusFilter(value) ? value : undefined })
           }}
         >
           <option value=''>All statuses</option>
+          <option value='open'>Not decided yet</option>
           {SHIPMENT_STATUSES.map((status) => (
             <option key={status} value={status}>{statusLabel(status)}</option>
           ))}

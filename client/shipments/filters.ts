@@ -1,5 +1,5 @@
 import { isCarrierId } from '../../shared/carriers.js'
-import { isShipmentStatus } from '../../shared/shipment-status.js'
+import { isStatusFilter } from '../../shared/shipment-status.js'
 import { SORT_KEYS } from '../../shared/shipment.js'
 import type { ListParams, SortKey } from '../../shared/shipment.js'
 
@@ -37,7 +37,7 @@ export function filtersFromSearch (search: URLSearchParams): ListParams {
   return {
     ...DEFAULT_FILTERS,
     ...(carrier !== null && isCarrierId(carrier) ? { carrier } : {}),
-    ...(status !== null && isShipmentStatus(status) ? { status } : {}),
+    ...(status !== null && isStatusFilter(status) ? { status } : {}),
     ...(trimmed(search.get('store')) === undefined ? {} : { store: trimmed(search.get('store')) }),
     ...(trimmed(search.get('search')) === undefined ? {} : { search: trimmed(search.get('search')) }),
     ...(oneOf(ARCHIVED_VALUES, search.get('archived')) === undefined
