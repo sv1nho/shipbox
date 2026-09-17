@@ -1,6 +1,7 @@
 import { prisma } from '../server/prisma.js'
 import { CURRENT_PAYLOAD_VERSION } from '../shared/label-payload.js'
 import type { LabelPayload } from '../shared/label-payload.js'
+import type { ShipmentStatus } from '../shared/shipment-status.js'
 
 const MIDNIGHT_UTC = (offsetDays: number): Date => {
   const now = new Date()
@@ -10,6 +11,106 @@ const MIDNIGHT_UTC = (offsetDays: number): Date => {
 const id = (suffix: number): string =>
   `00000000-0000-4000-8000-${String(suffix).padStart(12, '0')}`
 
+type SeedStore = {
+  name: string
+  supportEmail: string | null
+  prefix: string
+  decisionDays: number
+}
+
+const STORES: SeedStore[] = [
+  { name: 'Zalando', supportEmail: 'service@zalando.be', prefix: 'ZAL', decisionDays: 4 },
+  { name: 'Zalando BE', supportEmail: 'service@zalando.be', prefix: 'ZLB', decisionDays: 5 },
+  { name: 'H&M', supportEmail: 'kundservice@hm.com', prefix: 'HM', decisionDays: 12 },
+  { name: 'Zara', supportEmail: null, prefix: 'ZR', decisionDays: 18 },
+  { name: 'Decathlon', supportEmail: 'contact@decathlon.be', prefix: 'DK', decisionDays: 6 },
+  { name: 'Nike', supportEmail: 'support@nike.com', prefix: 'NK', decisionDays: 9 },
+  { name: 'Bol.com', supportEmail: null, prefix: 'BOL', decisionDays: 21 },
+  { name: 'Snipes', supportEmail: 'support@snipes.com', prefix: 'SNP', decisionDays: 7 },
+  { name: 'ASOS', supportEmail: 'help@asos.com', prefix: 'AS', decisionDays: 5 },
+  { name: 'JBC', supportEmail: null, prefix: 'JBC', decisionDays: 15 },
+]
+
+type Ago = {
+  requested: number
+  dropoff?: number
+  received?: number
+}
+
+type Recipe = {
+  status: ShipmentStatus
+  count: number
+  ago: (index: number) => Ago
+  archived?: boolean
+  note?: string
+}
+
+const PLAN: Recipe[] = [
+  {
+    status: 'pending',
+    count: 6,
+    ago: (index) => ({ requested: 1 + index * 2 }),
+  },
+  {
+    status: 'pending',
+    count: 3,
+    ago: (index) => ({ requested: 24 + index }),
+    note: 'Label about to expire, drop it off this week.',
+  },
+  {
+    status: 'pending',
+    count: 2,
+    ago: (index) => ({ requested: 32 + index * 4 }),
+    note: 'Label expired, a new one has to be asked for.',
+  },
+  {
+    status: 'dropped_off',
+    count: 5,
+    ago: (index) => ({ requested: 6 + index * 2, dropoff: 4 + index * 2 }),
+  },
+  {
+    status: 'dropped_off',
+    count: 4,
+    ago: (index) => ({ requested: 20 + index * 4, dropoff: 17 + index * 4 }),
+    note: 'Dropped off, the store still has not scanned it in.',
+  },
+  {
+    status: 'received',
+    count: 5,
+    ago: (index) => ({ requested: 10 + index * 2, dropoff: 8 + index * 2, received: 5 + index * 2 }),
+  },
+  {
+    status: 'received',
+    count: 4,
+    ago: (index) => ({ requested: 30 + index * 6, dropoff: 27 + index * 6, received: 22 + index * 6 }),
+    note: 'Received weeks ago and still no decision.',
+  },
+  {
+    status: 'refunded',
+    count: 18,
+    ago: (index) => ({ requested: 45 + index * 6, dropoff: 42 + index * 6, received: 38 + index * 6 }),
+  },
+  {
+    status: 'rejected',
+    count: 5,
+    ago: (index) => ({ requested: 50 + index * 9, dropoff: 47 + index * 9, received: 43 + index * 9 }),
+  },
+  {
+    status: 'refunded',
+    count: 2,
+    ago: (index) => ({ requested: 210 + index * 20, dropoff: 207 + index * 20, received: 203 + index * 20 }),
+    archived: true,
+  },
+]
+
+const REJECTIONS = [
+  'Worn outside, soles are dirty.',
+  'Returned after the thirty day window.',
+  'The security tag was cut off.',
+  'Not the item that was sent out.',
+  'Sale item, no refund on those.',
+]
+
 type SeedShipment = {
   id: string
   trackingNumber: string
@@ -17,112 +118,86 @@ type SeedShipment = {
   recipientPostalCode: string
   recipientCountry: string
   amountCents: number
-  store: string
-  createdAgo: number
+  store: SeedStore
+  status: ShipmentStatus
   orderNumber: string
-  note?: string
+  requestedAgo: number
+  dropoffAgo: number | null
+  receivedAgo: number | null
+  decisionAgo: number | null
+  rejectionReason: string | null
+  note: string | null
+  archived: boolean
 }
 
-const SHIPMENTS: SeedShipment[] = [
-  {
-    id: id(1),
-    trackingNumber: '323200000000000000000001',
-    carrier: 'bpost',
-    recipientPostalCode: '2000',
-    recipientCountry: 'BE',
-    amountCents: 4999,
-    store: 'Zalando',
-    createdAgo: 0,
-    orderNumber: 'ZAL-2026-0001',
-  },
-  {
-    id: id(2),
-    trackingNumber: '3SDDRL278573402',
-    carrier: 'postnl',
-    recipientPostalCode: '5145RC',
-    recipientCountry: 'NL',
-    amountCents: 2350,
-    store: 'Zalando BE',
-    createdAgo: 2,
-    orderNumber: 'ZAL-BE-880214',
-  },
-  {
-    id: id(3),
-    trackingNumber: '323200000000000000000003',
-    carrier: 'bpost',
-    recipientPostalCode: '1000',
-    recipientCountry: 'BE',
-    amountCents: 1999,
-    store: 'H&M',
-    createdAgo: 5,
-    orderNumber: 'HM-55120',
-  },
-  {
-    id: id(4),
-    trackingNumber: '3SDDRL278573404',
-    carrier: 'postnl',
-    recipientPostalCode: '1101CM',
-    recipientCountry: 'NL',
-    amountCents: 8990,
-    store: 'Zara',
-    createdAgo: 8,
-    orderNumber: '41028866102',
-    note: 'Waiting for a free afternoon to drop it off.',
-  },
-  {
-    id: id(5),
-    trackingNumber: '329900000000000000000005',
-    carrier: 'bpost',
-    recipientPostalCode: '9000',
-    recipientCountry: 'BE',
-    amountCents: 12500,
-    store: 'Decathlon',
-    createdAgo: 15,
-    orderNumber: 'DK-2026-77431',
-  },
-  {
-    id: id(6),
-    trackingNumber: '323200000000000000000006',
-    carrier: 'bpost',
-    recipientPostalCode: '4000',
-    recipientCountry: 'BE',
-    amountCents: 7499,
-    store: 'Nike',
-    createdAgo: 23,
-    orderNumber: 'C00912447835',
-  },
-  {
-    id: id(7),
-    trackingNumber: '3SDDRL278573407',
-    carrier: 'postnl',
-    recipientPostalCode: '3011AA',
-    recipientCountry: 'NL',
-    amountCents: 5999,
-    store: 'Bol.com',
-    createdAgo: 26,
-    orderNumber: '2447-1180-9923',
-    note: 'Keeps slipping down the list.',
-  },
-  {
-    id: id(8),
-    trackingNumber: '329900000000000000000008',
-    carrier: 'bpost',
-    recipientPostalCode: '2600',
-    recipientCountry: 'BE',
-    amountCents: 3450,
-    store: 'Snipes',
-    createdAgo: 29,
-    orderNumber: 'SNP-0099',
-  },
+const POSTAL_CODES = [
+  { code: '2000', country: 'BE' },
+  { code: '1000', country: 'BE' },
+  { code: '9000', country: 'BE' },
+  { code: '4000', country: 'BE' },
+  { code: '2600', country: 'BE' },
+  { code: '1101CM', country: 'NL' },
+  { code: '3011AA', country: 'NL' },
+  { code: '5145RC', country: 'NL' },
 ]
 
-const LABELLED = new Set([id(1), id(5), id(8)])
+const trackingFor = (carrier: 'bpost' | 'postnl', index: number): string =>
+  carrier === 'bpost'
+    ? `3232${String(index).padStart(20, '0')}`
+    : `3SDDRL${String(278573000 + index)}`
 
-const SUPPORT_EMAILS: Record<string, string> = {
-  Zalando: 'service@zalando.be',
-  Decathlon: 'contact@decathlon.be',
-  Snipes: 'support@snipes.com',
+const build = (): SeedShipment[] => {
+  const shipments: SeedShipment[] = []
+  let rejected = 0
+
+  for (const recipe of PLAN) {
+    for (let index = 0; index < recipe.count; index += 1) {
+      const rank = shipments.length
+      const store = STORES[rank % STORES.length]
+      const carrier = rank % 3 === 2 ? 'postnl' : 'bpost'
+      const place = POSTAL_CODES[rank % POSTAL_CODES.length]
+      const ago = recipe.ago(index)
+      const received = ago.received ?? null
+
+      const spread = store.decisionDays + ((rank % 7) - 3)
+
+      const decision =
+        received === null || (recipe.status !== 'refunded' && recipe.status !== 'rejected')
+          ? null
+          : Math.max(0, received - Math.max(1, spread))
+
+      const reason =
+        recipe.status === 'rejected' ? REJECTIONS[rejected % REJECTIONS.length] : null
+
+      if (reason !== null) rejected += 1
+
+      shipments.push({
+        id: id(rank + 1),
+        trackingNumber: trackingFor(carrier, rank + 1),
+        carrier,
+        recipientPostalCode: place.code,
+        recipientCountry: place.country,
+        amountCents: 1500 + ((rank * 1370) % 18500),
+        store,
+        status: recipe.status,
+        orderNumber: `${store.prefix}-2026-${String(4100 + rank * 7)}`,
+        requestedAgo: ago.requested,
+        dropoffAgo: ago.dropoff ?? null,
+        receivedAgo: received,
+        decisionAgo: decision,
+        rejectionReason: reason,
+        note: recipe.note ?? null,
+        archived: recipe.archived === true,
+      })
+    }
+  }
+
+  return shipments
 }
+
+const SHIPMENTS = build()
+
+const LABELLED = new Set(SHIPMENTS.slice(0, 3).map((shipment) => shipment.id))
 
 const payloadFor = (shipment: SeedShipment): LabelPayload => ({
   sender_firstname: 'Alex',
@@ -165,16 +240,18 @@ const owner = users[0]
 const removed = await prisma.shipment.deleteMany({ where: { userId: owner.id } })
 await prisma.store.deleteMany({ where: { userId: owner.id } })
 
-const storeIdOf = async (name: string): Promise<string> => {
-  const store = await prisma.store.upsert({
-    where: { userId_name: { userId: owner.id, name } },
-    create: { userId: owner.id, name, supportEmail: SUPPORT_EMAILS[name] ?? null },
-    update: {},
+const storeIds = new Map<string, string>()
+
+for (const store of STORES) {
+  const row = await prisma.store.create({
+    data: { userId: owner.id, name: store.name, supportEmail: store.supportEmail },
     select: { id: true },
   })
 
-  return store.id
+  storeIds.set(store.name, row.id)
 }
+
+const dateOf = (ago: number | null): Date | null => (ago === null ? null : MIDNIGHT_UTC(ago))
 
 for (const shipment of SHIPMENTS) {
   await prisma.shipment.create({
@@ -185,17 +262,18 @@ for (const shipment of SHIPMENTS) {
       carrier: shipment.carrier,
       recipientPostalCode: shipment.recipientPostalCode,
       recipientCountry: shipment.recipientCountry,
-      status: 'pending',
+      status: shipment.status,
       amountCents: shipment.amountCents,
-      storeId: await storeIdOf(shipment.store),
-      createdAt: MIDNIGHT_UTC(shipment.createdAgo),
-      requestedDate: MIDNIGHT_UTC(shipment.createdAgo),
-      dropoffDate: null,
-      receivedDate: null,
-      decisionDate: null,
+      storeId: storeIds.get(shipment.store.name) ?? '',
+      createdAt: MIDNIGHT_UTC(shipment.requestedAgo),
+      requestedDate: MIDNIGHT_UTC(shipment.requestedAgo),
+      dropoffDate: dateOf(shipment.dropoffAgo),
+      receivedDate: dateOf(shipment.receivedAgo),
+      decisionDate: dateOf(shipment.decisionAgo),
       orderNumber: shipment.orderNumber,
-      note: shipment.note ?? null,
-      archivedAt: null,
+      note: shipment.note,
+      rejectionReason: shipment.rejectionReason,
+      archivedAt: shipment.archived ? MIDNIGHT_UTC(shipment.requestedAgo - 1) : null,
       ...(LABELLED.has(shipment.id)
         ? {
             label: {
@@ -210,9 +288,15 @@ for (const shipment of SHIPMENTS) {
   })
 }
 
+const count = (status: ShipmentStatus): number =>
+  SHIPMENTS.filter((shipment) => shipment.status === status).length
+
 console.log(
-  `Replaced ${String(removed.count)} shipments with ${String(SHIPMENTS.length)} pending ones ` +
-  `and ${String(LABELLED.size)} labels for ${owner.email}`
+  `Replaced ${String(removed.count)} shipments with ${String(SHIPMENTS.length)} across ` +
+  `${String(STORES.length)} stores for ${owner.email}: ` +
+  `${String(count('pending'))} pending, ${String(count('dropped_off'))} dropped off, ` +
+  `${String(count('received'))} received, ${String(count('refunded'))} refunded, ` +
+  `${String(count('rejected'))} rejected, ${String(LABELLED.size)} with a label`
 )
 
 await prisma.$disconnect()
