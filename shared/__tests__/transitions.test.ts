@@ -191,24 +191,22 @@ describe('menuSteps, what the extra menu may offer', () => {
   const labels = (from: ShipmentStatus): string[] => menuSteps(from).map((entry) => entry.label)
 
   it('never repeats the step the row already shows as a button', () => {
-    expect(labels('pending')).not.toContain('Drop off')
-    expect(labels('dropped_off')).not.toContain('Receive')
+    expect(labels('pending')).not.toContain('Record the drop-off directly')
+    expect(labels('dropped_off')).not.toContain('Record the reception directly')
   })
 
   it('folds the two decisions into a single entry', () => {
-    expect(labels('pending')).toEqual(['Received', 'Decision'])
-    expect(labels('dropped_off')).toEqual(['Decision'])
+    expect(labels('pending')).toEqual(['Record the reception directly', 'Record the decision directly'])
+    expect(labels('dropped_off')).toEqual(['Record the decision directly'])
+  })
+
+  it('calls a decision that replaces another one a change, not a recording', () => {
+    expect(labels('refunded')).toEqual(['Change the decision to rejected'])
+    expect(labels('rejected')).toEqual(['Change the decision to refunded'])
   })
 
   it('carries both outcomes on that entry, so the prompt can ask', () => {
     expect(menuSteps('dropped_off')[0].actions).toEqual(['refund', 'reject'])
-  })
-
-  it.each([
-    ['refunded', 'Rejected'],
-    ['rejected', 'Refunded'],
-  ] as [ShipmentStatus, string][])('names a lone decision after itself, from %s', (from, label) => {
-    expect(labels(from)).toEqual([label])
   })
 
   it('offers nothing extra once the decision is the only thing left', () => {

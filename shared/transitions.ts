@@ -68,8 +68,15 @@ export function nextActions (from: ShipmentStatus): TransitionAction[] {
 
 const DECISION_ACTIONS: TransitionAction[] = ['refund', 'reject']
 
+const MENU_LABELS: Record<TransitionAction, string> = {
+  drop_off: 'Record the drop-off directly',
+  receive: 'Record the reception directly',
+  refund: 'Change the decision to refunded',
+  reject: 'Change the decision to rejected',
+}
+
 const singleStep = (action: TransitionAction): NextStep => ({
-  label: TRANSITIONS[action].label,
+  label: MENU_LABELS[action],
   actions: [action],
 })
 
@@ -82,7 +89,7 @@ export function menuSteps (from: ShipmentStatus): NextStep[] {
 
   return [
     ...rest.filter((action) => !DECISION_ACTIONS.includes(action)).map(singleStep),
-    { label: 'Decision', actions: ['refund', 'reject'] },
+    { label: 'Record the decision directly', actions: ['refund', 'reject'] },
   ]
 }
 

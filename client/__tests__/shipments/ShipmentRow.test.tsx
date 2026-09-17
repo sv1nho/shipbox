@@ -225,18 +225,18 @@ describe('the extra menu', () => {
     renderRow({ status: 'pending' })
     await openMenu()
 
-    expect(screen.queryByRole('menuitem', { name: /record drop off directly/i })).not.toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /record received directly/i })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /record the drop-off directly/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /record the reception directly/i })).toBeInTheDocument()
   })
 
   it('folds the two decisions into one entry, which opens the same choice', async () => {
     const { shipment, spies } = renderRow({ status: 'dropped_off', dropoffDate: '2026-06-01' })
     await openMenu()
 
-    expect(screen.queryByRole('menuitem', { name: /record refunded directly/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('menuitem', { name: /record rejected directly/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /change the decision to refunded/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /change the decision to rejected/i })).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('menuitem', { name: /record decision directly/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /record the decision directly/i }))
 
     expect(spies.onTransition).toHaveBeenCalledWith(shipment, ['refund', 'reject'])
   })
@@ -245,8 +245,8 @@ describe('the extra menu', () => {
     renderRow({ status: 'refunded', decisionDate: '2026-06-03' })
     await openMenu()
 
-    expect(screen.getByRole('menuitem', { name: /record rejected directly/i })).toBeInTheDocument()
-    expect(screen.queryByRole('menuitem', { name: /record decision directly/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /change the decision to rejected/i })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /record the decision directly/i })).not.toBeInTheDocument()
   })
 
   it.each(SHIPMENT_STATUSES)('offers from %s exactly what the api would accept', async (status) => {
@@ -254,7 +254,7 @@ describe('the extra menu', () => {
     await openMenu()
 
     for (const entry of menuSteps(status)) {
-      expect(screen.getByRole('menuitem', { name: new RegExp(`record ${entry.label} directly`, 'i') }))
+      expect(screen.getByRole('menuitem', { name: entry.label }))
         .toBeInTheDocument()
     }
   })

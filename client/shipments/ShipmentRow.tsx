@@ -121,7 +121,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                   className='row-menu-item'
                   onClick={() => { handlers.onTransition(shipment, entry.actions) }}
                 >
-                  Record {entry.label.toLowerCase()} directly
+                  {entry.label}
                 </button>
               ))}
 

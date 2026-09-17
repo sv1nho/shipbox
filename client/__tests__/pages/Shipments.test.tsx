@@ -322,7 +322,7 @@ describe('the other row actions', () => {
 
     renderPage()
     await screen.findByText('Zalando')
-    await chooseFromMenu(/record decision directly/i)
+    await chooseFromMenu(/record the decision directly/i)
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
 
     await waitFor(() => {
@@ -439,7 +439,7 @@ describe('a decision that skips the reception', () => {
     renderPage()
     await screen.findByText('Zalando')
     await userEvent.click(screen.getByRole('button', { name: /more actions/i }))
-    await userEvent.click(screen.getByRole('menuitem', { name: /record decision directly/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /record the decision directly/i }))
 
     const reception = screen.getByLabelText(/when did the store receive it/i)
     await userEvent.clear(reception)
@@ -464,7 +464,7 @@ describe('a decision that skips the reception', () => {
     renderPage()
     await screen.findByText('Zalando')
     await userEvent.click(screen.getByRole('button', { name: /more actions/i }))
-    await userEvent.click(screen.getByRole('menuitem', { name: /record decision directly/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /record the decision directly/i }))
 
     expect(screen.getByLabelText(/when did the store receive it/i))
       .toHaveAttribute('min', '2026-06-01')
