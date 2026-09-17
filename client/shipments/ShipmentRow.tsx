@@ -3,6 +3,7 @@ import { TRANSITIONS, menuSteps, nextStep, undoLabel } from '../../shared/transi
 import type { NextStep } from '../../shared/transitions.js'
 import { CARRIERS } from '../../shared/carriers.js'
 import { alertMessage, delayInfo, formatAmount, formatDate, statusDate } from './format.js'
+import { needsMail } from './mail.js'
 import { StatusPill } from './StatusPill.js'
 
 export type RowHandlers = {
@@ -13,6 +14,7 @@ export type RowHandlers = {
   onDelete: (shipment: ShipmentDto) => void
   onDownloadLabel: (shipment: ShipmentDto) => void
   onShowDetails: (shipment: ShipmentDto) => void
+  onWriteToStore: (shipment: ShipmentDto) => void
   onToggleMenu: (shipment: ShipmentDto) => void
 }
 
@@ -87,6 +89,30 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
             onClick={() => { handlers.onTransition(shipment, step.actions) }}
           >
             {step.label}
+          </button>
+        )}
+      </div>
+
+      <div className='shipment-mail'>
+        {!archived && needsMail(shipment) && (
+          <button
+            type='button'
+            className='icon-btn icon-btn-mail'
+            aria-label={`Chase ${shipment.store} about ${shipment.trackingNumber}`}
+            onClick={() => { handlers.onWriteToStore(shipment) }}
+          >
+            <svg
+              viewBox='0 0 16 16'
+              width='13'
+              height='13'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='1.4'
+              aria-hidden='true'
+            >
+              <rect x='1.7' y='3.5' width='12.6' height='9' rx='1.2' />
+              <path d='M2.4 4.6 8 8.9l5.6-4.3' />
+            </svg>
           </button>
         )}
       </div>

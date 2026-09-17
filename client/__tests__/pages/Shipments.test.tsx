@@ -20,6 +20,10 @@ vi.mock('../../api/shipments.js', () => ({
 
 vi.mock('../../shipments/regenerate-label.js', () => ({ regenerateLabel: vi.fn() }))
 
+vi.mock('../../auth/client.js', () => ({
+  useSession: vi.fn(() => ({ data: { user: { name: 'Alex Dupont' } }, isPending: false })),
+}))
+
 import { Shipments } from '../../pages/Shipments.js'
 import {
   applyTransition,
@@ -806,5 +810,40 @@ describe('deleting for good', () => {
 
     expect(deleteShipment).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
+describe('chasing a store that has gone quiet', () => {
+  const openMail = async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({
+        status: 'received',
+        store: 'Zalando',
+        storeSupportEmail: 'service@zalando.be',
+        needsAction: true,
+        orderNumber: '402-118843',
+        receivedDate: '2026-08-18',
+        daysLeft: -6,
+      })])
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /chase Zalando/i }))
+  }
+
+  it('opens a message already written to the store', async () => {
+    await openMail()
+
+    expect(screen.getByRole('heading', { name: 'Chase Zalando' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Subject')).toHaveValue('Concernant le retour de la commande 402-118843')
+  })
+
+  it('closes without touching the shipment', async () => {
+    await openMail()
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(updateShipment).not.toHaveBeenCalled()
   })
 })

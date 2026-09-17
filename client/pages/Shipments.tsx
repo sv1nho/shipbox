@@ -17,6 +17,7 @@ import { DatePrompt } from '../shipments/DatePrompt.js'
 import { DeleteDialog } from '../shipments/DeleteDialog.js'
 import { FilterBar } from '../shipments/FilterBar.js'
 import { ImportDialog } from '../shipments/ImportDialog.js'
+import { MailDialog } from '../shipments/MailDialog.js'
 import { ShipmentDetails } from '../shipments/ShipmentDetails.js'
 import { ShipmentRow } from '../shipments/ShipmentRow.js'
 import type { RowHandlers } from '../shipments/ShipmentRow.js'
@@ -48,6 +49,7 @@ export function Shipments () {
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [deleting, setDeleting] = useState<ShipmentDto | null>(null)
   const [details, setDetails] = useState<ShipmentDto | null>(null)
+  const [chasing, setChasing] = useState<ShipmentDto | null>(null)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -153,6 +155,7 @@ export function Shipments () {
     onUnarchive: (shipment) => { void run(() => unarchiveShipment(shipment.id)) },
     onDelete: (shipment) => { setOpenMenu(null); setActionError(null); setDeleting(shipment) },
     onShowDetails: (shipment) => { setActionError(null); setDetails(shipment) },
+    onWriteToStore: (shipment) => { setActionError(null); setChasing(shipment) },
     onToggleMenu: (shipment) => { setOpenMenu((open) => (open === shipment.id ? null : shipment.id)) },
     onDownloadLabel: (shipment) => {
       void run(async () => {
@@ -298,6 +301,10 @@ export function Shipments () {
           }
           onConfirm={(result) => { void confirmTransition(prompt, result) }}
         />
+      )}
+
+      {chasing !== null && (
+        <MailDialog shipment={chasing} onClose={() => { setChasing(null) }} />
       )}
 
       {details !== null && (

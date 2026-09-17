@@ -17,6 +17,7 @@ const handlers = (): RowHandlers => ({
   onDelete: vi.fn(),
   onDownloadLabel: vi.fn(),
   onShowDetails: vi.fn(),
+  onWriteToStore: vi.fn(),
   onToggleMenu: vi.fn(),
 })
 
@@ -195,6 +196,39 @@ describe('the alert', () => {
     renderRow()
 
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
+})
+
+describe('the button that chases the store', () => {
+  const chase = () => screen.queryByRole('button', { name: /chase Zalando/i })
+
+  it.each([
+    ['the store has said nothing since it received the parcel', { status: 'received', needsAction: true }],
+    ['the parcel never reached the store', { status: 'dropped_off', shippingLate: true }],
+  ] as [string, Partial<ShipmentDto>][])('offers a mail when %s', (_case, overrides) => {
+    renderRow(overrides)
+
+    expect(chase()).toBeInTheDocument()
+  })
+
+  it('stays out of the way while the deadline still has time to run', () => {
+    renderRow({ status: 'received', daysLeft: 5 })
+
+    expect(chase()).not.toBeInTheDocument()
+  })
+
+  it('leaves an archived return alone, there being nothing left to chase', () => {
+    renderRow({ status: 'received', needsAction: true, archivedAt: '2026-06-10T00:00:00.000Z' })
+
+    expect(chase()).not.toBeInTheDocument()
+  })
+
+  it('hands the shipment to the page, which owns the dialog', async () => {
+    const { shipment, spies } = renderRow({ status: 'received', needsAction: true })
+
+    await userEvent.click(screen.getByRole('button', { name: /chase Zalando/i }))
+
+    expect(spies.onWriteToStore).toHaveBeenCalledWith(shipment)
   })
 })
 
