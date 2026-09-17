@@ -437,6 +437,33 @@ describe('correctIdentity', () => {
   })
 })
 
+describe('an archived shipment is left alone', () => {
+  const archived = async () => {
+    const created = await shipments.create(OWNER, input())
+    await shipments.archive(OWNER, created.id)
+    return created
+  }
+
+  it.each([
+    ['transition', (id: string) => shipments.transition(OWNER, id, 'drop_off', today())],
+    ['revert', (id: string) => shipments.revert(OWNER, id)],
+    ['update', (id: string) => shipments.update(OWNER, id, { store: 'Nike' })],
+    ['correctIdentity', (id: string) =>
+      shipments.correctIdentity(OWNER, id, { carrier: 'bpost', trackingNumber: uniqueTracking() })],
+  ])('refuses %s until it is put back in the list', async (_name, run) => {
+    const created = await archived()
+
+    expect(await codeOf(() => run(created.id))).toBe('CONFLICT')
+  })
+
+  it('accepts the same change once it is back in the list', async () => {
+    const created = await archived()
+    await shipments.unarchive(OWNER, created.id)
+
+    expect((await shipments.update(OWNER, created.id, { store: 'Nike' })).store).toBe('Nike')
+  })
+})
+
 describe('archive, unarchive and remove', () => {
   it('archives and keeps the row', async () => {
     const created = await shipments.create(OWNER, input())
