@@ -4,7 +4,7 @@ import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import type { CarrierId } from '../../shared/carriers.js'
 import { COUNTRIES } from '../../shared/label-payload.js'
 import type { Country } from '../../shared/label-payload.js'
-import { normalizeTrackingNumber } from '../../shared/normalize.js'
+import { normalizeTrackingNumber, parseAmount } from '../../shared/normalize.js'
 import { findOrderBreak } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
 import type { CreateShipmentInput } from '../../shared/shipment.js'
@@ -76,14 +76,6 @@ const emptyDraft = (): Draft => ({
 })
 
 const REQUIRES_RECEPTION: ShipmentStatus[] = ['received', 'refunded', 'rejected']
-
-export const parseAmount = (raw: string): number | null => {
-  const normalised = raw.replace(',', '.').trim()
-
-  if (!/^\d+(\.\d{1,2})?$/.test(normalised)) return null
-
-  return Math.round(Number(normalised) * 100)
-}
 
 type Checked = {
   problems: Partial<Record<keyof Draft, string>>

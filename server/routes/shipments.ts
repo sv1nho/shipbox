@@ -3,7 +3,9 @@ import type { Request, RequestHandler, Response } from 'express'
 import * as shipments from '../services/shipments/index.js'
 import { requireUser, currentUser } from '../auth/require-user.js'
 import { parse } from './validate.js'
-import { toCsv } from './csv.js'
+import { toCsv } from '../../shared/csv.js'
+import type { ImportRow } from '../services/shipments/import.js'
+import type { ImportOutcome } from '../../shared/shipment.js'
 import {
   correctIdentitySchema,
   createShipmentSchema,
@@ -11,6 +13,7 @@ import {
   existsQuerySchema,
   exportQuerySchema,
   idParamSchema,
+  importShipmentsSchema,
   listQuerySchema,
   receiveSchema,
   refundSchema,
@@ -63,6 +66,32 @@ shipmentsRouter.get(
     }
 
     res.json({ items, total: items.length })
+  })
+)
+
+shipmentsRouter.post(
+  '/import',
+  handle(async (req, res) => {
+    const body = parse(importShipmentsSchema, req.body, 'body')
+    const rows: ImportRow[] = []
+    const refused: ImportOutcome['failures'] = []
+
+    body.shipments.forEach((row, index) => {
+      const parsed = createShipmentSchema.safeParse(row)
+
+      if (parsed.success) rows.push({ row: index + 1, input: parsed.data })
+      else {
+        const first = parsed.error.issues[0]
+        refused.push({ row: index + 1, message: `${first.path.join('.')}: ${first.message}` })
+      }
+    })
+
+    const outcome = await shipments.importMany(shipments.create, userIdOf(req), rows)
+
+    res.json({
+      imported: outcome.imported,
+      failures: [...refused, ...outcome.failures].sort((a, b) => a.row - b.row),
+    })
   })
 )
 

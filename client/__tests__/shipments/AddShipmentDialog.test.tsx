@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 
 vi.mock('../../api/shipments.js', () => ({ searchStores: vi.fn() }))
 
-import { AddShipmentDialog, parseAmount } from '../../shipments/AddShipmentDialog.js'
+import { AddShipmentDialog } from '../../shipments/AddShipmentDialog.js'
 import { searchStores } from '../../api/shipments.js'
 import { today } from '../../../shared/time.js'
 import type { CreateShipmentInput } from '../../../shared/shipment.js'
@@ -40,27 +40,6 @@ const submit = async () => {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(searchStores).mockResolvedValue([])
-})
-
-describe('parseAmount', () => {
-  it.each([
-    ['49.99', 4999],
-    ['49,99', 4999],
-    ['  10 ', 1000],
-    ['0', 0],
-    ['1234.5', 123450],
-  ])('reads %s as %i cents', (raw, expected) => {
-    expect(parseAmount(raw)).toBe(expected)
-  })
-
-  it.each(['', 'free', '-5', '49.999', '1.2.3'])('refuses %s', (raw) => {
-    expect(parseAmount(raw)).toBeNull()
-  })
-
-  it('never loses a cent to floating point', () => {
-    expect(parseAmount('29.99')).toBe(2999)
-    expect(parseAmount('10.10')).toBe(1010)
-  })
 })
 
 describe('what it asks for', () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  parseAmount,
   normalizeCountry,
   normalizePostalCode,
   normalizeStore,
@@ -66,5 +67,26 @@ describe('normalizeStore', () => {
   it('never merges two stores that differ by more than whitespace', () => {
     expect(normalizeStore('Zalando BE')).not.toBe(normalizeStore('Zalando FR'))
     expect(normalizeStore('Zalando')).not.toBe(normalizeStore('Zalando BE'))
+  })
+})
+
+describe('parseAmount', () => {
+  it.each([
+    ['49.99', 4999],
+    ['49,99', 4999],
+    ['  10 ', 1000],
+    ['0', 0],
+    ['1234.5', 123450],
+  ])('reads %s as %i cents', (raw, expected) => {
+    expect(parseAmount(raw)).toBe(expected)
+  })
+
+  it.each(['', 'free', '-5', '49.999', '1.2.3', '1e3'])('refuses %s', (raw) => {
+    expect(parseAmount(raw)).toBeNull()
+  })
+
+  it('never loses a cent to floating point', () => {
+    expect(parseAmount('29.99')).toBe(2999)
+    expect(parseAmount('10.10')).toBe(1010)
   })
 })
