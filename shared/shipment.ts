@@ -45,8 +45,6 @@ type LabelInput = {
   payloadVersion: number
 }
 
-export type StartingStatus = Extract<ShipmentStatus, 'pending' | 'dropped_off' | 'received'>
-
 export type CreateShipmentInput = {
   trackingNumber: string
   carrier: CarrierId
@@ -54,12 +52,14 @@ export type CreateShipmentInput = {
   recipientCountry: string
   amountCents: number
   store: string
-  status?: StartingStatus
+  status?: ShipmentStatus
   requestedDate?: IsoDate
   dropoffDate?: IsoDate | null
   receivedDate?: IsoDate | null
+  decisionDate?: IsoDate | null
   orderNumber?: string | null
   note?: string | null
+  rejectionReason?: string | null
   label?: LabelInput
 }
 

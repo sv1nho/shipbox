@@ -153,6 +153,31 @@ describe('what it refuses', () => {
     expect(onSubmit).toHaveBeenCalledOnce()
   })
 
+  it('asks for the decision day once a decided status is chosen', async () => {
+    const { onSubmit } = renderDialog()
+
+    await fillTheRequired()
+    await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'refunded')
+    await userEvent.type(screen.getByLabelText('Dropped off on'), '2026-06-03')
+    await userEvent.type(screen.getByLabelText('Received on'), '2026-06-05')
+    await submit()
+
+    expect(screen.getByText('Pick the day the store decided.')).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('asks for a refusal reason only on a refusal', async () => {
+    renderDialog()
+
+    await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'refunded')
+
+    expect(screen.queryByLabelText(/refused because/i)).not.toBeInTheDocument()
+
+    await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'rejected')
+
+    expect(screen.getByLabelText(/refused because/i)).toBeInTheDocument()
+  })
+
   it('refuses a reception that happened before the drop-off', async () => {
     const { onSubmit } = renderDialog()
 
@@ -208,6 +233,26 @@ describe('what it sends', () => {
     expect(sent).not.toHaveProperty('orderNumber')
     expect(sent).not.toHaveProperty('note')
     expect(sent).not.toHaveProperty('status')
+  })
+
+  it('records a return that was already decided long ago', async () => {
+    const { onSubmit } = renderDialog()
+
+    await fillTheRequired()
+    await userEvent.clear(screen.getByLabelText('Return requested on'))
+    await userEvent.type(screen.getByLabelText('Return requested on'), '2026-01-05')
+    await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'rejected')
+    await userEvent.type(screen.getByLabelText('Dropped off on'), '2026-01-07')
+    await userEvent.type(screen.getByLabelText('Received on'), '2026-01-10')
+    await userEvent.type(screen.getByLabelText('Decided on'), '2026-01-20')
+    await userEvent.type(screen.getByLabelText(/refused because/i), 'Worn shoes')
+    await submit()
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'rejected',
+      decisionDate: '2026-01-20',
+      rejectionReason: 'Worn shoes',
+    }))
   })
 
   it('carries the country and the note when they are given', async () => {

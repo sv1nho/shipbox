@@ -192,12 +192,14 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
     requestedDate: input.requestedDate ?? now,
     dropoffDate: input.dropoffDate ?? null,
     receivedDate: input.receivedDate ?? null,
-    decisionDate: null,
+    decisionDate: input.decisionDate ?? null,
   }
+
+  const rejectionReason = status === 'rejected' ? input.rejectionReason ?? null : null
 
   assertDates(dates, now)
   assertChronology(dates)
-  assertStatusHasItsDate({ status, rejectionReason: null, ...dates })
+  assertStatusHasItsDate({ status, rejectionReason, ...dates })
 
   const data = {
     userId,
@@ -211,9 +213,10 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
     requestedDate: toUtcDate(dates.requestedDate),
     dropoffDate: asDate(dates.dropoffDate),
     receivedDate: asDate(dates.receivedDate),
-    decisionDate: null,
+    decisionDate: asDate(dates.decisionDate),
     orderNumber: input.orderNumber ?? null,
     note: input.note ?? null,
+    rejectionReason,
   }
 
   try {

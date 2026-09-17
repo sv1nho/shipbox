@@ -83,12 +83,14 @@ export const createShipmentSchema = z
     recipientCountry: countryCodeSchema,
     amountCents: amountCentsSchema,
     store: storeSchema,
-    status: z.enum(['pending', 'dropped_off', 'received']).optional(),
+    status: statusSchema.optional(),
     requestedDate: isoDateSchema.optional(),
     dropoffDate: isoDateSchema.nullish(),
     receivedDate: isoDateSchema.nullish(),
+    decisionDate: isoDateSchema.nullish(),
     orderNumber: orderNumberSchema,
     note: noteSchema,
+    rejectionReason: noteSchema,
     label: labelSchema.optional(),
   })
   .superRefine(matchesCarrierPattern)

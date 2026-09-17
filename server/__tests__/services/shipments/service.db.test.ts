@@ -93,6 +93,46 @@ describe('create', () => {
     expect(created.labelExpiring).toBe(false)
   })
 
+  it('stores a return that was already decided, for a back-filled history', async () => {
+    const created = await shipments.create(OWNER, input({
+      requestedDate: '2026-01-05',
+      status: 'rejected',
+      dropoffDate: '2026-01-07',
+      receivedDate: '2026-01-10',
+      decisionDate: '2026-01-20',
+      rejectionReason: 'Worn shoes',
+    }))
+
+    expect(created.status).toBe('rejected')
+    expect(created.decisionDate).toBe('2026-01-20')
+    expect(created.rejectionReason).toBe('Worn shoes')
+    expect(created.decisionDelayDays).toBe(10)
+  })
+
+  it('refuses a decided status without the day it was decided', async () => {
+    expect(await codeOf(() => shipments.create(OWNER, input({ status: 'refunded' }))))
+      .toBe('VALIDATION_ERROR')
+  })
+
+  it('leaves the reason empty on a refusal that came without one', async () => {
+    const created = await shipments.create(OWNER, input({
+      status: 'rejected',
+      decisionDate: today(),
+    }))
+
+    expect(created.rejectionReason).toBeNull()
+  })
+
+  it('keeps no refusal reason on a refund', async () => {
+    const created = await shipments.create(OWNER, input({
+      status: 'refunded',
+      decisionDate: today(),
+      rejectionReason: 'Should be dropped',
+    }))
+
+    expect(created.rejectionReason).toBeNull()
+  })
+
   it('dates the request today when the caller does not say', async () => {
     const created = await shipments.create(OWNER, input({ requestedDate: undefined }))
 

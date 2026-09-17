@@ -7,7 +7,9 @@ import type { Country } from '../../shared/label-payload.js'
 import { normalizeTrackingNumber } from '../../shared/normalize.js'
 import { findOrderBreak } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
-import type { CreateShipmentInput, StartingStatus } from '../../shared/shipment.js'
+import type { CreateShipmentInput } from '../../shared/shipment.js'
+import { SHIPMENT_STATUSES, isDecisionStatus } from '../../shared/shipment-status.js'
+import type { ShipmentStatus } from '../../shared/shipment-status.js'
 import { statusLabel } from './format.js'
 import { Modal } from './Modal.js'
 import { StoreCombobox } from './StoreCombobox.js'
@@ -37,8 +39,6 @@ type AddShipmentDialogProps = {
   onSubmit: (input: CreateShipmentInput) => void
 }
 
-const STARTING_STATUSES: StartingStatus[] = ['pending', 'dropped_off', 'received']
-
 type Draft = {
   carrier: CarrierId
   trackingNumber: string
@@ -48,9 +48,11 @@ type Draft = {
   recipientCountry: Country
   orderNumber: string
   requestedDate: string
-  status: StartingStatus
+  status: ShipmentStatus
   dropoffDate: string
   receivedDate: string
+  decisionDate: string
+  rejectionReason: string
   note: string
 }
 
@@ -66,8 +68,12 @@ const emptyDraft = (): Draft => ({
   status: 'pending',
   dropoffDate: '',
   receivedDate: '',
+  decisionDate: '',
+  rejectionReason: '',
   note: '',
 })
+
+const REQUIRES_RECEPTION: ShipmentStatus[] = ['received', 'refunded', 'rejected']
 
 export const parseAmount = (raw: string): number | null => {
   const normalised = raw.replace(',', '.').trim()
@@ -91,7 +97,7 @@ export function check (draft: Draft): Checked {
     requestedDate: draft.requestedDate,
     dropoffDate: draft.dropoffDate === '' ? null : draft.dropoffDate,
     receivedDate: draft.receivedDate === '' ? null : draft.receivedDate,
-    decisionDate: null,
+    decisionDate: draft.decisionDate === '' ? null : draft.decisionDate,
   }
 
   const broken = draft.requestedDate === '' ? null : findOrderBreak(dates)
@@ -110,8 +116,11 @@ export function check (draft: Draft): Checked {
     ...(draft.status !== 'pending' && draft.dropoffDate === ''
       ? { dropoffDate: 'Pick the day you dropped the parcel off.' }
       : {}),
-    ...(draft.status === 'received' && draft.receivedDate === ''
+    ...(REQUIRES_RECEPTION.includes(draft.status) && draft.receivedDate === ''
       ? { receivedDate: 'Pick the day the store received it.' }
+      : {}),
+    ...(isDecisionStatus(draft.status) && draft.decisionDate === ''
+      ? { decisionDate: 'Pick the day the store decided.' }
       : {}),
     ...(broken === null ? {} : { [broken.field]: 'This cannot be earlier than the step before it.' }),
   }
@@ -131,6 +140,10 @@ export function check (draft: Draft): Checked {
       ...(draft.status === 'pending' ? {} : { status: draft.status }),
       ...(draft.dropoffDate === '' ? {} : { dropoffDate: draft.dropoffDate }),
       ...(draft.receivedDate === '' ? {} : { receivedDate: draft.receivedDate }),
+      ...(draft.decisionDate === '' ? {} : { decisionDate: draft.decisionDate }),
+      ...(draft.status === 'rejected' && draft.rejectionReason.trim() !== ''
+        ? { rejectionReason: draft.rejectionReason.trim() }
+        : {}),
       ...(draft.orderNumber.trim() === '' ? {} : { orderNumber: draft.orderNumber.trim() }),
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
     },
@@ -265,9 +278,9 @@ export function AddShipmentDialog (
               id='shipment-status'
               className='form-select'
               value={draft.status}
-              onChange={(event) => { set('status', event.target.value as StartingStatus) }}
+              onChange={(event) => { set('status', event.target.value as ShipmentStatus) }}
             >
-              {STARTING_STATUSES.map((status) => (
+              {SHIPMENT_STATUSES.map((status) => (
                 <option key={status} value={status}>{statusLabel(status)}</option>
               ))}
             </select>
@@ -292,7 +305,7 @@ export function AddShipmentDialog (
               />
             </Field>
 
-            {draft.status === 'received' && (
+            {REQUIRES_RECEPTION.includes(draft.status) && (
               <Field
                 label='Received on'
                 htmlFor='shipment-received'
@@ -306,6 +319,41 @@ export function AddShipmentDialog (
                   min={draft.dropoffDate === '' ? draft.requestedDate : draft.dropoffDate}
                   max={today()}
                   onChange={(event) => { set('receivedDate', event.target.value) }}
+                />
+              </Field>
+            )}
+          </div>
+        )}
+
+        {isDecisionStatus(draft.status) && (
+          <div className='form-row'>
+            <Field
+              label='Decided on'
+              htmlFor='shipment-decision'
+              problem={problem('decisionDate') ?? fieldError('decisionDate')}
+            >
+              <input
+                id='shipment-decision'
+                type='date'
+                className='form-input'
+                value={draft.decisionDate}
+                min={draft.receivedDate === '' ? draft.requestedDate : draft.receivedDate}
+                max={today()}
+                onChange={(event) => { set('decisionDate', event.target.value) }}
+              />
+            </Field>
+
+            {draft.status === 'rejected' && (
+              <Field
+                label='Refused because (optional)'
+                htmlFor='shipment-reason'
+                problem={fieldError('rejectionReason')}
+              >
+                <input
+                  id='shipment-reason'
+                  className='form-input'
+                  value={draft.rejectionReason}
+                  onChange={(event) => { set('rejectionReason', event.target.value) }}
                 />
               </Field>
             )}
