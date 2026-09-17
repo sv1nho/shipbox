@@ -948,6 +948,18 @@ html, body {
     resize: vertical;
   }
 
+  .mail-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .icon-btn-copy {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
   .shipment-transitions {
     display: flex;
     align-items: center;

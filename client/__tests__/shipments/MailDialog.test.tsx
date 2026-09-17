@@ -36,11 +36,16 @@ const pick = async (language: string) => {
   await userEvent.click(screen.getByRole('button', { name: language }))
 }
 
+const writeText = vi.fn<(text: string) => Promise<void>>()
+
 beforeEach(() => {
   vi.mocked(useSession).mockReturnValue({
     data: { user: { id: 'u1', name: 'Alex Dupont' } },
     isPending: false,
   } as unknown as ReturnType<typeof useSession>)
+
+  writeText.mockResolvedValue(undefined)
+  Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
 })
 
 describe('what it opens on', () => {
@@ -90,6 +95,88 @@ describe('the language choice', () => {
   })
 })
 
+describe('rewriting the message before it goes', () => {
+  it('lets the message be edited, the wording being the user s own', async () => {
+    renderDialog()
+
+    await userEvent.type(screen.getByLabelText('Message'), 'PS.')
+
+    expect(body()).toContain('PS.')
+  })
+
+  it('lets the subject be edited too', async () => {
+    renderDialog()
+
+    await userEvent.clear(screen.getByLabelText('Subject'))
+    await userEvent.type(screen.getByLabelText('Subject'), 'Relance')
+
+    expect(screen.getByLabelText('Subject')).toHaveValue('Relance')
+  })
+
+  it('hands the edited text to the mail app, not the one it started from', async () => {
+    renderDialog()
+
+    await userEvent.clear(screen.getByLabelText('Subject'))
+    await userEvent.type(screen.getByLabelText('Subject'), 'Relance')
+
+    expect(mailLink().getAttribute('href') ?? '').toContain(`subject=${encodeURIComponent('Relance')}`)
+  })
+
+  it('writes the message afresh when the language changes, edits and all', async () => {
+    renderDialog()
+
+    await userEvent.type(screen.getByLabelText('Message'), 'PS.')
+    await pick('English')
+
+    expect(body()).not.toContain('PS.')
+    expect(body()).toContain('Hello,')
+  })
+})
+
+describe('copying a part of the message', () => {
+  it('copies the subject on its own, for a form that asks for one', async () => {
+    renderDialog()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the subject' }))
+
+    expect(writeText).toHaveBeenCalledWith('Concernant le retour de la commande 402-118843')
+  })
+
+  it('copies the message on its own, the two going in different fields', async () => {
+    renderDialog()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Bonjour,'))
+  })
+
+  it('copies what was edited rather than what was generated', async () => {
+    renderDialog()
+
+    await userEvent.type(screen.getByLabelText('Message'), 'PS.')
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('PS.'))
+  })
+
+  it('says it went through, there being nothing else to see', async () => {
+    renderDialog()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the subject' }))
+
+    expect(await screen.findByRole('button', { name: 'Subject copied' })).toBeInTheDocument()
+  })
+
+  it('tells the user to copy by hand when the clipboard refuses', async () => {
+    writeText.mockRejectedValue(new Error('denied'))
+
+    renderDialog()
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the subject' }))
+
+    expect(await screen.findByText(/select the text and copy it yourself/i)).toBeInTheDocument()
+  })
+})
+
 describe('handing the message to the mail client', () => {
   it('addresses the store, with the message already written', () => {
     renderDialog()
@@ -98,6 +185,13 @@ describe('handing the message to the mail client', () => {
 
     expect(href.startsWith('mailto:service@zalando.be?')).toBe(true)
     expect(href).toContain('subject=Concernant')
+  })
+
+  it('opens beside shipbox rather than navigating the list away', () => {
+    renderDialog()
+
+    expect(mailLink()).toHaveAttribute('target', '_blank')
+    expect(mailLink()).toHaveAttribute('rel', 'noreferrer')
   })
 
   it('says the store has no address rather than opening an empty draft silently', () => {
@@ -125,8 +219,11 @@ describe('leaving', () => {
 
   it('closes once the mail app has been handed the message', async () => {
     const { onClose } = renderDialog()
+    const stay = (event: Event) => { event.preventDefault() }
 
+    document.addEventListener('click', stay)
     await userEvent.click(mailLink())
+    document.removeEventListener('click', stay)
 
     expect(onClose).toHaveBeenCalledOnce()
   })

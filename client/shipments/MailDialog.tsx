@@ -10,11 +10,72 @@ type MailDialogProps = {
   onClose: () => void
 }
 
+type Part = 'subject' | 'body'
+
+const LABELS: Record<Part, string> = { subject: 'Subject', body: 'Message' }
+
+function CopyIcon ({ copied }: { copied: boolean }) {
+  return (
+    <svg
+      viewBox='0 0 16 16'
+      width='12'
+      height='12'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth='1.6'
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+    >
+      {copied
+        ? <path d='M3 8.6 6.4 12 13 4.8' />
+        : (
+          <>
+            <rect x='5.6' y='2.2' width='8.2' height='9.6' rx='1.2' />
+            <path d='M10.4 13.8H3.4a1.2 1.2 0 0 1-1.2-1.2V5.2' />
+          </>
+        )}
+    </svg>
+  )
+}
+
 export function MailDialog ({ shipment, onClose }: MailDialogProps) {
   const { data: session } = useSession()
   const [language, setLanguage] = useState<MailLanguage>('fr')
+  const [edited, setEdited] = useState<Record<Part, string> | null>(null)
+  const [copied, setCopied] = useState<Part | null>(null)
+  const [failed, setFailed] = useState(false)
 
-  const draft = mailDraft(shipment, language, session?.user.name ?? '')
+  const draft = edited ?? mailDraft(shipment, language, session?.user.name ?? '')
+
+  const chooseLanguage = (next: MailLanguage) => {
+    setLanguage(next)
+    setEdited(null)
+    setCopied(null)
+    setFailed(false)
+  }
+
+  const change = (part: Part, value: string) => {
+    setEdited({ ...draft, [part]: value })
+    setCopied(null)
+  }
+
+  const copy = (part: Part) => {
+    navigator.clipboard.writeText(draft[part])
+      .then(() => { setCopied(part); setFailed(false) })
+      .catch(() => { setCopied(null); setFailed(true) })
+  }
+
+  const copyButton = (part: Part) => (
+    <button
+      type='button'
+      className='icon-btn icon-btn-copy'
+      aria-label={copied === part ? `${LABELS[part]} copied` : `Copy the ${part}`}
+      onClick={() => { copy(part) }}
+    >
+      <CopyIcon copied={copied === part} />
+    </button>
+  )
 
   return (
     <Modal titleId='mail-dialog-title' onClose={onClose}>
@@ -32,7 +93,7 @@ export function MailDialog ({ shipment, onClose }: MailDialogProps) {
                 candidate === language ? 'segmented-btn segmented-btn-active' : 'segmented-btn'
               }
               aria-pressed={candidate === language}
-              onClick={() => { setLanguage(candidate) }}
+              onClick={() => { chooseLanguage(candidate) }}
             >
               {mailLanguageLabel(candidate)}
             </button>
@@ -41,21 +102,38 @@ export function MailDialog ({ shipment, onClose }: MailDialogProps) {
 
         <p className='field-hint'>
           {shipment.storeSupportEmail === null
-            ? `No address on file for ${shipment.store}. Add one when you add the store, or copy the message below.`
+            ? `No address on file for ${shipment.store}. Copy the message into their contact form, or add the address when you add the store.`
             : `To ${shipment.storeSupportEmail}`}
         </p>
 
-        <label className='form-label' htmlFor='mail-subject'>Subject</label>
-        <input id='mail-subject' className='form-input' readOnly value={draft.subject} />
+        <div className='mail-field-header'>
+          <label className='form-label' htmlFor='mail-subject'>Subject</label>
+          {copyButton('subject')}
+        </div>
+        <input
+          id='mail-subject'
+          className='form-input'
+          value={draft.subject}
+          onChange={(event) => { change('subject', event.target.value) }}
+        />
 
-        <label className='form-label' htmlFor='mail-body'>Message</label>
+        <div className='mail-field-header'>
+          <label className='form-label' htmlFor='mail-body'>Message</label>
+          {copyButton('body')}
+        </div>
         <textarea
           id='mail-body'
           className='form-input mail-body'
           rows={12}
-          readOnly
           value={draft.body}
+          onChange={(event) => { change('body', event.target.value) }}
         />
+
+        {failed && (
+          <p className='field-error'>
+            The clipboard is not available here. Select the text and copy it yourself.
+          </p>
+        )}
       </div>
 
       <div className='modal-footer'>
@@ -63,6 +141,8 @@ export function MailDialog ({ shipment, onClose }: MailDialogProps) {
         <a
           className='btn btn-primary'
           href={mailtoLink(shipment.storeSupportEmail, draft)}
+          target='_blank'
+          rel='noreferrer'
           onClick={onClose}
         >
           Open in my mail app
