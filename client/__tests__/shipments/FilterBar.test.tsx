@@ -208,16 +208,28 @@ describe('clearing', () => {
 })
 
 describe('the needs attention toggle', () => {
-  it('says how many returns are waiting, without being clicked', () => {
+  it('badges the count, so the work shows without a click', () => {
     renderBar(DEFAULT_FILTERS, 8)
 
-    expect(screen.getByRole('button', { name: 'Needs attention (8)' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Needs attention, 8 waiting' })).toBeInTheDocument()
+    expect(screen.getByText('8')).toHaveClass('badge-count')
   })
 
-  it('says zero rather than hiding, so a quiet list is stated and not guessed', () => {
+  it('drops the badge when nothing waits, a red zero being a false alarm', () => {
     renderBar(DEFAULT_FILTERS, 0)
 
-    expect(screen.getByRole('button', { name: 'Needs attention (0)' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Needs attention, nothing waiting' }))
+      .toBeInTheDocument()
+    expect(document.querySelector('.badge-count')).toBeNull()
+  })
+
+  it('sits with the archive views rather than on a line of its own', () => {
+    renderBar(DEFAULT_FILTERS, 8)
+
+    const views = screen.getByRole('group', { name: 'Archive' }).parentElement
+
+    expect(views).toHaveClass('filter-views')
+    expect(views).toContainElement(screen.getByRole('button', { name: /needs attention/i }))
   })
 
   it('turns the filter on', async () => {
