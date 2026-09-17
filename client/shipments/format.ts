@@ -74,7 +74,10 @@ export function delayInfo (shipment: ShipmentDto): { label: string; days: number
   const { label, field } = STATE_DELAY[shipment.status]
   const count = shipment[field]
 
-  return count === null ? null : { label, days: count }
+  if (count === null) return null
+  if (count === 0 && label === 'Waiting') return null
+
+  return { label, days: count }
 }
 
 export function alertMessage (shipment: ShipmentDto): string | null {

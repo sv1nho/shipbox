@@ -130,6 +130,23 @@ describe('delayInfo, the figure next to the date', () => {
   ] as const)('reports nothing rather than a dash when %s has no figure', (status, gap) => {
     expect(delayInfo(shipment({ status, ...gap }))).toBeNull()
   })
+
+  it.each(['pending', 'dropped_off', 'received'] as const)(
+    'says nothing on the day a %s shipment starts waiting',
+    (status) => {
+      expect(delayInfo(shipment({
+        status,
+        daysSinceRequested: 0,
+        daysSinceDropoff: 0,
+        daysSinceReceived: 0,
+      }))).toBeNull()
+    }
+  )
+
+  it('still reports a decision taken the same day, which says something', () => {
+    expect(delayInfo(shipment({ status: 'refunded', decisionDelayDays: 0 })))
+      .toEqual({ label: 'Took', days: 0 })
+  })
 })
 
 describe('alertMessage', () => {
