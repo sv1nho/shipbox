@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { errorMessage } from '../api/client.js'
+import { ApiError, errorMessage } from '../api/client.js'
 import {
   applyTransition,
   archiveShipment,
+  createShipment,
   deleteShipment,
   getLabelPayload,
   revertShipment,
   unarchiveShipment,
   updateShipment,
 } from '../api/shipments.js'
+import { AddShipmentDialog } from '../shipments/AddShipmentDialog.js'
 import { DatePrompt } from '../shipments/DatePrompt.js'
 import { DeleteDialog } from '../shipments/DeleteDialog.js'
 import { FilterBar } from '../shipments/FilterBar.js'
@@ -24,7 +26,12 @@ import type { NextStep } from '../../shared/transitions.js'
 import { isDecisionStatus } from '../../shared/shipment-status.js'
 import { TRANSITIONS } from '../../shared/transitions.js'
 import type { PromptResult } from '../shipments/DatePrompt.js'
-import type { ListParams, ShipmentDto, UpdateShipmentInput } from '../../shared/shipment.js'
+import type {
+  CreateShipmentInput,
+  ListParams,
+  ShipmentDto,
+  UpdateShipmentInput,
+} from '../../shared/shipment.js'
 
 type Prompt = { shipment: ShipmentDto; actions: NextStep['actions'] }
 
@@ -39,6 +46,8 @@ export function Shipments () {
   const [deleting, setDeleting] = useState<ShipmentDto | null>(null)
   const [details, setDetails] = useState<ShipmentDto | null>(null)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [refused, setRefused] = useState<ApiError | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -70,6 +79,7 @@ export function Shipments () {
   const run = async (operation: () => Promise<unknown>): Promise<boolean> => {
     setBusy(true)
     setActionError(null)
+    setRefused(null)
     setOpenMenu(null)
 
     try {
@@ -78,10 +88,21 @@ export function Shipments () {
       return true
     } catch (cause) {
       setActionError(errorMessage(cause))
+      setRefused(cause instanceof ApiError ? cause : null)
       return false
     } finally {
       setBusy(false)
     }
+  }
+
+  const openAddForm = () => {
+    setActionError(null)
+    setRefused(null)
+    setAdding(true)
+  }
+
+  const confirmAdd = async (input: CreateShipmentInput) => {
+    if (await run(() => createShipment(input))) setAdding(false)
   }
 
   const confirmTransition = async (active: Prompt, result: PromptResult) => {
@@ -137,17 +158,22 @@ export function Shipments () {
     <div className='card'>
       <div className='card-header'>
         <h3 className='card-title'>Shipments</h3>
-        {result !== null && (
-          <span className='card-count'>
-            {result.total === 1 ? '1 shipment' : `${String(result.total)} shipments`}
-          </span>
-        )}
+        <div className='card-actions'>
+          {result !== null && (
+            <span className='card-count'>
+              {result.total === 1 ? '1 shipment' : `${String(result.total)} shipments`}
+            </span>
+          )}
+          <button type='button' className='btn btn-primary text-xs px-3 py-1.5' onClick={openAddForm}>
+            Track a return
+          </button>
+        </div>
       </div>
 
       <div className='space-y-4'>
         <FilterBar filters={filters} onChange={apply} />
 
-        {actionError !== null && prompt === null && details === null && (
+        {actionError !== null && prompt === null && details === null && !adding && (
           <div className='alert-error'>{actionError}</div>
         )}
 
@@ -167,6 +193,11 @@ export function Shipments () {
                 ? 'No shipment matches these filters. Clear them to see the whole list again.'
                 : 'You are not tracking any shipment yet.'}
             </p>
+            {!hasActiveFilters(filters) && (
+              <button type='button' className='btn btn-primary' onClick={openAddForm}>
+                Track a return
+              </button>
+            )}
           </div>
         )}
 
@@ -205,6 +236,16 @@ export function Shipments () {
           </nav>
         )}
       </div>
+
+      {adding && (
+        <AddShipmentDialog
+          busy={busy}
+          error={actionError}
+          fieldError={(path) => refused?.messageFor(path)}
+          onCancel={() => { setAdding(false); setActionError(null) }}
+          onSubmit={(input) => { void confirmAdd(input) }}
+        />
+      )}
 
       {prompt !== null && (
         <DatePrompt

@@ -12,6 +12,8 @@ vi.mock('../../api/shipments.js', () => ({
   deleteShipment: vi.fn(),
   getLabelPayload: vi.fn(),
   updateShipment: vi.fn(),
+  createShipment: vi.fn(),
+  searchStores: vi.fn(),
   exportUrl: vi.fn(() => '/api/shipments/export?format=csv'),
 }))
 
@@ -21,6 +23,8 @@ import { Shipments } from '../../pages/Shipments.js'
 import {
   applyTransition,
   archiveShipment,
+  createShipment,
+  searchStores,
   deleteShipment,
   getLabelPayload,
   listShipments,
@@ -54,6 +58,7 @@ const lastQuery = () => vi.mocked(listShipments).mock.calls.at(-1)?.[0]
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(listShipments).mockResolvedValue(listed([makeShipment()]))
+  vi.mocked(searchStores).mockResolvedValue([])
 })
 
 describe('loading the list', () => {
@@ -500,6 +505,113 @@ describe('a decision that skips the reception', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Decide' }))
 
     expect(screen.queryByLabelText(/when did the store receive it/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('adding a return by hand', () => {
+  const openForm = async () => {
+    await userEvent.click(screen.getAllByRole('button', { name: /track a return/i })[0])
+  }
+
+  it('is offered from the header, whatever the list holds', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+
+    await openForm()
+
+    expect(screen.getByRole('heading', { name: /track a return/i })).toBeInTheDocument()
+  })
+
+  it('is offered from the empty state, where it is the only thing to do', async () => {
+    vi.mocked(listShipments).mockResolvedValue(listed([], { total: 0 }))
+
+    renderPage()
+    await screen.findByText(/not tracking any shipment yet/i)
+
+    expect(screen.getAllByRole('button', { name: /track a return/i })).toHaveLength(2)
+  })
+
+  it('offers no shortcut out of a filtered empty list, which is not empty', async () => {
+    vi.mocked(listShipments).mockResolvedValue(listed([], { total: 0 }))
+
+    renderPage('/shipments?status=refunded')
+    await screen.findByText(/no shipment matches these filters/i)
+
+    expect(screen.getAllByRole('button', { name: /track a return/i })).toHaveLength(1)
+  })
+
+  it('closes without creating anything when the user backs out', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+    await openForm()
+
+    await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(createShipment).not.toHaveBeenCalled()
+  })
+
+  it('creates the shipment and refreshes the list', async () => {
+    vi.mocked(createShipment).mockResolvedValue(makeShipment({ store: 'Snipes' }))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await openForm()
+
+    await userEvent.type(screen.getByLabelText('Tracking number'), '323200000000000000004050')
+    await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
+    await userEvent.type(screen.getByLabelText('Amount'), '35')
+    await userEvent.type(screen.getByLabelText('Postal code'), '2600')
+    await userEvent.click(screen.getByRole('button', { name: /track it/i }))
+
+    await waitFor(() => {
+      expect(createShipment).toHaveBeenCalledWith(expect.objectContaining({
+        trackingNumber: '323200000000000000004050',
+        store: 'Snipes',
+        amountCents: 3500,
+      }))
+    })
+
+    await waitFor(() => { expect(screen.queryByRole('dialog')).not.toBeInTheDocument() })
+    expect(listShipments).toHaveBeenCalledTimes(2)
+  })
+
+  it('reports a connection failure without blaming a field', async () => {
+    vi.mocked(createShipment).mockRejectedValue(new TypeError('Failed to fetch'))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await openForm()
+
+    await userEvent.type(screen.getByLabelText('Tracking number'), '323200000000000000004050')
+    await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
+    await userEvent.type(screen.getByLabelText('Amount'), '35')
+    await userEvent.type(screen.getByLabelText('Postal code'), '2600')
+    await userEvent.click(screen.getByRole('button', { name: /track it/i }))
+
+    expect(await screen.findByText(/could not be reached/i)).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('keeps the form open and shows which field the api refused', async () => {
+    vi.mocked(createShipment).mockRejectedValue(
+      new ApiError(409, 'CONFLICT', 'This tracking number is already registered.', [
+        { path: 'trackingNumber', message: 'already used' },
+      ])
+    )
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await openForm()
+
+    await userEvent.type(screen.getByLabelText('Tracking number'), '323200000000000000004050')
+    await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
+    await userEvent.type(screen.getByLabelText('Amount'), '35')
+    await userEvent.type(screen.getByLabelText('Postal code'), '2600')
+    await userEvent.click(screen.getByRole('button', { name: /track it/i }))
+
+    expect(await screen.findByText('already used')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })
 

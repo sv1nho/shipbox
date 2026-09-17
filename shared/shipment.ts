@@ -44,7 +44,7 @@ type LabelInput = {
   payloadVersion: number
 }
 
-type StartingStatus = Extract<ShipmentStatus, 'pending' | 'dropped_off' | 'received'>
+export type StartingStatus = Extract<ShipmentStatus, 'pending' | 'dropped_off' | 'received'>
 
 export type CreateShipmentInput = {
   trackingNumber: string
