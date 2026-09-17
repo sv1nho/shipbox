@@ -3,6 +3,7 @@ interface LabelPreviewModalProps {
   maskedTracking: string | null;
   onClose: () => void;
   onDownload: () => void;
+  onTrack: () => void;
 }
 
 export function LabelPreviewModal ({
@@ -10,6 +11,7 @@ export function LabelPreviewModal ({
   maskedTracking,
   onClose,
   onDownload,
+  onTrack,
 }: LabelPreviewModalProps) {
   return (
     <div
@@ -57,6 +59,9 @@ export function LabelPreviewModal ({
         <div className='modal-footer'>
           <button onClick={onClose} className='btn btn-ghost'>
             Close
+          </button>
+          <button onClick={onTrack} className='btn btn-ghost'>
+            Add to tracking
           </button>
           <button onClick={onDownload} className='btn btn-primary'>
             Download PDF

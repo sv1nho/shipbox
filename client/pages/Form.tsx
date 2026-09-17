@@ -15,6 +15,7 @@ import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
 import { getTestData } from '../test-data.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
+import { TrackOffer } from '../shipments/TrackOffer.js'
 import { fakerFR_BE, fakerNL_BE, fakerNL } from '@faker-js/faker'
 
 const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
@@ -220,6 +221,8 @@ export function Form () {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [maskedTracking, setMaskedTracking] = useState<string | null>(null)
+  const [labelPayload, setLabelPayload] = useState<LabelPayload | null>(null)
+  const [offerOpen, setOfferOpen] = useState(false)
 
   const senderIsCompany = useWatch({ control, name: 'sender_isCompany' })
   const recipientIsCompany = useWatch({ control, name: 'recipient_isCompany' })
@@ -241,6 +244,7 @@ export function Form () {
       setMaskedTracking(masked)
 
       const blob = await svgToPdf(svg)
+      setLabelPayload(data)
       setPdfBlob(blob)
       setPdfUrl(URL.createObjectURL(blob))
       setIsPreviewOpen(true)
@@ -256,9 +260,15 @@ export function Form () {
     setPdfBlob(null)
   }
 
+  const openOffer = () => {
+    handleClose()
+    setOfferOpen(true)
+  }
+
   const handleDownload = () => {
     if (!pdfBlob) return
     downloadPdf(pdfBlob, 'label.pdf')
+    openOffer()
   }
 
   return (
@@ -344,7 +354,12 @@ export function Form () {
           maskedTracking={maskedTracking}
           onClose={handleClose}
           onDownload={handleDownload}
+          onTrack={openOffer}
         />
+      )}
+
+      {offerOpen && labelPayload !== null && (
+        <TrackOffer payload={labelPayload} onClose={() => { setOfferOpen(false) }} />
       )}
     </>
   )
