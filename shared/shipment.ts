@@ -41,7 +41,7 @@ export type ShipmentDto = {
   hasLabel: boolean
 } & DerivedFields
 
-type LabelInput = {
+export type LabelInput = {
   payload: LabelPayload
   payloadVersion: number
 }

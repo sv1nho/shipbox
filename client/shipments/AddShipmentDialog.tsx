@@ -7,7 +7,7 @@ import type { Country } from '../../shared/label-payload.js'
 import { normalizeTrackingNumber, parseAmount } from '../../shared/normalize.js'
 import { findOrderBreak } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
-import type { CreateShipmentInput } from '../../shared/shipment.js'
+import type { CreateShipmentInput, LabelInput } from '../../shared/shipment.js'
 import { SHIPMENT_STATUSES, isDecisionStatus } from '../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../shared/shipment-status.js'
 import { statusLabel } from './format.js'
@@ -31,10 +31,19 @@ function Field ({ label, htmlFor, problem, children }: FieldProps) {
   )
 }
 
+export type Prefill = {
+  trackingNumber?: string
+  carrier?: CarrierId
+  recipientPostalCode?: string
+  recipientCountry?: Country
+  label?: LabelInput
+}
+
 type AddShipmentDialogProps = {
   busy: boolean
   error: string | null
   fieldError: (path: string) => string | undefined
+  prefill?: Prefill
   onCancel: () => void
   onSubmit: (input: CreateShipmentInput) => void
 }
@@ -57,14 +66,14 @@ type Draft = {
   note: string
 }
 
-const emptyDraft = (): Draft => ({
-  carrier: 'bpost',
-  trackingNumber: '',
+const draftFrom = (prefill: Prefill): Draft => ({
+  carrier: prefill.carrier ?? 'bpost',
+  trackingNumber: prefill.trackingNumber ?? '',
   store: '',
   storeSupportEmail: '',
   amount: '',
-  recipientPostalCode: '',
-  recipientCountry: 'BE',
+  recipientPostalCode: prefill.recipientPostalCode ?? '',
+  recipientCountry: prefill.recipientCountry ?? 'BE',
   orderNumber: '',
   requestedDate: today(),
   status: 'pending',
@@ -82,7 +91,7 @@ type Checked = {
   input: CreateShipmentInput | null
 }
 
-export function check (draft: Draft): Checked {
+export function check (draft: Draft, label?: LabelInput): Checked {
   const tracking = normalizeTrackingNumber(draft.trackingNumber)
   const amountCents = parseAmount(draft.amount)
   const { patternHint, pattern } = CARRIERS[draft.carrier]
@@ -143,17 +152,18 @@ export function check (draft: Draft): Checked {
         : { storeSupportEmail: draft.storeSupportEmail.trim() }),
       ...(draft.orderNumber.trim() === '' ? {} : { orderNumber: draft.orderNumber.trim() }),
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
+      ...(label === undefined ? {} : { label }),
     },
   }
 }
 
 export function AddShipmentDialog (
-  { busy, error, fieldError, onCancel, onSubmit }: AddShipmentDialogProps
+  { busy, error, fieldError, prefill = {}, onCancel, onSubmit }: AddShipmentDialogProps
 ) {
-  const [draft, setDraft] = useState(emptyDraft)
+  const [draft, setDraft] = useState(() => draftFrom(prefill))
   const [attempted, setAttempted] = useState(false)
 
-  const { problems, input } = check(draft)
+  const { problems, input } = check(draft, prefill.label)
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft({ ...draft, [key]: value })
   }
