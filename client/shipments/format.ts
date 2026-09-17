@@ -1,4 +1,5 @@
 import { toIsoDateInZone } from '../../shared/time.js'
+import { isDecisionStatus } from '../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../shared/shipment-status.js'
 import type { DateField } from '../../shared/transitions.js'
 import type { IsoDate, ShipmentDto } from '../../shared/shipment.js'
@@ -21,20 +22,6 @@ const STATE_DATE: Record<ShipmentStatus, { label: string; field: DateField | nul
   received: { label: 'Received', field: 'receivedDate' },
   refunded: { label: 'Decided', field: 'decisionDate' },
   rejected: { label: 'Decided', field: 'decisionDate' },
-}
-
-type DelayField =
-  | 'daysSinceRequested'
-  | 'daysSinceDropoff'
-  | 'daysSinceReceived'
-  | 'decisionDelayDays'
-
-const STATE_DELAY: Record<ShipmentStatus, { label: string; field: DelayField }> = {
-  pending: { label: 'Waiting', field: 'daysSinceRequested' },
-  dropped_off: { label: 'Waiting', field: 'daysSinceDropoff' },
-  received: { label: 'Waiting', field: 'daysSinceReceived' },
-  refunded: { label: 'Took', field: 'decisionDelayDays' },
-  rejected: { label: 'Took', field: 'decisionDelayDays' },
 }
 
 export function formatAmount (amountCents: number, currency: string): string {
@@ -71,13 +58,26 @@ export function statusDate (shipment: ShipmentDto): { label: string; date: IsoDa
 }
 
 export function delayInfo (shipment: ShipmentDto): string | null {
-  const { label, field } = STATE_DELAY[shipment.status]
-  const count = shipment[field]
+  if (isDecisionStatus(shipment.status)) {
+    const taken = shipment.decisionDelayDays
 
-  if (count === null) return null
-  if (count === 0 && label === 'Waiting') return 'Today'
+    return taken === null ? null : `Took ${days(taken)}`
+  }
 
-  return `${label} ${days(count)}`
+  const left = shipment.daysLeft
+
+  if (left === null) return null
+  if (left > 0) return `${days(left)} left`
+  if (left === 0) return 'Due today'
+
+  return `${days(-left)} over`
+}
+
+function expiryMessage (daysLeft: number): string {
+  if (daysLeft < 0) return `The label expired ${days(-daysLeft)} ago and can no longer be used.`
+  if (daysLeft === 0) return 'The label expires today. Drop the parcel off now.'
+
+  return `The label expires in ${days(daysLeft)}. Drop the parcel off now.`
 }
 
 export function alertMessage (shipment: ShipmentDto): string | null {
@@ -89,12 +89,8 @@ export function alertMessage (shipment: ShipmentDto): string | null {
     return `The parcel was dropped off ${days(shipment.daysSinceDropoff)} ago and the store has still not received it. Time to contact them.`
   }
 
-  if (shipment.labelExpiring) {
-    return `The label was made ${days(shipment.daysSinceRequested)} ago and is about to expire. Drop the parcel off now.`
-  }
-
-  if (shipment.shouldDropOff) {
-    return `The label was made ${days(shipment.daysSinceRequested)} ago and the parcel has not been dropped off.`
+  if (shipment.labelExpiring && shipment.daysLeft !== null) {
+    return expiryMessage(shipment.daysLeft)
   }
 
   return null

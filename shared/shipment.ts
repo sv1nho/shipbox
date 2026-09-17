@@ -10,10 +10,10 @@ export type DerivedFields = {
   daysSinceReceived: number | null
   decisionDelayDays: number | null
   totalDelayDays: number | null
+  daysLeft: number | null
   needsAction: boolean
   shippingLate: boolean
   labelExpiring: boolean
-  shouldDropOff: boolean
 }
 
 export type ShipmentDto = {

@@ -2,7 +2,6 @@ import { AppError } from '../../errors.js'
 import {
   LABEL_EXPIRY_WARNING_DAYS,
   LABEL_VALIDITY_DAYS,
-  PENDING_ALERT_DAYS,
   RECEPTION_ALERT_DAYS,
   SHIPPING_ALERT_DAYS,
 } from '../../config/constants.js'
@@ -58,6 +57,14 @@ export function assertChronology (shipment: DatedShipment): void {
     `${broken.field} cannot be earlier than ${broken.previous}.`,
     { [broken.previous]: shipment[broken.previous], [broken.field]: shipment[broken.field] }
   )
+}
+
+const DEADLINE_DAYS: Record<ShipmentStatus, number | null> = {
+  pending: LABEL_VALIDITY_DAYS,
+  dropped_off: SHIPPING_ALERT_DAYS,
+  received: RECEPTION_ALERT_DAYS,
+  refunded: null,
+  rejected: null,
 }
 
 const REQUIRED_DATE: Record<ShipmentStatus, DateField | null> = {
@@ -169,23 +176,33 @@ export function computeDerived (shipment: ShipmentState, today: IsoDate): Derive
       ? null
       : diffDays(shipment.dropoffDate, shipment.decisionDate)
 
+  const waited: Record<ShipmentStatus, number | null> = {
+    pending: daysSinceRequested,
+    dropped_off: daysSinceDropoff,
+    received: daysSinceReceived,
+    refunded: null,
+    rejected: null,
+  }
+
+  const limit = DEADLINE_DAYS[shipment.status]
+  const elapsed = waited[shipment.status]
+  const daysLeft = limit === null || elapsed === null ? null : limit - elapsed
+
+  const overdue = (status: ShipmentStatus): boolean =>
+    shipment.status === status && daysLeft !== null && daysLeft <= 0
+
   return {
     daysSinceRequested,
     daysSinceDropoff,
     daysSinceReceived,
     decisionDelayDays,
     totalDelayDays,
-    needsAction:
-      shipment.status === 'received' &&
-      daysSinceReceived !== null &&
-      daysSinceReceived >= RECEPTION_ALERT_DAYS,
-    shippingLate:
-      shipment.status === 'dropped_off' &&
-      daysSinceDropoff !== null &&
-      daysSinceDropoff >= SHIPPING_ALERT_DAYS,
+    daysLeft,
+    needsAction: overdue('received'),
+    shippingLate: overdue('dropped_off'),
     labelExpiring:
       shipment.status === 'pending' &&
-      daysSinceRequested >= LABEL_VALIDITY_DAYS - LABEL_EXPIRY_WARNING_DAYS,
-    shouldDropOff: shipment.status === 'pending' && daysSinceRequested >= PENDING_ALERT_DAYS,
+      daysLeft !== null &&
+      daysLeft <= LABEL_EXPIRY_WARNING_DAYS,
   }
 }

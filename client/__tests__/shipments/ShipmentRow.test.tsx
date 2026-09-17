@@ -91,18 +91,18 @@ describe('the date the row shows', () => {
   })
 
   it.each([
-    ['pending', { daysSinceRequested: 4 }, 'Waiting 4 days'],
-    ['dropped_off', { daysSinceDropoff: 5 }, 'Waiting 5 days'],
-    ['received', { daysSinceReceived: 12 }, 'Waiting 12 days'],
-    ['refunded', { decisionDelayDays: 6 }, 'Took 6 days'],
-  ] as const)('counts what the %s status is waiting on', (status, fields, expected) => {
+    ['pending', { daysLeft: 26 }, '26 days left'],
+    ['dropped_off', { daysLeft: 9 }, '9 days left'],
+    ['received', { daysLeft: -2 }, '2 days over'],
+    ['refunded', { daysLeft: null, decisionDelayDays: 6 }, 'Took 6 days'],
+  ] as const)('counts what the %s status has left to run', (status, fields, expected) => {
     renderRow({ status, decisionDate: '2026-06-09', ...fields })
 
     expect(screen.getByText(expected)).toBeInTheDocument()
   })
 
   it('shows no dash when the figure cannot be derived', () => {
-    renderRow({ status: 'refunded', decisionDate: '2026-06-09', decisionDelayDays: null })
+    renderRow({ status: 'refunded', decisionDate: '2026-06-09', daysLeft: null, decisionDelayDays: null })
 
     expect(screen.queryByText('—')).not.toBeInTheDocument()
   })
@@ -178,7 +178,7 @@ describe('the chained action button', () => {
 describe('the alert', () => {
   it.each([
     ['the store is sitting on the parcel', { status: 'received', needsAction: true, daysSinceReceived: 21 }],
-    ['the parcel was never dropped off', { shouldDropOff: true, daysSinceRequested: 9 }],
+    ['the label is about to expire', { labelExpiring: true, daysLeft: 3 }],
   ] as [string, Partial<ShipmentDto>][])('flags the count when %s', (_case, overrides) => {
     renderRow(overrides)
 

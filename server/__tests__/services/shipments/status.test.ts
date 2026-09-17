@@ -398,26 +398,35 @@ describe('computeDerived', () => {
     )
   })
 
-  describe('shouldDropOff, the label was made and the parcel never left', () => {
-    it.each([
-      ['2026-06-09', 6, false],
-      ['2026-06-08', 7, true],
-      ['2026-06-07', 8, true],
-    ])('requested on %s, that is %i days ago', (requestedDate, _days, expected) => {
-      expect(derived({ status: 'pending', requestedDate }).shouldDropOff).toBe(expected)
+  describe('daysLeft, the time still owed to the step in progress', () => {
+    it('counts down from the thirty days a label is valid', () => {
+      expect(derived({ status: 'pending', requestedDate: '2026-06-10' }).daysLeft).toBe(25)
     })
 
-    it('fires exactly on the seventh day, the threshold is inclusive', () => {
-      expect(derived({ status: 'pending', requestedDate: '2026-06-08' }).daysSinceRequested).toBe(7)
-      expect(derived({ status: 'pending', requestedDate: '2026-06-08' }).shouldDropOff).toBe(true)
+    it('counts down from the fourteen days a parcel may travel', () => {
+      expect(derived({ status: 'dropped_off', dropoffDate: '2026-06-10' }).daysLeft).toBe(9)
     })
 
-    it.each(SHIPMENT_STATUSES.filter((s) => s !== 'pending'))(
-      'stays false for a %s shipment however old',
-      (status) => {
-        expect(derived({ status, requestedDate: '2026-01-01' }).shouldDropOff).toBe(false)
-      }
-    )
+    it('counts down from the fourteen days a store may take to decide', () => {
+      expect(derived({ status: 'received', receivedDate: '2026-06-10' }).daysLeft).toBe(9)
+    })
+
+    it('reaches zero on the day the wait becomes too long', () => {
+      expect(derived({ status: 'received', receivedDate: '2026-06-01' }).daysLeft).toBe(0)
+    })
+
+    it('goes negative once the day has passed, rather than stopping at zero', () => {
+      expect(derived({ status: 'received', receivedDate: '2026-05-30' }).daysLeft).toBe(-2)
+    })
+
+    it.each(['refunded', 'rejected'] as const)('stops counting once %s, the wait is over', (status) => {
+      expect(derived({ status, receivedDate: '2026-06-01', decisionDate: '2026-06-10' }).daysLeft)
+        .toBeNull()
+    })
+
+    it('counts nothing without the date its step starts from', () => {
+      expect(derived({ status: 'received', receivedDate: null }).daysLeft).toBeNull()
+    })
   })
 
   describe('shippingLate, the parcel left and never arrived', () => {
@@ -446,8 +455,8 @@ describe('computeDerived', () => {
       expect(derived({ status: 'pending', requestedDate }).labelExpiring).toBe(expected)
     })
 
-    it('warns a week before the thirty days are up', () => {
-      expect(derived({ status: 'pending', requestedDate: '2026-05-23' }).daysSinceRequested).toBe(23)
+    it('warns with a week still on the clock, not once the label is dead', () => {
+      expect(derived({ status: 'pending', requestedDate: '2026-05-23' }).daysLeft).toBe(7)
     })
 
     it.each(SHIPMENT_STATUSES.filter((s) => s !== 'pending'))(

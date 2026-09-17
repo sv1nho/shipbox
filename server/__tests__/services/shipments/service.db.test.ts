@@ -90,8 +90,8 @@ describe('create', () => {
     expect(created.currency).toBe('EUR')
     expect(created.trackingUrl).toContain('https://')
     expect(created.daysSinceRequested).toBe(0)
+    expect(created.daysLeft).toBe(30)
     expect(created.needsAction).toBe(false)
-    expect(created.shouldDropOff).toBe(false)
     expect(created.labelExpiring).toBe(false)
   })
 

@@ -30,10 +30,10 @@ export function makeShipment (overrides: Partial<ShipmentDto> = {}): ShipmentDto
     daysSinceReceived: null,
     decisionDelayDays: null,
     totalDelayDays: null,
+    daysLeft: 30,
     needsAction: false,
     shippingLate: false,
     labelExpiring: false,
-    shouldDropOff: false,
     ...overrides,
   }
 }
