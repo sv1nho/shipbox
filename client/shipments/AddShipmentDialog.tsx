@@ -43,6 +43,7 @@ type Draft = {
   carrier: CarrierId
   trackingNumber: string
   store: string
+  storeSupportEmail: string
   amount: string
   recipientPostalCode: string
   recipientCountry: Country
@@ -60,6 +61,7 @@ const emptyDraft = (): Draft => ({
   carrier: 'bpost',
   trackingNumber: '',
   store: '',
+  storeSupportEmail: '',
   amount: '',
   recipientPostalCode: '',
   recipientCountry: 'BE',
@@ -144,6 +146,9 @@ export function check (draft: Draft): Checked {
       ...(draft.status === 'rejected' && draft.rejectionReason.trim() !== ''
         ? { rejectionReason: draft.rejectionReason.trim() }
         : {}),
+      ...(draft.storeSupportEmail.trim() === ''
+        ? {}
+        : { storeSupportEmail: draft.storeSupportEmail.trim() }),
       ...(draft.orderNumber.trim() === '' ? {} : { orderNumber: draft.orderNumber.trim() }),
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
     },
@@ -207,13 +212,41 @@ export function AddShipmentDialog (
           />
         </Field>
 
-        <Field label='Store' htmlFor='shipment-store' problem={problem('store') ?? fieldError('store')}>
-          <StoreCombobox
-            value={draft.store}
-            invalid={problem('store') !== undefined}
-            onChange={(store) => { set('store', store) }}
-          />
-        </Field>
+        <div className='form-row'>
+          <Field
+            label='Store'
+            htmlFor='shipment-store'
+            problem={problem('store') ?? fieldError('store')}
+          >
+            <StoreCombobox
+              value={draft.store}
+              invalid={problem('store') !== undefined}
+              onChange={(store) => { set('store', store) }}
+              onPick={(store) => {
+                setDraft({
+                  ...draft,
+                  store: store.name,
+                  storeSupportEmail: store.supportEmail ?? '',
+                })
+              }}
+            />
+          </Field>
+
+          <Field
+            label='Customer service email (optional)'
+            htmlFor='shipment-store-email'
+            problem={fieldError('storeSupportEmail')}
+          >
+            <input
+              id='shipment-store-email'
+              className='form-input'
+              type='email'
+              autoComplete='off'
+              value={draft.storeSupportEmail}
+              onChange={(event) => { set('storeSupportEmail', event.target.value) }}
+            />
+          </Field>
+        </div>
 
         <div className='form-row form-row-three'>
           <Field

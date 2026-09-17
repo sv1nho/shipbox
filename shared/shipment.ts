@@ -26,6 +26,7 @@ export type ShipmentDto = {
   amountCents: number
   currency: string
   store: string
+  storeSupportEmail: string | null
   requestedDate: IsoDate
   dropoffDate: IsoDate | null
   receivedDate: IsoDate | null
@@ -52,6 +53,7 @@ export type CreateShipmentInput = {
   recipientCountry: string
   amountCents: number
   store: string
+  storeSupportEmail?: string | null
   status?: ShipmentStatus
   requestedDate?: IsoDate
   dropoffDate?: IsoDate | null
@@ -68,6 +70,7 @@ export type UpdateShipmentInput = {
   recipientCountry?: string
   amountCents?: number
   store?: string
+  storeSupportEmail?: string | null
   orderNumber?: string | null
   note?: string | null
   requestedDate?: IsoDate

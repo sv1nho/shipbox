@@ -12,6 +12,7 @@ export function makeShipment (overrides: Partial<ShipmentDto> = {}): ShipmentDto
     amountCents: 4999,
     currency: 'EUR',
     store: 'Zalando',
+    storeSupportEmail: null,
     requestedDate: '2026-06-01',
     dropoffDate: null,
     receivedDate: null,

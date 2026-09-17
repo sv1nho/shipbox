@@ -11,7 +11,8 @@ import {
 } from './status.js'
 import type { DatedShipment, ShipmentState } from './status.js'
 import type { TransitionAction } from '../../../shared/transitions.js'
-import { normalizeCountry, normalizePostalCode, normalizeStore, normalizeTrackingNumber } from '../../../shared/normalize.js'
+import { normalizeCountry, normalizePostalCode, normalizeTrackingNumber } from '../../../shared/normalize.js'
+import { storeIdFor } from './stores.js'
 import { toShipmentDto, toShipmentState } from './mapper.js'
 import type { ShipmentRow } from './mapper.js'
 import type {
@@ -33,7 +34,10 @@ const MAX_PAGE_SIZE = 100
 
 const DEFAULT_PAGE_SIZE = 25
 
-const LABEL_PRESENCE = { label: { select: { shipmentId: true } } } as const
+const ROW_INCLUDE = {
+  label: { select: { shipmentId: true } },
+  store: { select: { name: true, supportEmail: true } },
+} as const
 
 const notFound = (): AppError => new AppError('NOT_FOUND', 'Shipment not found.')
 
@@ -53,7 +57,7 @@ type ShipmentWrite = {
   recipientPostalCode?: string
   recipientCountry?: string
   amountCents?: number
-  store?: string
+  storeId?: string
   orderNumber?: string | null
   note?: string | null
   rejectionReason?: string | null
@@ -73,7 +77,7 @@ const stateWrite = (next: ShipmentState): ShipmentWrite => ({
 })
 
 async function writeOwned (id: string, data: ShipmentWrite, now: IsoDate): Promise<ShipmentDto> {
-  const updated = await prisma.shipment.update({ where: { id }, include: LABEL_PRESENCE, data })
+  const updated = await prisma.shipment.update({ where: { id }, include: ROW_INCLUDE, data })
   return toShipmentDto(updated, now)
 }
 
@@ -92,7 +96,7 @@ async function ownedRow (userId: string, id: string): Promise<ShipmentRow> {
 
   const row = await prisma.shipment.findFirst({
     where: { id, userId },
-    include: LABEL_PRESENCE,
+    include: ROW_INCLUDE,
   })
 
   if (!row) throw notFound()
@@ -114,7 +118,7 @@ const orderByOf = (sort: SortKey, direction: 'asc' | 'desc') => {
     case 'amountCents':
       return { amountCents: direction }
     case 'store':
-      return { store: direction }
+      return { store: { name: direction } }
     default:
       return { createdAt: direction }
   }
@@ -128,14 +132,14 @@ const whereOf = (userId: string, params: ListParams) => {
     userId,
     ...(params.carrier ? { carrier: params.carrier } : {}),
     ...(params.status ? { status: params.status } : {}),
-    ...(params.store ? { store: params.store } : {}),
+    ...(params.store ? { store: { name: params.store } } : {}),
     ...(archived === 'exclude' ? { archivedAt: null } : {}),
     ...(archived === 'only' ? { archivedAt: { not: null } } : {}),
     ...(search
       ? {
           OR: [
             { trackingNumber: { contains: search, mode: 'insensitive' as const } },
-            { store: { contains: search, mode: 'insensitive' as const } },
+            { store: { name: { contains: search, mode: 'insensitive' as const } } },
             { orderNumber: { contains: search, mode: 'insensitive' as const } },
           ],
         }
@@ -146,7 +150,7 @@ const whereOf = (userId: string, params: ListParams) => {
 export async function listAll (userId: string, params: ListParams = {}): Promise<ShipmentDto[]> {
   const rows = await prisma.shipment.findMany({
     where: whereOf(userId, params),
-    include: LABEL_PRESENCE,
+    include: ROW_INCLUDE,
     orderBy: orderByOf(params.sort ?? 'createdAt', params.direction ?? 'desc'),
   })
 
@@ -162,7 +166,7 @@ export async function list (userId: string, params: ListParams = {}): Promise<Li
   const [rows, total] = await Promise.all([
     prisma.shipment.findMany({
       where,
-      include: LABEL_PRESENCE,
+      include: ROW_INCLUDE,
       orderBy: orderByOf(params.sort ?? 'createdAt', params.direction ?? 'desc'),
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -209,7 +213,6 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
     recipientCountry: normalizeCountry(input.recipientCountry),
     status,
     amountCents: input.amountCents,
-    store: normalizeStore(input.store),
     requestedDate: toUtcDate(dates.requestedDate),
     dropoffDate: asDate(dates.dropoffDate),
     receivedDate: asDate(dates.receivedDate),
@@ -221,7 +224,8 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
 
   try {
     const row = await prisma.$transaction(async (tx) => {
-      const created = await tx.shipment.create({ data })
+      const storeId = await storeIdFor(tx, userId, input.store, input.storeSupportEmail)
+      const created = await tx.shipment.create({ data: { ...data, storeId } })
 
       if (input.label) {
         await tx.label.create({
@@ -235,7 +239,7 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
 
       return tx.shipment.findFirstOrThrow({
         where: { id: created.id },
-        include: LABEL_PRESENCE,
+        include: ROW_INCLUDE,
       })
     })
 
@@ -275,7 +279,9 @@ export async function update (
         ? {}
         : { recipientCountry: normalizeCountry(patch.recipientCountry) }),
       ...(patch.amountCents === undefined ? {} : { amountCents: patch.amountCents }),
-      ...(patch.store === undefined ? {} : { store: normalizeStore(patch.store) }),
+      ...(patch.store === undefined
+        ? {}
+        : { storeId: await storeIdFor(prisma, userId, patch.store, patch.storeSupportEmail) }),
       ...(patch.orderNumber === undefined ? {} : { orderNumber: patch.orderNumber }),
       ...(patch.note === undefined ? {} : { note: patch.note }),
       requestedDate: toUtcDate(dates.requestedDate),

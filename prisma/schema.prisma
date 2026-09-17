@@ -18,6 +18,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   shipments     Shipment[]
+  stores        Store[]
 
   @@unique([email])
   @@map("user")
@@ -86,7 +87,9 @@ model Shipment {
 
   amountCents         Int       @map("amount_cents")
   currency            String    @default("EUR")
-  store               String
+
+  storeId             String    @map("store_id") @db.Uuid
+  store               Store     @relation(fields: [storeId], references: [id])
 
   requestedDate       DateTime  @map("requested_date") @db.Date
   dropoffDate         DateTime? @map("dropoff_date")  @db.Date
@@ -105,7 +108,25 @@ model Shipment {
 
   @@index([userId, status])
   @@index([userId, archivedAt])
+  @@index([storeId])
   @@map("shipments")
+}
+
+model Store {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String     @map("user_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name         String
+  supportEmail String?    @map("support_email")
+
+  shipments    Shipment[]
+
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@unique([userId, name])
+  @@map("stores")
 }
 
 model Label {

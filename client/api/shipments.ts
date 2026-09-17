@@ -12,6 +12,7 @@ import type {
   UpdateShipmentInput,
 } from '../../shared/shipment.js'
 import type { CarrierId } from '../../shared/carriers.js'
+import type { StoreDto } from '../../shared/store.js'
 
 const BASE = '/api/shipments'
 
@@ -75,8 +76,8 @@ export const shipmentExists = (
 export const getLabelPayload = (id: string): Promise<LabelResult> =>
   request<LabelResult>(`${BASE}/${id}/label`)
 
-export const searchStores = (q: string, signal?: AbortSignal): Promise<string[]> =>
-  request<{ stores: string[] }>(`${BASE}/stores`, { query: { q }, signal }).then(
+export const searchStores = (q: string, signal?: AbortSignal): Promise<StoreDto[]> =>
+  request<{ stores: StoreDto[] }>(`${BASE}/stores`, { query: { q }, signal }).then(
     (result) => result.stores
   )
 

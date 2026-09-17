@@ -42,6 +42,19 @@ describe('what the panel always shows', () => {
     expect(valueOf('Amount')).toBe('€125.00')
   })
 
+  it('offers the customer service address as a link to write to', () => {
+    renderDetails({ storeSupportEmail: 'service@zalando.be' })
+
+    expect(screen.getByRole('link', { name: 'service@zalando.be' }))
+      .toHaveAttribute('href', 'mailto:service@zalando.be')
+  })
+
+  it('says nothing about an address the store never gave', () => {
+    renderDetails({ storeSupportEmail: null })
+
+    expect(screen.queryByText('Customer service')).not.toBeInTheDocument()
+  })
+
   it('names the status in the header, so the panel matches the row', () => {
     renderDetails({ status: 'refunded', decisionDate: '2026-06-09' })
 

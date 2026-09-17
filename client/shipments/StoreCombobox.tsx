@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { searchStores } from '../api/shipments.js'
+import type { StoreDto } from '../../shared/store.js'
 
 const DEBOUNCE_MS = 250
 
@@ -7,11 +8,12 @@ type StoreComboboxProps = {
   value: string
   invalid: boolean
   onChange: (value: string) => void
+  onPick: (store: StoreDto) => void
 }
 
-export function StoreCombobox ({ value, invalid, onChange }: StoreComboboxProps) {
+export function StoreCombobox ({ value, invalid, onChange, onPick }: StoreComboboxProps) {
   const listId = useId()
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [suggestions, setSuggestions] = useState<StoreDto[]>([])
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
 
@@ -36,8 +38,9 @@ export function StoreCombobox ({ value, invalid, onChange }: StoreComboboxProps)
     }
   }, [value])
 
-  const pick = (store: string) => {
-    onChange(store)
+  const pick = (store: StoreDto) => {
+    onChange(store.name)
+    onPick(store)
     setOpen(false)
     setActive(-1)
   }
@@ -90,14 +93,17 @@ export function StoreCombobox ({ value, invalid, onChange }: StoreComboboxProps)
         <ul className='combobox-list' id={listId} role='listbox'>
           {suggestions.map((store, index) => (
             <li
-              key={store}
+              key={store.name}
               id={`${listId}-${String(index)}`}
               role='option'
               aria-selected={index === active}
               className={index === active ? 'combobox-option combobox-option-active' : 'combobox-option'}
               onMouseDown={(event) => { event.preventDefault(); pick(store) }}
             >
-              {store}
+              <span className='combobox-name'>{store.name}</span>
+              {store.supportEmail !== null && (
+                <span className='combobox-hint'>{store.supportEmail}</span>
+              )}
             </li>
           ))}
         </ul>

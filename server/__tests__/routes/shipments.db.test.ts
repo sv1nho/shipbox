@@ -60,6 +60,7 @@ beforeAll(async () => {
 afterEach(async () => {
   signedInAs = OWNER
   await prisma.shipment.deleteMany({ where: { userId: { in: [OWNER, OTHER] } } })
+  await prisma.store.deleteMany({ where: { userId: { in: [OWNER, OTHER] } } })
 })
 
 afterAll(async () => {
@@ -165,11 +166,12 @@ describe('the routes that must be declared before /:id', () => {
   })
 
   it('reaches the stores route', async () => {
-    await createShipment({ store: 'Decathlon' })
+    await createShipment({ store: 'Decathlon', storeSupportEmail: 'contact@decathlon.be' })
 
     const response = await request(app).get('/api/shipments/stores?q=decath').expect(200)
 
-    expect(bodyOf(response).stores).toContain('Decathlon')
+    expect(bodyOf<{ stores: { name: string; supportEmail: string | null }[] }>(response).stores)
+      .toEqual([{ name: 'Decathlon', supportEmail: 'contact@decathlon.be' }])
   })
 
   it('suggests the recent stores when the query is left out', async () => {
@@ -178,9 +180,8 @@ describe('the routes that must be declared before /:id', () => {
 
     const response = await request(app).get('/api/shipments/stores').expect(200)
 
-    expect(bodyOf<{ stores: string[] }>(response).stores).toEqual(
-      expect.arrayContaining(['Decathlon', 'Nike'])
-    )
+    expect(bodyOf<{ stores: { name: string }[] }>(response).stores.map((store) => store.name))
+      .toEqual(expect.arrayContaining(['Decathlon', 'Nike']))
   })
 
   it('reaches the export route', async () => {

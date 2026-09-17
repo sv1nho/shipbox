@@ -114,6 +114,12 @@ const SHIPMENTS: SeedShipment[] = [
 
 const LABELLED = new Set([id(1), id(5), id(8)])
 
+const SUPPORT_EMAILS: Record<string, string> = {
+  Zalando: 'service@zalando.be',
+  Decathlon: 'contact@decathlon.be',
+  Snipes: 'support@snipes.com',
+}
+
 const payloadFor = (shipment: SeedShipment): LabelPayload => ({
   sender_firstname: 'Alex',
   sender_lastname: 'Nintunze',
@@ -153,6 +159,18 @@ if (users.length > 1) {
 const owner = users[0]
 
 const removed = await prisma.shipment.deleteMany({ where: { userId: owner.id } })
+await prisma.store.deleteMany({ where: { userId: owner.id } })
+
+const storeIdOf = async (name: string): Promise<string> => {
+  const store = await prisma.store.upsert({
+    where: { userId_name: { userId: owner.id, name } },
+    create: { userId: owner.id, name, supportEmail: SUPPORT_EMAILS[name] ?? null },
+    update: {},
+    select: { id: true },
+  })
+
+  return store.id
+}
 
 for (const shipment of SHIPMENTS) {
   await prisma.shipment.create({
@@ -165,7 +183,7 @@ for (const shipment of SHIPMENTS) {
       recipientCountry: shipment.recipientCountry,
       status: 'pending',
       amountCents: shipment.amountCents,
-      store: shipment.store,
+      storeId: await storeIdOf(shipment.store),
       createdAt: MIDNIGHT_UTC(shipment.createdAgo),
       requestedDate: MIDNIGHT_UTC(shipment.createdAgo),
       dropoffDate: null,

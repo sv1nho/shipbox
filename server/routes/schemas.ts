@@ -31,6 +31,8 @@ const orderNumberSchema = z.string().max(64).nullish()
 
 const noteSchema = z.string().max(2000).nullish()
 
+const supportEmailSchema = z.email().max(320).nullish()
+
 export const idParamSchema = z.object({ id: z.uuid() })
 
 const labelPayloadSchema = z.object({
@@ -83,6 +85,7 @@ export const createShipmentSchema = z
     recipientCountry: countryCodeSchema,
     amountCents: amountCentsSchema,
     store: storeSchema,
+    storeSupportEmail: supportEmailSchema,
     status: statusSchema.optional(),
     requestedDate: isoDateSchema.optional(),
     dropoffDate: isoDateSchema.nullish(),
@@ -101,6 +104,7 @@ export const updateShipmentSchema = z
     recipientCountry: countryCodeSchema.optional(),
     amountCents: amountCentsSchema.optional(),
     store: storeSchema.optional(),
+    storeSupportEmail: supportEmailSchema,
     orderNumber: orderNumberSchema,
     note: noteSchema,
     requestedDate: isoDateSchema.optional(),

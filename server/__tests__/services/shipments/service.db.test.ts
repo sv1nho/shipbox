@@ -71,6 +71,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await prisma.shipment.deleteMany({ where: { userId: { in: [OWNER, OTHER] } } })
+  await prisma.store.deleteMany({ where: { userId: { in: [OWNER, OTHER] } } })
 })
 
 afterAll(async () => {
@@ -732,41 +733,44 @@ describe('searchStores', () => {
     }
   }
 
+  const namesOf = async (query: string, limit?: number): Promise<string[]> =>
+    (await shipments.searchStores(OWNER, query, limit)).map((store) => store.name)
+
   it('finds a store despite a typo', async () => {
     await seedStores()
 
-    expect(await shipments.searchStores(OWNER, 'zalndo')).toContain('Zalando')
+    expect(await namesOf('zalndo')).toContain('Zalando')
   })
 
   it('ignores case', async () => {
     await seedStores()
 
-    expect(await shipments.searchStores(OWNER, 'ZARA')).toContain('Zara')
+    expect(await namesOf('ZARA')).toContain('Zara')
   })
 
   it('ignores accents in both directions', async () => {
     await seedStores()
 
-    expect(await shipments.searchStores(OWNER, 'decathlon')).toContain('Décathlon')
-    expect(await shipments.searchStores(OWNER, 'Décathlon')).toContain('Décathlon')
+    expect(await namesOf('decathlon')).toContain('Décathlon')
+    expect(await namesOf('Décathlon')).toContain('Décathlon')
   })
 
   it('matches a substring', async () => {
     await seedStores()
 
-    expect(await shipments.searchStores(OWNER, 'ala')).toContain('Zalando')
+    expect(await namesOf('ala')).toContain('Zalando')
   })
 
   it('puts an exact match first, which is what prevents duplicates', async () => {
     await seedStores()
 
-    expect((await shipments.searchStores(OWNER, 'zalando'))[0]).toBe('Zalando')
+    expect((await namesOf('zalando'))[0]).toBe('Zalando')
   })
 
   it('never merges two stores that differ, it only lists them', async () => {
     await seedStores()
 
-    const found = await shipments.searchStores(OWNER, 'Zalando')
+    const found = await namesOf('Zalando')
 
     expect(found).toContain('Zalando')
     expect(found).toContain('Zalando BE')
@@ -776,13 +780,13 @@ describe('searchStores', () => {
     await shipments.create(OWNER, input({ store: 'Zalando' }))
     await shipments.create(OWNER, input({ store: 'Zalando' }))
 
-    expect(await shipments.searchStores(OWNER, 'Zalando')).toEqual(['Zalando'])
+    expect(await namesOf('Zalando')).toEqual(['Zalando'])
   })
 
   it('lists the most recent stores when asked nothing', async () => {
     await seedStores()
 
-    const suggestions = await shipments.searchStores(OWNER, '')
+    const suggestions = await namesOf('')
 
     expect(suggestions).toHaveLength(stores.length)
     expect(new Set(suggestions)).toEqual(new Set(stores))
@@ -791,6 +795,61 @@ describe('searchStores', () => {
   it('honours the limit', async () => {
     await seedStores()
 
-    expect(await shipments.searchStores(OWNER, '', 2)).toHaveLength(2)
+    expect(await namesOf('', 2)).toHaveLength(2)
+  })
+
+  it('carries the customer service address of each store', async () => {
+    await shipments.create(OWNER, input({ store: 'Zalando', storeSupportEmail: 'service@zalando.be' }))
+
+    expect(await shipments.searchStores(OWNER, 'Zalando'))
+      .toEqual([{ name: 'Zalando', supportEmail: 'service@zalando.be' }])
+  })
+})
+
+describe('stores as entities', () => {
+  it('reuses one store for every shipment that names it', async () => {
+    const first = await shipments.create(OWNER, input({ store: 'Zalando' }))
+    const second = await shipments.create(OWNER, input({ store: 'Zalando' }))
+
+    expect(second.store).toBe(first.store)
+    expect(await prisma.store.count({ where: { userId: OWNER, name: 'Zalando' } })).toBe(1)
+  })
+
+  it('folds the spacing of a name into the store already there', async () => {
+    await shipments.create(OWNER, input({ store: 'Zalando' }))
+    await shipments.create(OWNER, input({ store: '  Zalando   ' }))
+
+    expect(await prisma.store.count({ where: { userId: OWNER, name: 'Zalando' } })).toBe(1)
+  })
+
+  it('keeps one user out of another user store list', async () => {
+    await shipments.create(OWNER, input({ store: 'Zalando' }))
+    await shipments.create(OTHER, input({ store: 'Zalando' }))
+
+    expect(await prisma.store.count({ where: { name: 'Zalando' } })).toBe(2)
+    expect(await shipments.searchStores(OTHER, 'Zalando')).toHaveLength(1)
+  })
+
+  it('remembers the address given with a later shipment of the same store', async () => {
+    await shipments.create(OWNER, input({ store: 'Zalando' }))
+    await shipments.create(OWNER, input({ store: 'Zalando', storeSupportEmail: 'service@zalando.be' }))
+
+    expect((await shipments.searchStores(OWNER, 'Zalando'))[0].supportEmail)
+      .toBe('service@zalando.be')
+  })
+
+  it('exposes the address on every shipment of the store', async () => {
+    await shipments.create(OWNER, input({ store: 'Zalando', storeSupportEmail: 'service@zalando.be' }))
+    const second = await shipments.create(OWNER, input({ store: 'Zalando' }))
+
+    expect(second.storeSupportEmail).toBe('service@zalando.be')
+  })
+
+  it('moves a shipment to another store when the name is corrected', async () => {
+    const created = await shipments.create(OWNER, input({ store: 'Zalndo' }))
+    const fixed = await shipments.update(OWNER, created.id, { store: 'Zalando' })
+
+    expect(fixed.store).toBe('Zalando')
+    expect(await prisma.store.count({ where: { userId: OWNER } })).toBe(2)
   })
 })

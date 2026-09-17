@@ -678,6 +678,14 @@ html, body {
   .combobox-option:hover,
   .combobox-option-active { background: var(--color-primary-light); }
 
+  .combobox-name { display: block; }
+
+  .combobox-hint {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--color-text-subtle);
+  }
+
   .card-count {
     font-size: 0.75rem;
     font-weight: 700;

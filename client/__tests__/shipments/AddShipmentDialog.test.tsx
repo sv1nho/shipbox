@@ -255,6 +255,18 @@ describe('what it sends', () => {
     }))
   })
 
+  it('sends the customer service address given for the store', async () => {
+    const { onSubmit } = renderDialog()
+
+    await fillTheRequired()
+    await userEvent.type(screen.getByLabelText(/customer service email/i), '  service@zalando.be ')
+    await submit()
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      storeSupportEmail: 'service@zalando.be',
+    }))
+  })
+
   it('carries the country and the note when they are given', async () => {
     const { onSubmit } = renderDialog()
 
@@ -292,6 +304,31 @@ describe('what it sends', () => {
       receivedDate: '2026-05-06',
       orderNumber: 'ORD-1',
     }))
+  })
+})
+
+describe('the store suggestions', () => {
+  it('fills the address of a store that already has one', async () => {
+    vi.mocked(searchStores).mockResolvedValue([
+      { name: 'Zalando', supportEmail: 'service@zalando.be' },
+    ])
+
+    renderDialog()
+    await userEvent.click(screen.getByLabelText('Store'))
+    await userEvent.click(await screen.findByRole('option', { name: /zalando/i }))
+
+    expect(screen.getByLabelText('Store')).toHaveValue('Zalando')
+    expect(screen.getByLabelText(/customer service email/i)).toHaveValue('service@zalando.be')
+  })
+
+  it('leaves the address empty for a store that has none', async () => {
+    vi.mocked(searchStores).mockResolvedValue([{ name: 'Snipes', supportEmail: null }])
+
+    renderDialog()
+    await userEvent.click(screen.getByLabelText('Store'))
+    await userEvent.click(await screen.findByRole('option', { name: 'Snipes' }))
+
+    expect(screen.getByLabelText(/customer service email/i)).toHaveValue('')
   })
 })
 

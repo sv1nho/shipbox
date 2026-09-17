@@ -80,6 +80,11 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
           </Field>
           <Field label='Carrier'>{CARRIERS[shipment.carrier].label}</Field>
           <Field label='Store'>{shipment.store}</Field>
+          {shipment.storeSupportEmail !== null && (
+            <Field label='Customer service'>
+              <a href={`mailto:${shipment.storeSupportEmail}`}>{shipment.storeSupportEmail}</a>
+            </Field>
+          )}
           {shipment.orderNumber !== null && (
             <Field label='Order number'>{shipment.orderNumber}</Field>
           )}

@@ -6,20 +6,24 @@ vi.mock('../../api/shipments.js', () => ({ searchStores: vi.fn() }))
 
 import { StoreCombobox } from '../../shipments/StoreCombobox.js'
 import { searchStores } from '../../api/shipments.js'
+import type { StoreDto } from '../../../shared/store.js'
+
+const store = (name: string, supportEmail: string | null = null): StoreDto => ({ name, supportEmail })
 
 const renderCombobox = (value = '') => {
   const onChange = vi.fn()
+  const onPick = vi.fn()
 
-  render(<StoreCombobox value={value} invalid={false} onChange={onChange} />)
+  render(<StoreCombobox value={value} invalid={false} onChange={onChange} onPick={onPick} />)
 
-  return { onChange }
+  return { onChange, onPick }
 }
 
 const box = () => screen.getByRole('combobox')
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(searchStores).mockResolvedValue(['Zalando', 'Zara'])
+  vi.mocked(searchStores).mockResolvedValue([store('Zalando'), store('Zara')])
 })
 
 afterEach(() => {
@@ -48,17 +52,19 @@ describe('asking the api', () => {
   })
 
   it('drops an answer that lands after the term moved on', async () => {
-    let settle: (stores: string[]) => void = () => undefined
+    let settle: (stores: StoreDto[]) => void = () => undefined
     vi.mocked(searchStores).mockImplementationOnce(() => new Promise((resolve) => { settle = resolve }))
 
-    const { rerender } = render(<StoreCombobox value='Z' invalid={false} onChange={vi.fn()} />)
+    const { rerender } = render(
+      <StoreCombobox value='Z' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />
+    )
 
     await waitFor(() => { expect(searchStores).toHaveBeenCalledOnce() })
 
-    vi.mocked(searchStores).mockResolvedValue(['Snipes'])
-    rerender(<StoreCombobox value='Sni' invalid={false} onChange={vi.fn()} />)
+    vi.mocked(searchStores).mockResolvedValue([store('Snipes')])
+    rerender(<StoreCombobox value='Sni' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />)
 
-    settle(['Zalando', 'Zara'])
+    settle([store('Zalando'), store('Zara')])
     await userEvent.click(box())
 
     expect(await screen.findByRole('option', { name: 'Snipes' })).toBeInTheDocument()
@@ -69,12 +75,14 @@ describe('asking the api', () => {
     let fail: (cause: Error) => void = () => undefined
     vi.mocked(searchStores).mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = reject }))
 
-    const { rerender } = render(<StoreCombobox value='Z' invalid={false} onChange={vi.fn()} />)
+    const { rerender } = render(
+      <StoreCombobox value='Z' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />
+    )
 
     await waitFor(() => { expect(searchStores).toHaveBeenCalledOnce() })
 
-    vi.mocked(searchStores).mockResolvedValue(['Snipes'])
-    rerender(<StoreCombobox value='Sni' invalid={false} onChange={vi.fn()} />)
+    vi.mocked(searchStores).mockResolvedValue([store('Snipes')])
+    rerender(<StoreCombobox value='Sni' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />)
 
     fail(new Error('offline'))
     await userEvent.click(box())
@@ -129,8 +137,28 @@ describe('the suggestion list', () => {
     expect(onChange).toHaveBeenCalledWith('Zara')
   })
 
+  it('shows the customer service address of a store that has one', async () => {
+    vi.mocked(searchStores).mockResolvedValue([store('Zalando', 'service@zalando.be')])
+
+    renderCombobox('Zal')
+    await userEvent.click(box())
+
+    expect(await screen.findByText('service@zalando.be')).toBeInTheDocument()
+  })
+
+  it('hands the whole store over, so its address can be reused', async () => {
+    vi.mocked(searchStores).mockResolvedValue([store('Zalando', 'service@zalando.be')])
+
+    const { onPick } = renderCombobox('Zal')
+    await userEvent.click(box())
+
+    await userEvent.click(await screen.findByRole('option', { name: /zalando/i }))
+
+    expect(onPick).toHaveBeenCalledWith({ name: 'Zalando', supportEmail: 'service@zalando.be' })
+  })
+
   it('shows the api order, which puts an exact match first', async () => {
-    vi.mocked(searchStores).mockResolvedValue(['Zara', 'Zara Home'])
+    vi.mocked(searchStores).mockResolvedValue([store('Zara'), store('Zara Home')])
 
     renderCombobox('Zara')
     await userEvent.click(box())

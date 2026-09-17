@@ -14,6 +14,8 @@ const insertRaw = (values: Record<string, unknown>): Promise<number> => {
   )
 }
 
+let ownerStoreId = ''
+
 const valid = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   user_id: OWNER,
   tracking_number: `TRK-${String(Math.random()).slice(2)}`,
@@ -22,7 +24,7 @@ const valid = (overrides: Record<string, unknown> = {}): Record<string, unknown>
   recipient_country: 'BE',
   status: 'pending',
   amount_cents: 1000,
-  store: 'Zalando',
+  store_id: ownerStoreId,
   requested_date: '2026-04-01',
   ...overrides,
 })
@@ -34,7 +36,18 @@ type ShipmentOverrides = {
   store?: string
 }
 
-const createShipment = (overrides: ShipmentOverrides = {}) =>
+const storeIdOf = async (userId: string, name: string): Promise<string> => {
+  const store = await prisma.store.upsert({
+    where: { userId_name: { userId, name } },
+    create: { userId, name },
+    update: {},
+    select: { id: true },
+  })
+
+  return store.id
+}
+
+const createShipment = async ({ store = 'Zalando', ...overrides }: ShipmentOverrides = {}) =>
   prisma.shipment.create({
     data: {
       userId: OWNER,
@@ -43,8 +56,8 @@ const createShipment = (overrides: ShipmentOverrides = {}) =>
       recipientPostalCode: '2000',
       recipientCountry: 'BE',
       amountCents: 1000,
-      store: 'Zalando',
       requestedDate: new Date('2026-06-01T00:00:00.000Z'),
+      storeId: await storeIdOf(overrides.userId ?? OWNER, store),
       ...overrides,
     },
   })
@@ -57,10 +70,13 @@ beforeAll(async () => {
       update: {},
     })
   }
+
+  ownerStoreId = await storeIdOf(OWNER, 'Zalando')
 })
 
 afterEach(async () => {
   await prisma.shipment.deleteMany({ where: { userId: { in: [OWNER, OTHER] } } })
+  await prisma.store.deleteMany({ where: { userId: { in: [OWNER, OTHER] }, name: { not: 'Zalando' } } })
 })
 
 afterAll(async () => {
@@ -112,7 +128,7 @@ describe('shipments constraints', () => {
   })
 
   describe('required values', () => {
-    it.each(['store', 'amount_cents', 'recipient_postal_code', 'recipient_country', 'tracking_number'])(
+    it.each(['store_id', 'amount_cents', 'recipient_postal_code', 'recipient_country', 'tracking_number'])(
       'rejects a null %s',
       async (column) => {
         await expect(insertRaw(valid({ [column]: null }))).rejects.toThrow()
@@ -300,7 +316,7 @@ describe('updated_at', () => {
     const historical = new Date('2020-01-01T00:00:00.000Z')
     await insertRaw(valid({ tracking_number: 'UPDATED-TRIGGER', updated_at: historical }))
 
-    await prisma.$executeRaw`UPDATE shipments SET store = 'Zara' WHERE tracking_number = 'UPDATED-TRIGGER'`
+    await prisma.$executeRaw`UPDATE shipments SET amount_cents = 2000 WHERE tracking_number = 'UPDATED-TRIGGER'`
 
     const rows = await prisma.$queryRaw<{ updated_at: Date }[]>`
       SELECT updated_at FROM shipments WHERE tracking_number = 'UPDATED-TRIGGER'
@@ -309,27 +325,61 @@ describe('updated_at', () => {
   })
 })
 
+describe('stores constraints', () => {
+  it('refuses two stores with the same name for one user', async () => {
+    await storeIdOf(OWNER, 'Twice')
+
+    await expect(prisma.store.create({ data: { userId: OWNER, name: 'Twice' } })).rejects.toThrow()
+  })
+
+  it('lets two users each own a store of the same name', async () => {
+    await storeIdOf(OWNER, 'Shared')
+
+    await expect(storeIdOf(OTHER, 'Shared')).resolves.toBeTypeOf('string')
+  })
+
+  it('refuses to delete a store a shipment still points at', async () => {
+    const created = await createShipment({ store: 'Still used' })
+    const used = await prisma.shipment.findFirstOrThrow({ where: { id: created.id } })
+
+    await expect(prisma.store.delete({ where: { id: used.storeId } })).rejects.toThrow()
+  })
+
+  it('refreshes updated_at through the trigger, like shipments do', async () => {
+    const id = await storeIdOf(OWNER, 'Touched')
+    const historical = new Date('2020-01-01T00:00:00.000Z')
+
+    await prisma.$executeRaw`UPDATE stores SET updated_at = ${historical} WHERE id = ${id}::uuid`
+    await prisma.$executeRaw`UPDATE stores SET support_email = 'a@b.test' WHERE id = ${id}::uuid`
+
+    const rows = await prisma.$queryRaw<{ updated_at: Date }[]>`
+      SELECT updated_at FROM stores WHERE id = ${id}::uuid
+    `
+    expect(rows[0].updated_at.getTime()).toBeGreaterThan(historical.getTime())
+  })
+})
+
 describe('store search', () => {
   it('ranks a typo closer to the store it meant than to any other', async () => {
-    await createShipment({ trackingNumber: 'SEARCH-1', store: 'Zalando' })
-    await createShipment({ trackingNumber: 'SEARCH-2', store: 'Decathlon' })
+    await storeIdOf(OWNER, 'Zalando')
+    await storeIdOf(OWNER, 'Decathlon')
 
-    const rows = await prisma.$queryRaw<{ store: string }[]>`
-      SELECT store FROM shipments
+    const rows = await prisma.$queryRaw<{ name: string }[]>`
+      SELECT name FROM stores
       WHERE user_id = ${OWNER}
-      ORDER BY similarity(lower(immutable_unaccent(store)), 'zalndo') DESC
+      ORDER BY similarity(lower(immutable_unaccent(name)), 'zalndo') DESC
       LIMIT 1
     `
-    expect(rows[0].store).toBe('Zalando')
+    expect(rows[0].name).toBe('Zalando')
   })
 
   it('ignores case and accents', async () => {
-    await createShipment({ trackingNumber: 'SEARCH-3', store: 'Décathlon' })
+    await storeIdOf(OWNER, 'Décathlon')
 
-    const rows = await prisma.$queryRaw<{ store: string }[]>`
-      SELECT store FROM shipments
+    const rows = await prisma.$queryRaw<{ name: string }[]>`
+      SELECT name FROM stores
       WHERE user_id = ${OWNER}
-        AND lower(immutable_unaccent(store)) LIKE '%' || lower(immutable_unaccent('DECATHLON')) || '%'
+        AND lower(immutable_unaccent(name)) LIKE '%' || lower(immutable_unaccent('DECATHLON')) || '%'
     `
     expect(rows).toHaveLength(1)
   })

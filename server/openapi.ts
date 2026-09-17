@@ -100,7 +100,7 @@ export const openApiDocument = {
         tags: ['shipments'],
         summary: 'Suggest stores, tolerating case, accents, substrings and typos.',
         parameters: queryParameters(storesQuerySchema),
-        responses: { 200: { description: '{ stores: string[] }' }, ...errorResponses },
+        responses: { 200: { description: '{ stores: { name, supportEmail }[] }' }, ...errorResponses },
       },
     },
     '/api/shipments/export': {

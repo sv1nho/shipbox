@@ -19,7 +19,7 @@ export type ShipmentRow = {
   status: string
   amountCents: number
   currency: string
-  store: string
+  store: { name: string; supportEmail: string | null }
   requestedDate: Date
   dropoffDate: Date | null
   receivedDate: Date | null
@@ -77,7 +77,8 @@ export function toShipmentDto (row: ShipmentRow, today: IsoDate): ShipmentDto {
     status,
     amountCents: row.amountCents,
     currency: row.currency,
-    store: row.store,
+    store: row.store.name,
+    storeSupportEmail: row.store.supportEmail,
     requestedDate,
     dropoffDate,
     receivedDate,
