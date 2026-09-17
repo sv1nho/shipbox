@@ -259,18 +259,30 @@ describe('the extra menu', () => {
     }
   })
 
-  it('offers to undo except on a pending shipment', async () => {
-    renderRow({ status: 'dropped_off', dropoffDate: '2026-06-01' })
+  it.each([
+    ['dropped_off', 'Undo the drop-off'],
+    ['received', 'Undo the reception'],
+    ['refunded', 'Undo the decision'],
+  ] as const)('names the step the undo removes, from %s', async (status, name) => {
+    renderRow({ status, dropoffDate: '2026-06-01', receivedDate: '2026-06-02', decisionDate: '2026-06-03' })
     await openMenu()
 
-    expect(screen.getByRole('menuitem', { name: /undo the last step/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name })).toBeInTheDocument()
+  })
+
+  it('tells the undo apart from a change of decision, both being about the decision', async () => {
+    renderRow({ status: 'refunded', decisionDate: '2026-06-03' })
+    await openMenu()
+
+    expect(screen.getByRole('menuitem', { name: 'Undo the decision' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Change the decision to rejected' })).toBeInTheDocument()
   })
 
   it('offers nothing to change on an archived shipment, only the way back', async () => {
     renderRow({ status: 'received', receivedDate: '2026-06-02', archivedAt: '2026-06-05T00:00:00.000Z' })
     await openMenu()
 
-    expect(screen.queryByRole('menuitem', { name: /undo the last step/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /^undo/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('menuitem', { name: /record/i })).not.toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /put back in the list/i })).toBeInTheDocument()
   })
@@ -279,7 +291,7 @@ describe('the extra menu', () => {
     renderRow({ status: 'pending' })
     await openMenu()
 
-    expect(screen.queryByRole('menuitem', { name: /undo the last step/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /^undo/i })).not.toBeInTheDocument()
   })
 
   it('offers the label only when there is one to regenerate', async () => {

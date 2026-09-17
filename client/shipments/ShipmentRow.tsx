@@ -1,8 +1,8 @@
 import type { ShipmentDto } from '../../shared/shipment.js'
-import { TRANSITIONS, menuSteps, nextStep } from '../../shared/transitions.js'
+import { TRANSITIONS, menuSteps, nextStep, undoLabel } from '../../shared/transitions.js'
 import type { NextStep } from '../../shared/transitions.js'
 import { CARRIERS } from '../../shared/carriers.js'
-import { alertMessage, days, delayInfo, formatAmount, formatDate, statusDate } from './format.js'
+import { alertMessage, delayInfo, formatAmount, formatDate, statusDate } from './format.js'
 import { StatusPill } from './StatusPill.js'
 
 export type RowHandlers = {
@@ -30,6 +30,7 @@ type RowProps = {
 export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
   const alert = alertMessage(shipment)
   const step = nextStep(shipment.status)
+  const undo = undoLabel(shipment.status)
   const archived = shipment.archivedAt !== null
   const state = statusDate(shipment)
   const delay = delayInfo(shipment)
@@ -73,7 +74,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 />
               </svg>
             )}
-            {delay.label} {days(delay.days)}
+            {delay}
           </span>
         )}
       </span>
@@ -125,14 +126,14 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 </button>
               ))}
 
-            {!archived && shipment.status !== 'pending' && (
+            {!archived && undo !== null && (
               <button
                 type='button'
                 role='menuitem'
                 className='row-menu-item'
                 onClick={() => { handlers.onRevert(shipment) }}
               >
-                Undo the last step
+                {undo}
               </button>
             )}
 

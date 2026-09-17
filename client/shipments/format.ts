@@ -70,14 +70,14 @@ export function statusDate (shipment: ShipmentDto): { label: string; date: IsoDa
   return date === null ? { label: 'Requested', date: shipment.requestedDate } : { label, date }
 }
 
-export function delayInfo (shipment: ShipmentDto): { label: string; days: number } | null {
+export function delayInfo (shipment: ShipmentDto): string | null {
   const { label, field } = STATE_DELAY[shipment.status]
   const count = shipment[field]
 
   if (count === null) return null
-  if (count === 0 && label === 'Waiting') return null
+  if (count === 0 && label === 'Waiting') return 'Today'
 
-  return { label, days: count }
+  return `${label} ${days(count)}`
 }
 
 export function alertMessage (shipment: ShipmentDto): string | null {

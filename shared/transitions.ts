@@ -58,6 +58,18 @@ const NEXT_STEP: Record<ShipmentStatus, NextStep | null> = {
   rejected: null,
 }
 
+const UNDO_LABELS: Record<ShipmentStatus, string | null> = {
+  pending: null,
+  dropped_off: 'Undo the drop-off',
+  received: 'Undo the reception',
+  refunded: 'Undo the decision',
+  rejected: 'Undo the decision',
+}
+
+export function undoLabel (from: ShipmentStatus): string | null {
+  return UNDO_LABELS[from]
+}
+
 export function nextStep (from: ShipmentStatus): NextStep | null {
   return NEXT_STEP[from]
 }

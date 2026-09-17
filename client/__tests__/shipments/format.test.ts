@@ -103,24 +103,21 @@ describe('statusDate, the day the pill is about', () => {
 })
 
 describe('delayInfo, the figure next to the date', () => {
-  it('counts from the day it was added while nothing has moved', () => {
-    expect(delayInfo(shipment({ status: 'pending', daysSinceRequested: 4 })))
-      .toEqual({ label: 'Waiting', days: 4 })
+  it('counts from the day it was requested while nothing has moved', () => {
+    expect(delayInfo(shipment({ status: 'pending', daysSinceRequested: 4 }))).toBe('Waiting 4 days')
   })
 
   it('counts from the drop-off while the parcel travels', () => {
     expect(delayInfo(shipment({ status: 'dropped_off', daysSinceRequested: 9, daysSinceDropoff: 4 })))
-      .toEqual({ label: 'Waiting', days: 4 })
+      .toBe('Waiting 4 days')
   })
 
   it('counts from the reception while the store decides', () => {
-    expect(delayInfo(shipment({ status: 'received', daysSinceReceived: 12 })))
-      .toEqual({ label: 'Waiting', days: 12 })
+    expect(delayInfo(shipment({ status: 'received', daysSinceReceived: 12 }))).toBe('Waiting 12 days')
   })
 
   it.each(['refunded', 'rejected'] as const)('reports how long the store took once %s', (status) => {
-    expect(delayInfo(shipment({ status, decisionDelayDays: 6, totalDelayDays: 18 })))
-      .toEqual({ label: 'Took', days: 6 })
+    expect(delayInfo(shipment({ status, decisionDelayDays: 6, totalDelayDays: 18 }))).toBe('Took 6 days')
   })
 
   it.each([
@@ -132,20 +129,19 @@ describe('delayInfo, the figure next to the date', () => {
   })
 
   it.each(['pending', 'dropped_off', 'received'] as const)(
-    'says nothing on the day a %s shipment starts waiting',
+    'says Today rather than 0 days when a %s shipment starts waiting',
     (status) => {
       expect(delayInfo(shipment({
         status,
         daysSinceRequested: 0,
         daysSinceDropoff: 0,
         daysSinceReceived: 0,
-      }))).toBeNull()
+      }))).toBe('Today')
     }
   )
 
-  it('still reports a decision taken the same day, which says something', () => {
-    expect(delayInfo(shipment({ status: 'refunded', decisionDelayDays: 0 })))
-      .toEqual({ label: 'Took', days: 0 })
+  it('still counts a decision taken the same day, which says something', () => {
+    expect(delayInfo(shipment({ status: 'refunded', decisionDelayDays: 0 }))).toBe('Took 0 days')
   })
 })
 
