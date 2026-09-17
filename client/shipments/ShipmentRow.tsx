@@ -125,7 +125,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 </button>
               ))}
 
-            {shipment.status !== 'pending' && (
+            {!archived && shipment.status !== 'pending' && (
               <button
                 type='button'
                 role='menuitem'

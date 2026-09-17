@@ -75,6 +75,16 @@ async function writeOwned (id: string, data: ShipmentWrite, now: IsoDate): Promi
   return toShipmentDto(updated, now)
 }
 
+async function editableRow (userId: string, id: string): Promise<ShipmentRow> {
+  const row = await ownedRow(userId, id)
+
+  if (row.archivedAt !== null) {
+    throw new AppError('CONFLICT', 'This shipment is archived. Put it back in the list first.')
+  }
+
+  return row
+}
+
 async function ownedRow (userId: string, id: string): Promise<ShipmentRow> {
   if (!UUID.test(id)) throw notFound()
 
@@ -236,7 +246,7 @@ export async function update (
   id: string,
   patch: UpdateShipmentInput
 ): Promise<ShipmentDto> {
-  const row = await ownedRow(userId, id)
+  const row = await editableRow(userId, id)
   const now = today()
   const current = toShipmentState(row)
 
@@ -277,7 +287,7 @@ export async function correctIdentity (
   id: string,
   input: CorrectIdentityInput
 ): Promise<ShipmentDto> {
-  const row = await ownedRow(userId, id)
+  const row = await editableRow(userId, id)
 
   try {
     return await writeOwned(
@@ -298,7 +308,7 @@ export async function transition (
   date: IsoDate,
   note?: string
 ): Promise<ShipmentDto> {
-  const row = await ownedRow(userId, id)
+  const row = await editableRow(userId, id)
   const now = today()
   const next = planTransition(toShipmentState(row), action, date, now)
 
@@ -310,7 +320,7 @@ export async function transition (
 }
 
 export async function revert (userId: string, id: string): Promise<ShipmentDto> {
-  const row = await ownedRow(userId, id)
+  const row = await editableRow(userId, id)
 
   return writeOwned(row.id, stateWrite(planRevert(toShipmentState(row))), today())
 }

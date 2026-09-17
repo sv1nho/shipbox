@@ -266,6 +266,15 @@ describe('the extra menu', () => {
     expect(screen.getByRole('menuitem', { name: /undo the last step/i })).toBeInTheDocument()
   })
 
+  it('offers nothing to change on an archived shipment, only the way back', async () => {
+    renderRow({ status: 'received', receivedDate: '2026-06-02', archivedAt: '2026-06-05T00:00:00.000Z' })
+    await openMenu()
+
+    expect(screen.queryByRole('menuitem', { name: /undo the last step/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /record/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /put back in the list/i })).toBeInTheDocument()
+  })
+
   it('does not offer to undo a pending shipment, which has no step to undo', async () => {
     renderRow({ status: 'pending' })
     await openMenu()
