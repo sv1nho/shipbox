@@ -11,7 +11,7 @@ import {
 } from './status.js'
 import type { DatedShipment, ShipmentState } from './status.js'
 import type { TransitionAction } from '../../../shared/transitions.js'
-import { normalizeCountry, normalizePostalCode, normalizeStore, normalizeTrackingNumber } from './normalize.js'
+import { normalizeCountry, normalizePostalCode, normalizeStore, normalizeTrackingNumber } from '../../../shared/normalize.js'
 import { toShipmentDto, toShipmentState } from './mapper.js'
 import type { ShipmentRow } from './mapper.js'
 import type {

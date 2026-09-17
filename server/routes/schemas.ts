@@ -4,7 +4,7 @@ import type { CarrierId } from '../../shared/carriers.js'
 import { SHIPMENT_STATUSES } from '../../shared/shipment-status.js'
 import { COUNTRIES, LANGUAGES } from '../../shared/label-payload.js'
 import { SORT_KEYS } from '../../shared/shipment.js'
-import { normalizeTrackingNumber } from '../services/shipments/normalize.js'
+import { normalizeTrackingNumber } from '../../shared/normalize.js'
 
 const asTuple = <T extends string>(values: readonly T[]): [T, ...T[]] =>
   values as unknown as [T, ...T[]]
