@@ -6,6 +6,7 @@ import {
   assertChronology,
   assertDates,
   assertStatusHasItsDate,
+  attentionCutoffs,
   planRevert,
   planTransition,
 } from './status.js'
@@ -121,6 +122,13 @@ const orderByOf = (sort: SortKey, direction: 'asc' | 'desc') => {
   }
 }
 
+const needsAttention = (now: IsoDate) => ({
+  OR: attentionCutoffs(now).map(({ status, field, onOrBefore }) => ({
+    status,
+    [field]: { lte: toUtcDate(onOrBefore) },
+  })),
+})
+
 const whereOf = (userId: string, params: ListParams) => {
   const archived = params.archived ?? 'exclude'
   const search = params.search?.trim()
@@ -136,15 +144,18 @@ const whereOf = (userId: string, params: ListParams) => {
     ...(params.store ? { store: { name: params.store } } : {}),
     ...(archived === 'exclude' ? { archivedAt: null } : {}),
     ...(archived === 'only' ? { archivedAt: { not: null } } : {}),
-    ...(search
-      ? {
-          OR: [
-            { trackingNumber: { contains: search, mode: 'insensitive' as const } },
-            { store: { name: { contains: search, mode: 'insensitive' as const } } },
-            { orderNumber: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {}),
+    AND: [
+      ...(search
+        ? [{
+            OR: [
+              { trackingNumber: { contains: search, mode: 'insensitive' as const } },
+              { store: { name: { contains: search, mode: 'insensitive' as const } } },
+              { orderNumber: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }]
+        : []),
+      ...(params.attention === true ? [needsAttention(today())] : []),
+    ],
   }
 }
 
@@ -164,7 +175,9 @@ export async function list (userId: string, params: ListParams = {}): Promise<Li
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Math.trunc(params.pageSize ?? DEFAULT_PAGE_SIZE)))
   const where = whereOf(userId, params)
 
-  const [rows, total] = await Promise.all([
+  const now = today()
+
+  const [rows, total, attentionTotal] = await Promise.all([
     prisma.shipment.findMany({
       where,
       include: ROW_INCLUDE,
@@ -173,15 +186,15 @@ export async function list (userId: string, params: ListParams = {}): Promise<Li
       take: pageSize,
     }),
     prisma.shipment.count({ where }),
+    prisma.shipment.count({ where: { userId, archivedAt: null, ...needsAttention(now) } }),
   ])
-
-  const now = today()
 
   return {
     items: rows.map((row) => toShipmentDto(row, now)),
     total,
     page,
     pageSize,
+    attentionTotal,
   }
 }
 

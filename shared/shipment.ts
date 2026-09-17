@@ -112,6 +112,7 @@ export type ListParams = {
   store?: string
   search?: string
   archived?: ArchivedFilter
+  attention?: boolean
   sort?: SortKey
   direction?: 'asc' | 'desc'
   page?: number
@@ -123,6 +124,7 @@ export type ListResult = {
   total: number
   page: number
   pageSize: number
+  attentionTotal: number
 }
 
 export type ImportOutcome = {

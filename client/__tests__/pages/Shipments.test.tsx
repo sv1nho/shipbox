@@ -49,6 +49,7 @@ const listed = (items: ShipmentDto[], extra: Partial<ListResult> = {}): ListResu
   total: items.length,
   page: 1,
   pageSize: 20,
+  attentionTotal: 0,
   ...extra,
 })
 

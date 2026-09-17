@@ -663,6 +663,87 @@ describe('list', () => {
     expect((await shipments.list(OWNER, { status: 'open' })).total).toBe(0)
   })
 
+  describe('the needs attention filter', () => {
+    const daysAgo = (days: number): string => {
+      const date = new Date(`${today()}T00:00:00.000Z`)
+      date.setUTCDate(date.getUTCDate() - days)
+
+      return date.toISOString().slice(0, 10)
+    }
+
+    const aSpreadOfEveryState = async () => {
+      await shipments.create(OWNER, input({ requestedDate: daysAgo(25) }))
+      await shipments.create(OWNER, input({ requestedDate: daysAgo(2) }))
+      await shipments.create(OWNER, input({
+        status: 'dropped_off', requestedDate: daysAgo(20), dropoffDate: daysAgo(18),
+      }))
+      await shipments.create(OWNER, input({
+        status: 'dropped_off', requestedDate: daysAgo(5), dropoffDate: daysAgo(3),
+      }))
+      await shipments.create(OWNER, input({
+        status: 'received', requestedDate: daysAgo(30), dropoffDate: daysAgo(28), receivedDate: daysAgo(20),
+      }))
+      await shipments.create(OWNER, input({
+        status: 'received', requestedDate: daysAgo(8), dropoffDate: daysAgo(6), receivedDate: daysAgo(4),
+      }))
+      await shipments.create(OWNER, input({
+        status: 'refunded',
+        requestedDate: daysAgo(60),
+        dropoffDate: daysAgo(58),
+        receivedDate: daysAgo(50),
+        decisionDate: daysAgo(45),
+      }))
+    }
+
+    it('returns exactly the rows that flag themselves, so sql and the badge cannot drift', async () => {
+      await aSpreadOfEveryState()
+
+      const everything = await shipments.list(OWNER)
+      const flagged = everything.items
+        .filter((item) => item.needsAction || item.shippingLate || item.labelExpiring)
+        .map((item) => item.id)
+        .sort()
+
+      const filtered = await shipments.list(OWNER, { attention: true })
+
+      expect(flagged).toHaveLength(3)
+      expect(filtered.items.map((item) => item.id).sort()).toEqual(flagged)
+    })
+
+    it('counts the same rows whatever the view is filtered to', async () => {
+      await aSpreadOfEveryState()
+
+      const narrowed = await shipments.list(OWNER, { status: 'refunded' })
+
+      expect(narrowed.total).toBe(1)
+      expect(narrowed.attentionTotal).toBe(3)
+    })
+
+    it('leaves an archived return out of the count, nobody having to chase it', async () => {
+      const late = await shipments.create(OWNER, input({
+        status: 'received', requestedDate: daysAgo(30), dropoffDate: daysAgo(28), receivedDate: daysAgo(20),
+      }))
+
+      expect((await shipments.list(OWNER)).attentionTotal).toBe(1)
+
+      await shipments.archive(OWNER, late.id)
+
+      expect((await shipments.list(OWNER)).attentionTotal).toBe(0)
+    })
+
+    it('still combines with a search, rather than one filter cancelling the other', async () => {
+      await aSpreadOfEveryState()
+      await shipments.create(OWNER, input({
+        store: 'Decathlon', status: 'received', requestedDate: daysAgo(30), receivedDate: daysAgo(20),
+      }))
+
+      const both = await shipments.list(OWNER, { attention: true, search: 'decath' })
+
+      expect(both.total).toBe(1)
+      expect(both.items[0].store).toBe('Decathlon')
+    })
+  })
+
   it('searches the tracking number, the store and the order number', async () => {
     await shipments.create(OWNER, input({ store: 'Decathlon', orderNumber: 'ORD-4242' }))
 

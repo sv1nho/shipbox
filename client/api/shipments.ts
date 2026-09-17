@@ -25,6 +25,7 @@ const listQuery = (params: ListParams): Record<string, string | number | undefin
   store: params.store,
   search: params.search,
   archived: params.archived,
+  attention: params.attention === true ? '1' : undefined,
   sort: params.sort,
   direction: params.direction,
   page: params.page,

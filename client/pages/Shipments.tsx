@@ -199,7 +199,7 @@ export function Shipments () {
       </div>
 
       <div className='space-y-4'>
-        <FilterBar filters={filters} onChange={apply} />
+        <FilterBar filters={filters} attentionTotal={result?.attentionTotal ?? 0} onChange={apply} />
 
         {actionError !== null && prompt === null && details === null && !adding && !importing && (
           <div className='alert-error'>{actionError}</div>

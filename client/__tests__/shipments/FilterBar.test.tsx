@@ -5,9 +5,9 @@ import { FilterBar } from '../../shipments/FilterBar.js'
 import { DEFAULT_FILTERS } from '../../shipments/filters.js'
 import type { ListParams } from '../../../shared/shipment.js'
 
-const renderBar = (filters: ListParams = DEFAULT_FILTERS) => {
+const renderBar = (filters: ListParams = DEFAULT_FILTERS, attentionTotal = 0) => {
   const onChange = vi.fn()
-  render(<FilterBar filters={filters} onChange={onChange} />)
+  render(<FilterBar filters={filters} attentionTotal={attentionTotal} onChange={onChange} />)
   return { onChange }
 }
 
@@ -142,10 +142,10 @@ describe('the search box', () => {
 
   it('follows the url when the term is changed elsewhere, such as the back button', async () => {
     const onChange = vi.fn()
-    const { rerender } = render(<FilterBar filters={DEFAULT_FILTERS} onChange={onChange} />)
+    const { rerender } = render(<FilterBar filters={DEFAULT_FILTERS} attentionTotal={0} onChange={onChange} />)
 
     await userEvent.type(screen.getByRole('searchbox'), 'half typed')
-    rerender(<FilterBar filters={{ ...DEFAULT_FILTERS, search: 'Zalando' }} onChange={onChange} />)
+    rerender(<FilterBar filters={{ ...DEFAULT_FILTERS, search: 'Zalando' }} attentionTotal={0} onChange={onChange} />)
 
     expect(screen.getByRole('searchbox')).toHaveValue('Zalando')
   })
@@ -153,10 +153,10 @@ describe('the search box', () => {
   it('empties the box when the url drops the term', () => {
     const onChange = vi.fn()
     const { rerender } = render(
-      <FilterBar filters={{ ...DEFAULT_FILTERS, search: 'Zalando' }} onChange={onChange} />
+      <FilterBar filters={{ ...DEFAULT_FILTERS, search: 'Zalando' }} attentionTotal={0} onChange={onChange} />
     )
 
-    rerender(<FilterBar filters={DEFAULT_FILTERS} onChange={onChange} />)
+    rerender(<FilterBar filters={DEFAULT_FILTERS} attentionTotal={0} onChange={onChange} />)
 
     expect(screen.getByRole('searchbox')).toHaveValue('')
   })
@@ -185,7 +185,14 @@ describe('clearing', () => {
   })
 
   it('wipes every filter, not only the ones the defaults mention', async () => {
-    const { onChange } = renderBar({ carrier: 'bpost', status: 'received', search: 'x', store: 'y', archived: 'only' })
+    const { onChange } = renderBar({
+      carrier: 'bpost',
+      status: 'received',
+      search: 'x',
+      store: 'y',
+      archived: 'only',
+      attention: true,
+    })
 
     await userEvent.click(screen.getByRole('button', { name: /clear filters/i }))
 
@@ -194,8 +201,46 @@ describe('clearing', () => {
       status: undefined,
       store: undefined,
       search: undefined,
+      attention: undefined,
       ...DEFAULT_FILTERS,
     })
+  })
+})
+
+describe('the needs attention toggle', () => {
+  it('says how many returns are waiting, without being clicked', () => {
+    renderBar(DEFAULT_FILTERS, 8)
+
+    expect(screen.getByRole('button', { name: 'Needs attention (8)' })).toBeInTheDocument()
+  })
+
+  it('says zero rather than hiding, so a quiet list is stated and not guessed', () => {
+    renderBar(DEFAULT_FILTERS, 0)
+
+    expect(screen.getByRole('button', { name: 'Needs attention (0)' })).toBeInTheDocument()
+  })
+
+  it('turns the filter on', async () => {
+    const { onChange } = renderBar(DEFAULT_FILTERS, 8)
+
+    await userEvent.click(screen.getByRole('button', { name: /needs attention/i }))
+
+    expect(onChange).toHaveBeenCalledWith({ attention: true })
+  })
+
+  it('turns it back off on a second click, rather than trapping the view', async () => {
+    const { onChange } = renderBar({ ...DEFAULT_FILTERS, attention: true }, 8)
+
+    await userEvent.click(screen.getByRole('button', { name: /needs attention/i }))
+
+    expect(onChange).toHaveBeenCalledWith({ attention: undefined })
+  })
+
+  it('shows whether it is on without opening anything', () => {
+    renderBar({ ...DEFAULT_FILTERS, attention: true }, 8)
+
+    expect(screen.getByRole('button', { name: /needs attention/i }))
+      .toHaveAttribute('aria-pressed', 'true')
   })
 })
 

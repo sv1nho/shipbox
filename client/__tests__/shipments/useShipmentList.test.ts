@@ -19,6 +19,7 @@ const listed = (store: string): ListResult => ({
   total: 1,
   page: 1,
   pageSize: 20,
+  attentionTotal: 0,
 })
 
 let pending: Pending[] = []

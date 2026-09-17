@@ -17,18 +17,26 @@ describe('filtersFromSearch', () => {
   })
 
   it('reads every filter the page offers', () => {
-    expect(from('carrier=postnl&status=received&store=Zalando&search=zal&archived=only&sort=receivedDate&direction=asc&page=3'))
+    expect(from('carrier=postnl&status=received&store=Zalando&search=zal&archived=only&attention=1&sort=receivedDate&direction=asc&page=3'))
       .toEqual({
         carrier: 'postnl',
         status: 'received',
         store: 'Zalando',
         search: 'zal',
         archived: 'only',
+        attention: true,
         sort: 'receivedDate',
         direction: 'asc',
         page: 3,
       })
   })
+
+  it.each(['attention=0', 'attention=true', 'attention='])(
+    'treats %s as off, only the flag the page writes turning it on',
+    (query) => {
+      expect(from(query).attention).toBeUndefined()
+    }
+  )
 
   it.each([
     ['carrier=dhl', 'carrier'],
@@ -85,6 +93,8 @@ describe('the two directions agree', () => {
     'carrier=bpost&sort=amountCents&direction=asc',
     'archived=only&page=4',
     'store=Zalando+BE&search=zal',
+    'attention=1',
+    'status=open&attention=1',
   ])('round trips %s', (query) => {
     expect(to(from(query))).toBe(query)
   })
@@ -113,6 +123,7 @@ describe('hasActiveFilters', () => {
     { store: 'Zalando' },
     { search: 'zal' },
     { archived: 'only' },
+    { attention: true },
     { sort: 'amountCents' },
   ] as Partial<ListParams>[])('is true for %o', (overrides) => {
     expect(hasActiveFilters({ ...DEFAULT_FILTERS, ...overrides })).toBe(true)

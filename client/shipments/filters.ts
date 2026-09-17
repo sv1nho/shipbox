@@ -43,6 +43,7 @@ export function filtersFromSearch (search: URLSearchParams): ListParams {
     ...(oneOf(ARCHIVED_VALUES, search.get('archived')) === undefined
       ? {}
       : { archived: oneOf(ARCHIVED_VALUES, search.get('archived')) }),
+    ...(search.get('attention') === '1' ? { attention: true } : {}),
     ...(sort === undefined ? {} : { sort }),
     ...(oneOf(DIRECTIONS, search.get('direction')) === undefined
       ? {}
@@ -60,6 +61,7 @@ export function searchFromFilters (filters: ListParams): URLSearchParams {
     ['store', filters.store],
     ['search', filters.search],
     ['archived', filters.archived],
+    ['attention', filters.attention === true ? '1' : undefined],
     ['sort', filters.sort],
     ['direction', filters.direction],
     ['page', filters.page],

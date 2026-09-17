@@ -960,6 +960,27 @@ html, body {
     height: 1.5rem;
   }
 
+  .btn-attention {
+    border-color: var(--color-border);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .btn-attention:hover:not(:disabled) { color: var(--color-text); }
+
+  .btn-attention-alert {
+    color: var(--color-danger);
+    border-color: var(--color-danger-border);
+    background: var(--color-danger-bg);
+  }
+
+  .btn-attention-on,
+  .btn-attention-on:hover:not(:disabled) {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: #ffffff;
+  }
+
   .shipment-transitions {
     display: flex;
     align-items: center;

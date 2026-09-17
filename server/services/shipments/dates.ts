@@ -28,6 +28,13 @@ export function toUtcDate (value: IsoDate): Date {
   return new Date(Date.UTC(year, month - 1, day))
 }
 
+export function shiftDays (from: IsoDate, days: number): IsoDate {
+  const shifted = toUtcDate(from)
+  shifted.setUTCDate(shifted.getUTCDate() + days)
+
+  return toIsoDate(shifted)
+}
+
 export function diffDays (from: IsoDate, to: IsoDate): number {
   const millisecondsPerDay = 24 * 60 * 60 * 1000
   return Math.round((toUtcDate(to).getTime() - toUtcDate(from).getTime()) / millisecondsPerDay)

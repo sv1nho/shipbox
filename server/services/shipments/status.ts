@@ -5,7 +5,7 @@ import {
   RECEPTION_ALERT_DAYS,
   SHIPPING_ALERT_DAYS,
 } from '../../config/constants.js'
-import { diffDays, isIsoDate } from './dates.js'
+import { diffDays, isIsoDate, shiftDays } from './dates.js'
 import type { IsoDate } from './dates.js'
 import type { ShipmentStatus } from '../../../shared/shipment-status.js'
 import {
@@ -65,6 +65,20 @@ const DEADLINE_DAYS: Record<ShipmentStatus, number | null> = {
   received: RECEPTION_ALERT_DAYS,
   refunded: null,
   rejected: null,
+}
+
+type AttentionCutoff = { status: ShipmentStatus; field: DatedField; onOrBefore: IsoDate }
+
+export function attentionCutoffs (today: IsoDate): AttentionCutoff[] {
+  return [
+    {
+      status: 'pending',
+      field: 'requestedDate',
+      onOrBefore: shiftDays(today, LABEL_EXPIRY_WARNING_DAYS - LABEL_VALIDITY_DAYS),
+    },
+    { status: 'dropped_off', field: 'dropoffDate', onOrBefore: shiftDays(today, -SHIPPING_ALERT_DAYS) },
+    { status: 'received', field: 'receivedDate', onOrBefore: shiftDays(today, -RECEPTION_ALERT_DAYS) },
+  ]
 }
 
 const REQUIRED_DATE: Record<ShipmentStatus, DateField | null> = {

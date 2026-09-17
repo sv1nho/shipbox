@@ -24,10 +24,17 @@ const SORT_LABELS: Record<SortKey, string> = {
 
 type FilterBarProps = {
   filters: ListParams
+  attentionTotal: number
   onChange: (patch: ListParams) => void
 }
 
-export function FilterBar ({ filters, onChange }: FilterBarProps) {
+const attentionClass = (on: boolean, waiting: number): string => {
+  if (on) return 'btn btn-attention btn-attention-on'
+
+  return waiting === 0 ? 'btn btn-attention' : 'btn btn-attention btn-attention-alert'
+}
+
+export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps) {
   const [term, setTerm] = useState(filters.search ?? '')
   const [appliedSearch, setAppliedSearch] = useState(filters.search)
 
@@ -77,6 +84,17 @@ export function FilterBar ({ filters, onChange }: FilterBarProps) {
           </button>
         ))}
       </div>
+
+      <button
+        type='button'
+        className={attentionClass(filters.attention === true, attentionTotal)}
+        aria-pressed={filters.attention === true}
+        onClick={() => {
+          onChange({ attention: filters.attention === true ? undefined : true })
+        }}
+      >
+        Needs attention ({attentionTotal})
+      </button>
 
       <div className='filter-selects'>
         <label className='sr-only' htmlFor='filter-carrier'>Carrier</label>
@@ -144,6 +162,7 @@ export function FilterBar ({ filters, onChange }: FilterBarProps) {
                 status: undefined,
                 store: undefined,
                 search: undefined,
+                attention: undefined,
                 ...DEFAULT_FILTERS,
               })
             }}

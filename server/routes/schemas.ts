@@ -137,6 +137,7 @@ export const listQuerySchema = z.object({
   store: z.string().min(1).max(120).optional(),
   search: z.string().min(1).max(120).optional(),
   archived: z.enum(['exclude', 'only', 'include']).optional(),
+  attention: z.stringbool().optional(),
   sort: z.enum(asTuple(SORT_KEYS)).optional(),
   direction: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().min(1).optional(),
