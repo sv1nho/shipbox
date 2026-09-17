@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 
@@ -8,6 +9,15 @@ type ModalProps = {
 }
 
 export function Modal ({ titleId, onClose, children }: ModalProps) {
+  useEffect(() => {
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', dismiss)
+    return () => { document.removeEventListener('keydown', dismiss) }
+  }, [onClose])
+
   return createPortal(
     <div
       className='modal-backdrop'

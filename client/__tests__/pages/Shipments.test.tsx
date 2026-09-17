@@ -343,7 +343,7 @@ describe('the other row actions', () => {
 
     renderPage()
     await screen.findByText('Zalando')
-    await chooseFromMenu(/undo the last step/i)
+    await chooseFromMenu(/undo the reception/i)
 
     await waitFor(() => { expect(revertShipment).toHaveBeenCalled() })
   })
@@ -413,6 +413,26 @@ describe('the extra menu', () => {
     await userEvent.click(screen.getByRole('searchbox'))
 
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('closes on escape, without touching the shipment', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+
+    await openMenuOf('323200000000000000000001')
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('stays open on any other key, so a stray keystroke costs nothing', async () => {
+    renderPage()
+    await screen.findByText('Zalando')
+
+    await openMenuOf('323200000000000000000001')
+    await userEvent.keyboard('{Tab}a')
+
+    expect(screen.getByRole('menu')).toBeInTheDocument()
   })
 
   it('closes once an entry is chosen', async () => {

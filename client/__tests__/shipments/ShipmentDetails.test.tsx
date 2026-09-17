@@ -277,3 +277,13 @@ describe('correcting the dates', () => {
     expect(screen.getByText('receivedDate cannot be earlier than dropoffDate.')).toBeInTheDocument()
   })
 })
+
+describe('the keyboard', () => {
+  it('closes on escape, the key everyone reaches for', async () => {
+    const { onClose } = renderDetails()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+})

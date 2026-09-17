@@ -50,8 +50,17 @@ export function Shipments () {
       if (!(target instanceof Element) || target.closest('.row-menu') === null) setOpenMenu(null)
     }
 
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenMenu(null)
+    }
+
     document.addEventListener('pointerdown', dismiss)
-    return () => { document.removeEventListener('pointerdown', dismiss) }
+    document.addEventListener('keydown', dismissOnEscape)
+
+    return () => {
+      document.removeEventListener('pointerdown', dismiss)
+      document.removeEventListener('keydown', dismissOnEscape)
+    }
   }, [openMenu])
 
   const apply = (patch: ListParams) => {
