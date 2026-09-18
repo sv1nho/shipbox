@@ -118,7 +118,7 @@ const orderByOf = (sort: SortKey, direction: 'asc' | 'desc') => {
     case 'store':
       return { store: { name: direction } }
     default:
-      return { createdAt: direction }
+      return { requestedDate: direction }
   }
 }
 
@@ -163,7 +163,7 @@ export async function listAll (userId: string, params: ListParams = {}): Promise
   const rows = await prisma.shipment.findMany({
     where: whereOf(userId, params),
     include: ROW_INCLUDE,
-    orderBy: orderByOf(params.sort ?? 'createdAt', params.direction ?? 'desc'),
+    orderBy: orderByOf(params.sort ?? 'requestedDate', params.direction ?? 'desc'),
   })
 
   const now = today()
@@ -181,7 +181,7 @@ export async function list (userId: string, params: ListParams = {}): Promise<Li
     prisma.shipment.findMany({
       where,
       include: ROW_INCLUDE,
-      orderBy: orderByOf(params.sort ?? 'createdAt', params.direction ?? 'desc'),
+      orderBy: orderByOf(params.sort ?? 'requestedDate', params.direction ?? 'desc'),
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

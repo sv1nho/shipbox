@@ -96,7 +96,7 @@ export type CorrectIdentityInput = {
 export type ArchivedFilter = 'exclude' | 'only' | 'include'
 
 export const SORT_KEYS = [
-  'createdAt',
+  'requestedDate',
   'dropoffDate',
   'receivedDate',
   'decisionDate',

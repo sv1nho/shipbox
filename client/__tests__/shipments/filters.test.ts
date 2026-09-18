@@ -100,7 +100,7 @@ describe('the two directions agree', () => {
   })
 
   it('normalises an url carrying redundant defaults', () => {
-    expect(to(from('archived=exclude&sort=createdAt&direction=desc&page=1'))).toBe('')
+    expect(to(from('archived=exclude&sort=requestedDate&direction=desc&page=1'))).toBe('')
   })
 
   it('normalises an url carrying refused values', () => {

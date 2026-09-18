@@ -764,6 +764,16 @@ describe('list', () => {
     expect((await shipments.list(OWNER, { pageSize: 2, page: 3 })).items).toHaveLength(1)
   })
 
+  it('sorts by the day the return was asked for, not the day it was typed in', async () => {
+    const recent = await shipments.create(OWNER, input({ requestedDate: today() }))
+    const backFilled = await shipments.create(OWNER, input({ requestedDate: '2026-01-05' }))
+
+    const newestFirst = await shipments.list(OWNER)
+
+    expect(newestFirst.items.map((item) => item.id)).toEqual([recent.id, backFilled.id])
+    expect(backFilled.createdAt > recent.createdAt).toBe(true)
+  })
+
   it('sorts by amount', async () => {
     await shipments.create(OWNER, input({ amountCents: 100 }))
     await shipments.create(OWNER, input({ amountCents: 900 }))

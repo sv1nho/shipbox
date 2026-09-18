@@ -15,7 +15,7 @@ const ARCHIVED_LABELS: Record<ArchivedFilter, string> = {
 }
 
 const SORT_LABELS: Record<SortKey, string> = {
-  createdAt: 'Date added',
+  requestedDate: 'Return date',
   dropoffDate: 'Drop-off date',
   receivedDate: 'Reception date',
   decisionDate: 'Decision date',

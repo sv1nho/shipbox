@@ -9,7 +9,7 @@ const DIRECTIONS = ['asc', 'desc'] as const
 
 export const DEFAULT_FILTERS: ListParams = {
   archived: 'exclude',
-  sort: 'createdAt',
+  sort: 'requestedDate',
   direction: 'desc',
   page: 1,
 }
