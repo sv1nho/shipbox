@@ -566,7 +566,7 @@ describe('adding a return by hand', () => {
     await openForm()
 
     await userEvent.type(screen.getByLabelText('Tracking number'), '323200000000000000004050')
-    await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
+    await userEvent.type(within(screen.getByRole('dialog')).getByLabelText('Store'), 'Snipes')
     await userEvent.type(screen.getByLabelText('Amount'), '35')
     await userEvent.type(screen.getByLabelText('Postal code'), '2600')
     await userEvent.type(screen.getByLabelText('Order number'), 'SNP-0099')
@@ -592,7 +592,7 @@ describe('adding a return by hand', () => {
     await openForm()
 
     await userEvent.type(screen.getByLabelText('Tracking number'), '323200000000000000004050')
-    await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
+    await userEvent.type(within(screen.getByRole('dialog')).getByLabelText('Store'), 'Snipes')
     await userEvent.type(screen.getByLabelText('Amount'), '35')
     await userEvent.type(screen.getByLabelText('Postal code'), '2600')
     await userEvent.type(screen.getByLabelText('Order number'), 'SNP-0099')
@@ -614,7 +614,7 @@ describe('adding a return by hand', () => {
     await openForm()
 
     await userEvent.type(screen.getByLabelText('Tracking number'), '323200000000000000004050')
-    await userEvent.type(screen.getByLabelText('Store'), 'Snipes')
+    await userEvent.type(within(screen.getByRole('dialog')).getByLabelText('Store'), 'Snipes')
     await userEvent.type(screen.getByLabelText('Amount'), '35')
     await userEvent.type(screen.getByLabelText('Postal code'), '2600')
     await userEvent.type(screen.getByLabelText('Order number'), 'SNP-0099')

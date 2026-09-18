@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CARRIERS, CARRIER_IDS, isCarrierId } from '../../shared/carriers.js'
 import { SHIPMENT_STATUSES, isStatusFilter } from '../../shared/shipment-status.js'
 import { SORT_KEYS } from '../../shared/shipment.js'
 import type { ArchivedFilter, ListParams, SortKey } from '../../shared/shipment.js'
-import { exportUrl } from '../api/shipments.js'
+import type { StoreDto } from '../../shared/store.js'
+import { exportUrl, searchStores } from '../api/shipments.js'
 import { DEFAULT_FILTERS, hasActiveFilters } from './filters.js'
 import { statusLabel } from './format.js'
 
@@ -46,9 +47,22 @@ type FilterBarProps = {
   onChange: (patch: ListParams) => void
 }
 
+const STORE_LIMIT = 50
+
 export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps) {
   const [term, setTerm] = useState(filters.search ?? '')
   const [appliedSearch, setAppliedSearch] = useState(filters.search)
+  const [stores, setStores] = useState<StoreDto[]>([])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    searchStores('', controller.signal, STORE_LIMIT)
+      .then(setStores)
+      .catch(() => { setStores([]) })
+
+    return () => { controller.abort() }
+  }, [])
 
   if (filters.search !== appliedSearch) {
     setAppliedSearch(filters.search)
@@ -56,6 +70,12 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
   }
 
   const direction = filters.direction ?? DEFAULT_FILTERS.direction
+  const tracked = stores.map((store) => store.name).sort((a, b) => a.localeCompare(b))
+
+  const storeNames =
+    filters.store !== undefined && !tracked.includes(filters.store)
+      ? [filters.store, ...tracked]
+      : tracked
 
   return (
     <div className='filter-bar'>
@@ -123,6 +143,22 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
       </form>
 
       <div className='filter-row'>
+        <label className='sr-only' htmlFor='filter-store'>Store</label>
+        <select
+          id='filter-store'
+          className='form-select'
+          value={filters.store ?? ''}
+          onChange={(event) => {
+            const value = event.target.value
+            onChange({ store: value === '' ? undefined : value })
+          }}
+        >
+          <option value=''>All stores</option>
+          {storeNames.map((name) => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+        </select>
+
         <label className='sr-only' htmlFor='filter-carrier'>Carrier</label>
         <select
           id='filter-carrier'

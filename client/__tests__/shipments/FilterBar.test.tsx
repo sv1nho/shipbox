@@ -1,7 +1,14 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+
+vi.mock('../../api/shipments.js', () => ({
+  searchStores: vi.fn(),
+  exportUrl: vi.fn((_filters: unknown, format: string) => `/api/shipments/export?format=${format}`),
+}))
+
 import { FilterBar } from '../../shipments/FilterBar.js'
+import { exportUrl, searchStores } from '../../api/shipments.js'
 import { DEFAULT_FILTERS } from '../../shipments/filters.js'
 import type { ListParams } from '../../../shared/shipment.js'
 
@@ -10,6 +17,19 @@ const renderBar = (filters: ListParams = DEFAULT_FILTERS, attentionTotal = 0) =>
   render(<FilterBar filters={filters} attentionTotal={attentionTotal} onChange={onChange} />)
   return { onChange }
 }
+
+const storeOptions = async () => {
+  await waitFor(() => { expect(searchStores).toHaveBeenCalled() })
+
+  return screen.getByLabelText('Store')
+}
+
+beforeEach(() => {
+  vi.mocked(searchStores).mockResolvedValue([
+    { name: 'Zara', supportEmail: null },
+    { name: 'Decathlon', supportEmail: 'contact@decathlon.be' },
+  ])
+})
 
 describe('what the bar shows', () => {
   it('reflects the filters already in the url', () => {
@@ -256,13 +276,72 @@ describe('the needs attention toggle', () => {
   })
 })
 
+describe('the store filter', () => {
+  it('lists the stores actually tracked, in alphabetical order', async () => {
+    renderBar()
+
+    await storeOptions()
+
+    const names = screen.getAllByRole('option')
+      .map((option) => option.textContent)
+      .filter((text) => text === 'Decathlon' || text === 'Zara')
+
+    expect(names).toEqual(['Decathlon', 'Zara'])
+  })
+
+  it('asks for more stores than a suggestion list would show', async () => {
+    renderBar()
+
+    await storeOptions()
+
+    expect(searchStores).toHaveBeenCalledWith('', expect.anything(), 50)
+  })
+
+  it('reports the store that was picked', async () => {
+    const { onChange } = renderBar()
+
+    await userEvent.selectOptions(await storeOptions(), 'Zara')
+
+    expect(onChange).toHaveBeenCalledWith({ store: 'Zara' })
+  })
+
+  it('clears the store when all stores is picked back', async () => {
+    const { onChange } = renderBar({ ...DEFAULT_FILTERS, store: 'Zara' })
+
+    await userEvent.selectOptions(await storeOptions(), '')
+
+    expect(onChange).toHaveBeenCalledWith({ store: undefined })
+  })
+
+  it('shows a store the url names even when the list does not carry it', async () => {
+    renderBar({ ...DEFAULT_FILTERS, store: 'Une boutique oubliée' })
+
+    expect(await storeOptions()).toHaveValue('Une boutique oubliée')
+  })
+
+  it('still offers the url store when the stores cannot be loaded', async () => {
+    vi.mocked(searchStores).mockRejectedValue(new TypeError('Failed to fetch'))
+
+    renderBar({ ...DEFAULT_FILTERS, store: 'Zalando' })
+
+    expect(await storeOptions()).toHaveValue('Zalando')
+  })
+})
+
 describe('the export links', () => {
-  it('exports the view on screen, in both formats', () => {
+  it('hands the view on screen to both formats, filters and all', () => {
     renderBar({ ...DEFAULT_FILTERS, status: 'refunded' })
 
+    expect(exportUrl).toHaveBeenCalledWith(expect.objectContaining({ status: 'refunded' }), 'csv')
+    expect(exportUrl).toHaveBeenCalledWith(expect.objectContaining({ status: 'refunded' }), 'json')
+  })
+
+  it('offers one link per format', () => {
+    renderBar()
+
     expect(screen.getByRole('link', { name: 'Export CSV' }))
-      .toHaveAttribute('href', expect.stringContaining('status=refunded'))
+      .toHaveAttribute('href', '/api/shipments/export?format=csv')
     expect(screen.getByRole('link', { name: 'Export JSON' }))
-      .toHaveAttribute('href', expect.stringContaining('format=json'))
+      .toHaveAttribute('href', '/api/shipments/export?format=json')
   })
 })

@@ -83,8 +83,13 @@ export const shipmentExists = (
 export const getLabelPayload = (id: string): Promise<LabelResult> =>
   request<LabelResult>(`${BASE}/${id}/label`)
 
-export const searchStores = (q: string, signal?: AbortSignal): Promise<StoreDto[]> =>
-  request<{ stores: StoreDto[] }>(STORES, { query: { q }, signal }).then((result) => result.stores)
+export const searchStores = (
+  q: string,
+  signal?: AbortSignal,
+  limit?: number
+): Promise<StoreDto[]> =>
+  request<{ stores: StoreDto[] }>(STORES, { query: { q, limit }, signal })
+    .then((result) => result.stores)
 
 export const addStore = (name: string, supportEmail: string): Promise<StoreDto> =>
   request<StoreDto>(STORES, { method: 'POST', body: { name, supportEmail } })
