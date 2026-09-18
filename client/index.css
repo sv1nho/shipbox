@@ -907,26 +907,34 @@ html, body {
     color: var(--color-text-muted);
   }
 
-  .dash-bars {
+  .dash-rows {
     display: grid;
     gap: 0.5rem;
     margin-top: 0.875rem;
   }
 
-  .dash-bar-row {
+  .dash-row {
     display: grid;
-    grid-template-columns: 8.5rem 1fr 2.5rem;
+    grid-template-columns: 8.5rem 1fr 3.25rem;
     align-items: center;
     gap: 0.75rem;
   }
 
-  .dash-bar-label {
+  .dash-row-head {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-subtle);
+  }
+
+  .dash-cell-label {
     display: flex;
     flex-direction: column;
     min-width: 0;
   }
 
-  .dash-bar-name {
+  .dash-cell-name {
     font-size: 0.8125rem;
     font-weight: 700;
     color: var(--color-text);
@@ -935,10 +943,25 @@ html, body {
     white-space: nowrap;
   }
 
-  .dash-bar-sample {
+  .dash-cell-sample {
     font-size: 0.6875rem;
     color: var(--color-text-subtle);
     white-space: nowrap;
+  }
+
+  .dash-cell-days {
+    display: grid;
+    grid-template-columns: 1fr 2.5rem;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .dash-cell-number {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--color-text);
   }
 
   .dash-bar-track {
@@ -956,16 +979,9 @@ html, body {
     background: var(--color-primary);
   }
 
-  .dash-bar-value {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-    color: var(--color-text);
-  }
-
   @media (max-width: 34rem) {
-    .dash-bar-row { grid-template-columns: 6.5rem 1fr 2.25rem; }
+    .dash-row { grid-template-columns: 6rem 1fr 2.75rem; }
+    .dash-cell-days { grid-template-columns: 1fr 2rem; }
   }
 
   .shipment-list {

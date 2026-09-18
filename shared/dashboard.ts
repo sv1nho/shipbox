@@ -1,6 +1,8 @@
-export type StoreDecisionSpeed = {
+export type StoreStats = {
   store: string
   returns: number
+  decided: number
+  refunded: number
   measured: number
   averageDecisionDays: number | null
 }
@@ -15,5 +17,5 @@ export type DashboardSummary = {
   lostCents: number
   awaitingCents: number
   measuredDecisions: number
-  byStore: StoreDecisionSpeed[]
+  byStore: StoreStats[]
 }

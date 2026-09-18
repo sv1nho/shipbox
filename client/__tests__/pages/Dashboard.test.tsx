@@ -19,7 +19,7 @@ const summary = (overrides: Partial<DashboardSummary> = {}): DashboardSummary =>
   lostCents: 65650,
   awaitingCents: 303720,
   measuredDecisions: 25,
-  byStore: [{ store: 'Bol.com', returns: 5, measured: 2, averageDecisionDays: 20.5 }],
+  byStore: [{ store: 'Bol.com', returns: 5, decided: 2, refunded: 1, measured: 2, averageDecisionDays: 20.5 }],
   ...overrides,
 })
 

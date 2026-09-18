@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { bodyOf } from './http.js'
+import { today } from '../../services/shipments/dates.js'
 import type { ApiError, ListBody, ShipmentBody } from './http.js'
 
 const OWNER = 'route-tests-owner'
@@ -28,8 +29,6 @@ const uniqueTracking = (): string => {
   counter += 1
   return `3232${String(counter).padStart(20, '0')}`
 }
-
-const todayIso = (): string => new Date().toISOString().slice(0, 10)
 
 const validBody = (overrides: Record<string, unknown> = {}) => ({
   trackingNumber: uniqueTracking(),
@@ -304,17 +303,17 @@ describe('the transitions', () => {
 
     await request(app)
       .post(`/api/shipments/${created.id}/drop-off`)
-      .send({ dropoffDate: todayIso() })
+      .send({ dropoffDate: today() })
       .expect(200)
 
     await request(app)
       .post(`/api/shipments/${created.id}/receive`)
-      .send({ receivedDate: todayIso() })
+      .send({ receivedDate: today() })
       .expect(200)
 
     const refunded = await request(app)
       .post(`/api/shipments/${created.id}/refund`)
-      .send({ decisionDate: todayIso() })
+      .send({ decisionDate: today() })
       .expect(200)
 
     expect(bodyOf(refunded).status).toBe('refunded')
@@ -322,11 +321,11 @@ describe('the transitions', () => {
 
   it('answers 409 on a step backwards', async () => {
     const created = await createShipment()
-    await request(app).post(`/api/shipments/${created.id}/receive`).send({ receivedDate: todayIso() }).expect(200)
+    await request(app).post(`/api/shipments/${created.id}/receive`).send({ receivedDate: today() }).expect(200)
 
     const response = await request(app)
       .post(`/api/shipments/${created.id}/drop-off`)
-      .send({ dropoffDate: todayIso() })
+      .send({ dropoffDate: today() })
       .expect(409)
 
     expect(bodyOf<ApiError>(response).error.code).toBe('ILLEGAL_TRANSITION')
@@ -352,7 +351,7 @@ describe('the transitions', () => {
 
     const response = await request(app)
       .post(`/api/shipments/${created.id}/reject`)
-      .send({ decisionDate: todayIso(), rejectionReason: 'Worn item' })
+      .send({ decisionDate: today(), rejectionReason: 'Worn item' })
       .expect(200)
 
     expect(bodyOf(response).rejectionReason).toBe('Worn item')
@@ -361,7 +360,7 @@ describe('the transitions', () => {
 
   it('undoes the last step', async () => {
     const created = await createShipment()
-    await request(app).post(`/api/shipments/${created.id}/refund`).send({ decisionDate: todayIso() }).expect(200)
+    await request(app).post(`/api/shipments/${created.id}/refund`).send({ decisionDate: today() }).expect(200)
 
     const response = await request(app).post(`/api/shipments/${created.id}/revert`).send().expect(200)
 
@@ -446,7 +445,7 @@ describe('POST /api/shipments/:id/chase', () => {
 
     const response = await request(app).post(`/api/shipments/${created.id}/chase`).send().expect(200)
 
-    expect(bodyOf<{ lastChasedAt: string }>(response).lastChasedAt).toBe(todayIso())
+    expect(bodyOf<{ lastChasedAt: string }>(response).lastChasedAt).toBe(today())
   })
 
   it('answers 409 on a parcel that never left', async () => {
@@ -552,7 +551,7 @@ describe('user isolation through http', () => {
   it.each([
     ['GET', (id: string) => request(app).get(`/api/shipments/${id}`)],
     ['PATCH', (id: string) => request(app).patch(`/api/shipments/${id}`).send({ amountCents: 1 })],
-    ['POST drop-off', (id: string) => request(app).post(`/api/shipments/${id}/drop-off`).send({ dropoffDate: todayIso() })],
+    ['POST drop-off', (id: string) => request(app).post(`/api/shipments/${id}/drop-off`).send({ dropoffDate: today() })],
     ['POST archive', (id: string) => request(app).post(`/api/shipments/${id}/archive`).send()],
     ['DELETE', (id: string) => request(app).delete(`/api/shipments/${id}`)],
     ['GET label', (id: string) => request(app).get(`/api/shipments/${id}/label`)],

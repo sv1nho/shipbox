@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest'
 import { prisma } from '../../prisma.js'
 import * as shipments from '../../services/shipments/index.js'
 import { summary } from '../../services/dashboard.js'
-import { today } from '../../services/shipments/dates.js'
+import { daysAgo } from '../days.js'
 import type { CreateShipmentInput } from '../../services/shipments/types.js'
 
 const OWNER = 'dashboard-tests-owner'
@@ -24,13 +24,6 @@ const input = (overrides: Partial<CreateShipmentInput> = {}): CreateShipmentInpu
     requestedDate: '2026-01-01',
     ...overrides,
   }
-}
-
-const daysAgo = (days: number): string => {
-  const date = new Date(`${today()}T00:00:00.000Z`)
-  date.setUTCDate(date.getUTCDate() - days)
-
-  return date.toISOString().slice(0, 10)
 }
 
 beforeAll(async () => {
@@ -132,8 +125,8 @@ describe('the average decision time per store', () => {
     const result = await summary(OWNER)
 
     expect(result.byStore).toEqual([
-      { store: 'Bol.com', returns: 1, measured: 1, averageDecisionDays: 16 },
-      { store: 'Zalando', returns: 1, measured: 1, averageDecisionDays: 4 },
+      { store: 'Bol.com', returns: 1, decided: 1, refunded: 1, measured: 1, averageDecisionDays: 16 },
+      { store: 'Zalando', returns: 1, decided: 1, refunded: 1, measured: 1, averageDecisionDays: 4 },
     ])
   })
 
@@ -151,6 +144,8 @@ describe('the average decision time per store', () => {
     expect(result.byStore[0]).toEqual({
       store: 'Zalando',
       returns: 2,
+      decided: 1,
+      refunded: 1,
       measured: 1,
       averageDecisionDays: 4,
     })
@@ -161,7 +156,7 @@ describe('the average decision time per store', () => {
     await shipments.create(OWNER, input({ store: 'Nike' }))
 
     expect((await summary(OWNER)).byStore).toEqual([
-      { store: 'Nike', returns: 1, measured: 0, averageDecisionDays: null },
+      { store: 'Nike', returns: 1, decided: 0, refunded: 0, measured: 0, averageDecisionDays: null },
     ])
   })
 
@@ -177,6 +172,43 @@ describe('the average decision time per store', () => {
     }
 
     expect((await summary(OWNER)).byStore.map((row) => row.store)).toEqual(['Slow', 'Fast'])
+  })
+})
+
+describe('how each store answers', () => {
+  it('counts the refunds and the refusals it decided on, apart from the open ones', async () => {
+    await shipments.create(OWNER, input({ status: 'refunded', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input({ status: 'refunded', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input({ status: 'rejected', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input())
+
+    const [zalando] = (await summary(OWNER)).byStore
+
+    expect(zalando.returns).toBe(4)
+    expect(zalando.decided).toBe(3)
+    expect(zalando.refunded).toBe(2)
+  })
+
+  it('keeps each store to its own returns', async () => {
+    await shipments.create(OWNER, input({ store: 'Zalando', status: 'refunded', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input({ store: 'Nike', status: 'rejected', decisionDate: '2026-02-01' }))
+
+    const byName = new Map((await summary(OWNER)).byStore.map((row) => [row.store, row]))
+
+    expect(byName.get('Zalando')?.refunded).toBe(1)
+    expect(byName.get('Nike')?.refunded).toBe(0)
+    expect(byName.get('Nike')?.decided).toBe(1)
+  })
+
+  it('adds each store up to the totals the hero figure shows', async () => {
+    await shipments.create(OWNER, input({ store: 'Zalando', status: 'refunded', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input({ store: 'Nike', status: 'refunded', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input({ store: 'Nike', status: 'rejected', decisionDate: '2026-02-01' }))
+
+    const result = await summary(OWNER)
+
+    expect(result.byStore.reduce((total, row) => total + row.decided, 0)).toBe(result.decided)
+    expect(result.byStore.reduce((total, row) => total + row.refunded, 0)).toBe(result.refunded)
   })
 })
 

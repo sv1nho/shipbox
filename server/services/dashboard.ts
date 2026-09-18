@@ -3,11 +3,13 @@ import { today, toUtcDate } from './shipments/dates.js'
 import type { IsoDate } from './shipments/dates.js'
 import { attentionCutoffs, chasedRecentlyOnOrAfter } from './shipments/status.js'
 import { DECISION_STATUSES, OPEN_STATUSES } from '../../shared/shipment-status.js'
-import type { DashboardSummary, StoreDecisionSpeed } from '../../shared/dashboard.js'
+import type { DashboardSummary, StoreStats } from '../../shared/dashboard.js'
 
 type StoreRow = {
   store: string
   returns: number
+  decided: number
+  refunded: number
   measured: number
   average_decision_days: number | null
 }
@@ -63,6 +65,8 @@ export async function summary (userId: string): Promise<DashboardSummary> {
       SELECT
         s.name AS store,
         count(*)::int AS returns,
+        count(*) FILTER (WHERE sh.status IN ('refunded', 'rejected'))::int AS decided,
+        count(*) FILTER (WHERE sh.status = 'refunded')::int AS refunded,
         count(sh.decision_date) FILTER (
           WHERE coalesce(sh.received_date, sh.dropoff_date) IS NOT NULL
         )::int AS measured,
@@ -80,9 +84,11 @@ export async function summary (userId: string): Promise<DashboardSummary> {
   const rejected = sumOf(groups, ['rejected'])
   const open = sumOf(groups, OPEN_STATUSES)
 
-  const byStore: StoreDecisionSpeed[] = stores.map((row) => ({
+  const byStore: StoreStats[] = stores.map((row) => ({
     store: row.store,
     returns: row.returns,
+    decided: row.decided,
+    refunded: row.refunded,
     measured: row.measured,
     averageDecisionDays:
       row.average_decision_days === null ? null : Number(row.average_decision_days),

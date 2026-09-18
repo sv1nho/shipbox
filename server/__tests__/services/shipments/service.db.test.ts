@@ -3,6 +3,7 @@ import { prisma } from '../../../prisma.js'
 import * as shipments from '../../../services/shipments/index.js'
 import * as storeService from '../../../services/shipments/stores.js'
 import { today } from '../../../services/shipments/dates.js'
+import { daysAgo } from '../../days.js'
 import { AppError } from '../../../errors.js'
 import type { CreateShipmentInput } from '../../../services/shipments/types.js'
 import { SORT_KEYS } from '../../../../shared/shipment.js'
@@ -384,13 +385,6 @@ describe('transition and revert', () => {
 })
 
 describe('chasing a store', () => {
-  const daysAgo = (days: number): string => {
-    const date = new Date(`${today()}T00:00:00.000Z`)
-    date.setUTCDate(date.getUTCDate() - days)
-
-    return date.toISOString().slice(0, 10)
-  }
-
   const lateReception = async () =>
     shipments.create(OWNER, input({
       status: 'received',
@@ -830,13 +824,6 @@ describe('list', () => {
   })
 
   describe('the needs attention filter', () => {
-    const daysAgo = (days: number): string => {
-      const date = new Date(`${today()}T00:00:00.000Z`)
-      date.setUTCDate(date.getUTCDate() - days)
-
-      return date.toISOString().slice(0, 10)
-    }
-
     const aSpreadOfEveryState = async () => {
       await shipments.create(OWNER, input({ requestedDate: daysAgo(25) }))
       await shipments.create(OWNER, input({ requestedDate: daysAgo(2) }))

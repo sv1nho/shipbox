@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { errorMessage } from '../api/client.js'
 import { getDashboard } from '../api/dashboard.js'
-import { StoreSpeed } from '../dashboard/StoreSpeed.js'
+import { StoreTable } from '../dashboard/StoreTable.js'
 import { searchFromFilters } from '../shipments/filters.js'
 import { formatAmount } from '../shipments/format.js'
 import type { DashboardSummary } from '../../shared/dashboard.js'
@@ -97,7 +97,7 @@ export function Dashboard () {
             />
           </div>
 
-          <StoreSpeed stores={summary.byStore} measured={summary.measuredDecisions} />
+          <StoreTable stores={summary.byStore} measured={summary.measuredDecisions} />
         </div>
       )}
     </div>

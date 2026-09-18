@@ -74,7 +74,7 @@ describe('GET /api/dashboard', () => {
     const body = bodyOf<DashboardSummary>(await request(app).get('/api/dashboard').expect(200))
 
     expect(body.byStore).toEqual([
-      { store: 'Zalando', returns: 1, measured: 0, averageDecisionDays: null },
+      { store: 'Zalando', returns: 1, decided: 0, refunded: 0, measured: 0, averageDecisionDays: null },
     ])
     expect(typeof body.byStore[0].returns).toBe('number')
   })
