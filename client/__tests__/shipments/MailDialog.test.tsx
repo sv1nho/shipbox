@@ -9,8 +9,9 @@ import { useSession } from '../../auth/client.js'
 import { makeShipment } from '../fixtures.js'
 import type { ShipmentDto } from '../../../shared/shipment.js'
 
-const renderDialog = (overrides: Partial<ShipmentDto> = {}) => {
+const renderDialog = (overrides: Partial<ShipmentDto> = {}, busy = false) => {
   const onClose = vi.fn()
+  const onSent = vi.fn()
   const shipment = makeShipment({
     status: 'received',
     store: 'Zalando',
@@ -23,9 +24,11 @@ const renderDialog = (overrides: Partial<ShipmentDto> = {}) => {
     ...overrides,
   })
 
-  render(<MailDialog shipment={shipment} onClose={onClose} />)
+  render(
+    <MailDialog shipment={shipment} busy={busy} onClose={onClose} onSent={onSent} />
+  )
 
-  return { onClose, shipment }
+  return { onClose, onSent, shipment }
 }
 
 const body = () => screen.getByLabelText<HTMLTextAreaElement>('Message').value
@@ -217,15 +220,91 @@ describe('leaving', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('closes once the mail app has been handed the message', async () => {
-    const { onClose } = renderDialog()
+  it('closes without recording anything, nothing having been handed over', async () => {
+    const { onClose, onSent } = renderDialog()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(onSent).not.toHaveBeenCalled()
+  })
+})
+
+describe('whether the message actually went out', () => {
+  const handOver = async () => {
     const stay = (event: Event) => { event.preventDefault() }
 
     document.addEventListener('click', stay)
     await userEvent.click(mailLink())
     document.removeEventListener('click', stay)
+  }
+
+  it('asks nothing before anything has been handed over', () => {
+    renderDialog()
+
+    expect(screen.queryByRole('button', { name: /i sent it/i })).not.toBeInTheDocument()
+  })
+
+  it('stays open after the mail app is handed the message, since it cannot tell', async () => {
+    const { onClose, onSent } = renderDialog()
+
+    await handOver()
+
+    expect(screen.getByText(/cannot tell whether the message went out/i)).toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+    expect(onSent).not.toHaveBeenCalled()
+  })
+
+  it('records the chase only once the user says it went', async () => {
+    const { onSent } = renderDialog()
+
+    await handOver()
+    await userEvent.click(screen.getByRole('button', { name: /i sent it/i }))
+
+    expect(onSent).toHaveBeenCalledOnce()
+  })
+
+  it('records nothing when the user backs out', async () => {
+    const { onClose, onSent } = renderDialog()
+
+    await handOver()
+    await userEvent.click(screen.getByRole('button', { name: /not yet/i }))
 
     expect(onClose).toHaveBeenCalledOnce()
+    expect(onSent).not.toHaveBeenCalled()
+  })
+
+  it('asks after a copy too, the message going out through a contact form', async () => {
+    renderDialog()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+
+    expect(await screen.findByRole('button', { name: /i sent it/i })).toBeInTheDocument()
+  })
+
+  it('asks nothing when the clipboard refused, nothing having left', async () => {
+    writeText.mockRejectedValue(new Error('denied'))
+
+    renderDialog()
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+
+    await screen.findByText(/select the text and copy it yourself/i)
+
+    expect(screen.queryByRole('button', { name: /i sent it/i })).not.toBeInTheDocument()
+  })
+
+  it('holds still while the chase is being saved', () => {
+    renderDialog({}, true)
+
+    expect(screen.getByRole('button', { name: 'Close' })).toBeDisabled()
+  })
+
+  it('says it is saving rather than looking idle', async () => {
+    renderDialog({}, true)
+
+    await handOver()
+
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled()
   })
 })
 

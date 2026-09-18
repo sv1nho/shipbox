@@ -1,5 +1,6 @@
 import { AppError } from '../../errors.js'
 import {
+  CHASE_GRACE_DAYS,
   LABEL_EXPIRY_WARNING_DAYS,
   LABEL_VALIDITY_DAYS,
   RECEPTION_ALERT_DAYS,
@@ -26,6 +27,7 @@ export type DatedShipment = ShipmentDates & { requestedDate: IsoDate }
 export type ShipmentState = DatedShipment & {
   status: ShipmentStatus
   rejectionReason: string | null
+  lastChasedAt: IsoDate | null
 }
 
 const dateFieldRank = (field: DateField): number => ORDERED_DATE_FIELDS.indexOf(field) + 1
@@ -69,6 +71,9 @@ const DEADLINE_DAYS: Record<ShipmentStatus, number | null> = {
 
 type AttentionCutoff = { status: ShipmentStatus; field: DatedField; onOrBefore: IsoDate }
 
+export const chasedRecentlyOnOrAfter = (today: IsoDate): IsoDate =>
+  shiftDays(today, 1 - CHASE_GRACE_DAYS)
+
 export function attentionCutoffs (today: IsoDate): AttentionCutoff[] {
   return [
     {
@@ -89,7 +94,7 @@ const REQUIRED_DATE: Record<ShipmentStatus, DateField | null> = {
   rejected: 'decisionDate',
 }
 
-export function assertStatusHasItsDate (state: ShipmentState): void {
+export function assertStatusHasItsDate (state: DatedShipment & { status: ShipmentStatus }): void {
   const field = REQUIRED_DATE[state.status]
 
   if (field !== null && state[field] === null) {
@@ -163,6 +168,7 @@ export function planRevert (state: ShipmentState): ShipmentState {
     ...cleared,
     requestedDate: state.requestedDate,
     rejectionReason: null,
+    lastChasedAt: state.lastChasedAt,
     status,
   }
 }
@@ -207,6 +213,9 @@ export function computeDerived (shipment: ShipmentState, today: IsoDate): Derive
   const overdue = (status: ShipmentStatus): boolean =>
     shipment.status === status && daysLeft !== null && daysLeft <= 0
 
+  const awaitingReply =
+    shipment.lastChasedAt !== null && diffDays(shipment.lastChasedAt, today) < CHASE_GRACE_DAYS
+
   return {
     daysSinceRequested,
     daysSinceDropoff,
@@ -214,6 +223,7 @@ export function computeDerived (shipment: ShipmentState, today: IsoDate): Derive
     decisionDelayDays,
     totalDelayDays,
     daysLeft,
+    awaitingReply,
     needsAction: overdue('received'),
     shippingLate: overdue('dropped_off'),
     labelExpiring:

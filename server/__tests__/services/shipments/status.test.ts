@@ -21,6 +21,7 @@ const state = (overrides: Partial<ShipmentState> = {}): ShipmentState => ({
   dropoffDate: null,
   receivedDate: null,
   decisionDate: null,
+  lastChasedAt: null,
   ...overrides,
 })
 
@@ -438,6 +439,22 @@ describe('computeDerived', () => {
 
     it('counts nothing without the date its step starts from', () => {
       expect(derived({ status: 'received', receivedDate: null }).daysLeft).toBeNull()
+    })
+  })
+
+  describe('awaitingReply, the store owes an answer rather than the user an action', () => {
+    it.each([
+      ['2026-06-15', 0, true],
+      ['2026-06-10', 5, true],
+      ['2026-06-09', 6, true],
+      ['2026-06-08', 7, false],
+      ['2026-05-01', 45, false],
+    ])('chased on %s, that is %i days ago', (lastChasedAt, _days, expected) => {
+      expect(derived({ lastChasedAt }).awaitingReply).toBe(expected)
+    })
+
+    it('waits on nobody when the store was never chased', () => {
+      expect(derived().awaitingReply).toBe(false)
     })
   })
 

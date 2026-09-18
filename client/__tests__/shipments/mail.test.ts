@@ -35,6 +35,11 @@ describe('needsMail, the two moments a store has to be chased', () => {
   it('asks for nothing while both deadlines still have time to run', () => {
     expect(needsMail(makeShipment({ status: 'received', daysLeft: 5 }))).toBe(false)
   })
+
+  it('stands down while the store still owes a reply to a mail already sent', () => {
+    expect(needsMail(noNews({ awaitingReply: true }))).toBe(false)
+    expect(needsMail(notReceived({ awaitingReply: true }))).toBe(false)
+  })
 })
 
 describe('the message about a return with no news', () => {

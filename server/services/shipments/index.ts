@@ -7,6 +7,7 @@ import {
   assertDates,
   assertStatusHasItsDate,
   attentionCutoffs,
+  chasedRecentlyOnOrAfter,
   planRevert,
   planTransition,
 } from './status.js'
@@ -68,6 +69,7 @@ type ShipmentWrite = {
   receivedDate?: Date | null
   neverReceived?: boolean
   decisionDate?: Date | null
+  lastChasedAt?: Date | null
   archivedAt?: Date | null
 }
 
@@ -124,10 +126,20 @@ const orderByOf = (sort: SortKey, direction: 'asc' | 'desc') => {
 }
 
 const needsAttention = (now: IsoDate) => ({
-  OR: attentionCutoffs(now).map(({ status, field, onOrBefore }) => ({
-    status,
-    [field]: { lte: toUtcDate(onOrBefore) },
-  })),
+  AND: [
+    {
+      OR: attentionCutoffs(now).map(({ status, field, onOrBefore }) => ({
+        status,
+        [field]: { lte: toUtcDate(onOrBefore) },
+      })),
+    },
+    {
+      OR: [
+        { lastChasedAt: null },
+        { lastChasedAt: { lt: toUtcDate(chasedRecentlyOnOrAfter(now)) } },
+      ],
+    },
+  ],
 })
 
 const whereOf = (userId: string, params: ListParams) => {
@@ -218,7 +230,7 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
 
   assertDates(dates, now)
   assertChronology(dates)
-  assertStatusHasItsDate({ status, rejectionReason, ...dates })
+  assertStatusHasItsDate({ status, ...dates })
 
   const data = {
     userId,
@@ -370,6 +382,17 @@ export async function archive (userId: string, id: string): Promise<ShipmentDto>
   }
 
   return writeOwned(row.id, { archivedAt: new Date() }, today())
+}
+
+export async function chase (userId: string, id: string): Promise<ShipmentDto> {
+  const row = await editableRow(userId, id)
+  const now = today()
+
+  if (row.dropoffDate === null) {
+    throw new AppError('CONFLICT', 'This parcel has not been dropped off, there is nothing to chase.')
+  }
+
+  return writeOwned(row.id, { lastChasedAt: toUtcDate(now) }, now)
 }
 
 export async function unarchive (userId: string, id: string): Promise<ShipmentDto> {

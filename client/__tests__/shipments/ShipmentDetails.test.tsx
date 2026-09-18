@@ -138,6 +138,18 @@ describe('what it leaves out', () => {
     expect(screen.queryByText('Refused because')).not.toBeInTheDocument()
   })
 
+  it('dates the last chase, so a reminder is never sent twice by mistake', () => {
+    renderDetails({ status: 'received', receivedDate: '2026-06-05', lastChasedAt: '2026-06-20' })
+
+    expect(valueOf('Store chased')).toBe('20/06/2026')
+  })
+
+  it('says nothing about a chase that never happened', () => {
+    renderDetails({ lastChasedAt: null })
+
+    expect(screen.queryByText('Store chased')).not.toBeInTheDocument()
+  })
+
   it('says the parcel never reached the store, rather than leaving the gap unexplained', () => {
     renderDetails({ status: 'refunded', neverReceived: true, decisionDate: '2026-06-09' })
 

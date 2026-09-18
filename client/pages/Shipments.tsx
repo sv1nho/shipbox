@@ -4,6 +4,7 @@ import { ApiError, errorMessage } from '../api/client.js'
 import {
   applyTransition,
   archiveShipment,
+  chaseShipment,
   createShipment,
   deleteShipment,
   getLabelPayload,
@@ -132,6 +133,10 @@ export function Shipments () {
     })
 
     if (done) setPrompt(null)
+  }
+
+  const recordChase = async (shipment: ShipmentDto) => {
+    if (await run(() => chaseShipment(shipment.id))) setChasing(null)
   }
 
   const saveDates = async (shipment: ShipmentDto, patch: UpdateShipmentInput) => {
@@ -307,7 +312,12 @@ export function Shipments () {
       )}
 
       {chasing !== null && (
-        <MailDialog shipment={chasing} onClose={() => { setChasing(null) }} />
+        <MailDialog
+          shipment={chasing}
+          busy={busy}
+          onClose={() => { setChasing(null) }}
+          onSent={() => { void recordChase(chasing) }}
+        />
       )}
 
       {details !== null && (

@@ -94,6 +94,16 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
       </div>
 
       <div className='shipment-mail'>
+        {!archived && !needsMail(shipment) && shipment.lastChasedAt !== null && (
+          <span
+            className='chased-mark'
+            role='img'
+            aria-label={`Chased on ${formatDate(shipment.lastChasedAt)}`}
+          >
+            ✓
+          </span>
+        )}
+
         {!archived && needsMail(shipment) && (
           <button
             type='button'

@@ -18,6 +18,7 @@ const shipment = (overrides: Partial<ShipmentDto> = {}): ShipmentDto => ({
   receivedDate: null,
   neverReceived: false,
   decisionDate: null,
+  lastChasedAt: null,
   orderNumber: 'ZAL-2026-0001',
   note: null,
   rejectionReason: null,
@@ -35,6 +36,7 @@ const shipment = (overrides: Partial<ShipmentDto> = {}): ShipmentDto => ({
   needsAction: false,
   shippingLate: false,
   labelExpiring: false,
+  awaitingReply: false,
   ...overrides,
 })
 

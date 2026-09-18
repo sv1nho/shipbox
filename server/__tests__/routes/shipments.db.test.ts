@@ -440,6 +440,29 @@ describe('PATCH and correct-identity', () => {
   })
 })
 
+describe('POST /api/shipments/:id/chase', () => {
+  it('records the chase and answers with the shipment', async () => {
+    const created = await createShipment({ status: 'dropped_off', dropoffDate: '2026-01-05' })
+
+    const response = await request(app).post(`/api/shipments/${created.id}/chase`).send().expect(200)
+
+    expect(bodyOf<{ lastChasedAt: string }>(response).lastChasedAt).toBe(todayIso())
+  })
+
+  it('answers 409 on a parcel that never left', async () => {
+    const created = await createShipment()
+
+    await request(app).post(`/api/shipments/${created.id}/chase`).send().expect(409)
+  })
+
+  it('answers 404 on a shipment owned by someone else', async () => {
+    await request(app)
+      .post('/api/shipments/11111111-1111-4111-8111-111111111111/chase')
+      .send()
+      .expect(404)
+  })
+})
+
 describe('archive, unarchive and delete', () => {
   it('archives, hides from the list, then puts back', async () => {
     const created = await createShipment()

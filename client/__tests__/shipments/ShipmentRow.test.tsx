@@ -223,6 +223,25 @@ describe('the button that chases the store', () => {
     expect(chase()).not.toBeInTheDocument()
   })
 
+  it('stands down while the store still owes a reply', () => {
+    renderRow({ status: 'received', needsAction: true, awaitingReply: true, lastChasedAt: '2026-06-20' })
+
+    expect(chase()).not.toBeInTheDocument()
+  })
+
+  it('marks a return already chased, so the row says the work was done', () => {
+    renderRow({ status: 'received', needsAction: true, awaitingReply: true, lastChasedAt: '2026-06-20' })
+
+    expect(screen.getByRole('img', { name: 'Chased on 20/06/2026' })).toBeInTheDocument()
+  })
+
+  it('comes back once the grace period runs out, the store having stayed silent', () => {
+    renderRow({ status: 'received', needsAction: true, awaitingReply: false, lastChasedAt: '2026-06-01' })
+
+    expect(chase()).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /chased on/i })).not.toBeInTheDocument()
+  })
+
   it('hands the shipment to the page, which owns the dialog', async () => {
     const { shipment, spies } = renderRow({ status: 'received', needsAction: true })
 

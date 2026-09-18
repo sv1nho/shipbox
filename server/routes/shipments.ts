@@ -188,6 +188,13 @@ shipmentsRouter.post(
 )
 
 shipmentsRouter.post(
+  '/:id/chase',
+  handle(async (req, res) => {
+    res.json(await shipments.chase(userIdOf(req), idOf(req)))
+  })
+)
+
+shipmentsRouter.post(
   '/:id/unarchive',
   handle(async (req, res) => {
     res.json(await shipments.unarchive(userIdOf(req), idOf(req)))

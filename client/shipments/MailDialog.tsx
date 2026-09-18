@@ -7,7 +7,9 @@ import { Modal } from './Modal.js'
 
 type MailDialogProps = {
   shipment: ShipmentDto
+  busy: boolean
   onClose: () => void
+  onSent: () => void
 }
 
 type Part = 'subject' | 'body'
@@ -39,12 +41,13 @@ function CopyIcon ({ copied }: { copied: boolean }) {
   )
 }
 
-export function MailDialog ({ shipment, onClose }: MailDialogProps) {
+export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps) {
   const { data: session } = useSession()
   const [language, setLanguage] = useState<MailLanguage>('fr')
   const [edited, setEdited] = useState<Record<Part, string> | null>(null)
   const [copied, setCopied] = useState<Part | null>(null)
   const [failed, setFailed] = useState(false)
+  const [handedOver, setHandedOver] = useState(false)
 
   const draft = edited ?? mailDraft(shipment, language, session?.user.name ?? '')
 
@@ -62,7 +65,7 @@ export function MailDialog ({ shipment, onClose }: MailDialogProps) {
 
   const copy = (part: Part) => {
     navigator.clipboard.writeText(draft[part])
-      .then(() => { setCopied(part); setFailed(false) })
+      .then(() => { setCopied(part); setFailed(false); setHandedOver(true) })
       .catch(() => { setCopied(null); setFailed(true) })
   }
 
@@ -136,17 +139,32 @@ export function MailDialog ({ shipment, onClose }: MailDialogProps) {
         )}
       </div>
 
+      {handedOver && (
+        <p className='field-hint mail-sent-ask'>
+          ShipBox cannot tell whether the message went out. Say so and the row will show it.
+        </p>
+      )}
+
       <div className='modal-footer'>
-        <button type='button' className='btn btn-ghost' onClick={onClose}>Close</button>
-        <a
-          className='btn btn-primary'
-          href={mailtoLink(shipment.storeSupportEmail, draft)}
-          target='_blank'
-          rel='noreferrer'
-          onClick={onClose}
-        >
-          Open in my mail app
-        </a>
+        <button type='button' className='btn btn-ghost' onClick={onClose} disabled={busy}>
+          {handedOver ? 'Not yet' : 'Close'}
+        </button>
+
+        {handedOver ? (
+          <button type='button' className='btn btn-primary' disabled={busy} onClick={onSent}>
+            {busy ? 'Saving…' : 'I sent it'}
+          </button>
+        ) : (
+          <a
+            className='btn btn-primary'
+            href={mailtoLink(shipment.storeSupportEmail, draft)}
+            target='_blank'
+            rel='noreferrer'
+            onClick={() => { setHandedOver(true) }}
+          >
+            Open in my mail app
+          </a>
+        )}
       </div>
     </Modal>
   )

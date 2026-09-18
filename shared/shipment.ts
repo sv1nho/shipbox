@@ -11,6 +11,7 @@ export type DerivedFields = {
   decisionDelayDays: number | null
   totalDelayDays: number | null
   daysLeft: number | null
+  awaitingReply: boolean
   needsAction: boolean
   shippingLate: boolean
   labelExpiring: boolean
@@ -32,6 +33,7 @@ export type ShipmentDto = {
   receivedDate: IsoDate | null
   neverReceived: boolean
   decisionDate: IsoDate | null
+  lastChasedAt: IsoDate | null
   orderNumber: string
   note: string | null
   rejectionReason: string | null

@@ -42,6 +42,7 @@ type Recipe = {
   count: number
   ago: (index: number) => Ago
   archived?: boolean
+  chasedAgo?: number
   note?: string
 }
 
@@ -81,9 +82,16 @@ const PLAN: Recipe[] = [
   },
   {
     status: 'received',
-    count: 4,
+    count: 2,
     ago: (index) => ({ requested: 30 + index * 6, dropoff: 27 + index * 6, received: 22 + index * 6 }),
     note: 'Received weeks ago and still no decision.',
+  },
+  {
+    status: 'received',
+    count: 2,
+    ago: (index) => ({ requested: 42 + index * 6, dropoff: 39 + index * 6, received: 34 + index * 6 }),
+    chasedAgo: 2,
+    note: 'Chased already, the store has not answered yet.',
   },
   {
     status: 'refunded',
@@ -128,6 +136,7 @@ type SeedShipment = {
   rejectionReason: string | null
   note: string | null
   archived: boolean
+  chasedAgo: number | null
 }
 
 const POSTAL_CODES = [
@@ -188,6 +197,7 @@ const build = (): SeedShipment[] => {
         rejectionReason: reason,
         note: recipe.note ?? null,
         archived: recipe.archived === true,
+        chasedAgo: recipe.chasedAgo ?? null,
       })
     }
   }
@@ -271,6 +281,7 @@ for (const shipment of SHIPMENTS) {
       receivedDate: dateOf(shipment.receivedAgo),
       decisionDate: dateOf(shipment.decisionAgo),
       orderNumber: shipment.orderNumber,
+      lastChasedAt: dateOf(shipment.chasedAgo),
       note: shipment.note,
       rejectionReason: shipment.rejectionReason,
       archivedAt: shipment.archived ? MIDNIGHT_UTC(shipment.requestedAgo - 1) : null,

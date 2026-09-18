@@ -58,7 +58,7 @@ export function mailLanguageLabel (language: MailLanguage): string {
 }
 
 export function needsMail (shipment: ShipmentDto): boolean {
-  return shipment.needsAction || shipment.shippingLate
+  return (shipment.needsAction || shipment.shippingLate) && !shipment.awaitingReply
 }
 
 export function mailDraft (

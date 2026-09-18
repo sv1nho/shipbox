@@ -191,6 +191,14 @@ export const openApiDocument = {
         responses: { 200: shipmentResponse, ...errorResponses },
       },
     },
+    '/api/shipments/{id}/chase': {
+      post: {
+        tags: ['shipments'],
+        summary: 'Record that the store was chased about this return today.',
+        parameters: [ID_PARAMETER],
+        responses: { 200: shipmentResponse, ...errorResponses },
+      },
+    },
     '/api/shipments/{id}/unarchive': {
       post: {
         tags: ['shipments'],

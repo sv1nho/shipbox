@@ -966,10 +966,21 @@ html, body {
     justify-content: center;
   }
 
+  .chased-mark {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: var(--status-refunded);
+    cursor: default;
+  }
+
   .mail-body {
     font-size: 0.8125rem;
     line-height: 1.55;
     resize: vertical;
+  }
+
+  .mail-sent-ask {
+    padding: 0 1.25rem 0.25rem;
   }
 
   .mail-field-header {

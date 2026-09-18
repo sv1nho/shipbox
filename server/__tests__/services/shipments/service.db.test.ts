@@ -383,6 +383,98 @@ describe('transition and revert', () => {
   })
 })
 
+describe('chasing a store', () => {
+  const daysAgo = (days: number): string => {
+    const date = new Date(`${today()}T00:00:00.000Z`)
+    date.setUTCDate(date.getUTCDate() - days)
+
+    return date.toISOString().slice(0, 10)
+  }
+
+  const lateReception = async () =>
+    shipments.create(OWNER, input({
+      status: 'received',
+      requestedDate: daysAgo(30),
+      dropoffDate: daysAgo(28),
+      receivedDate: daysAgo(20),
+    }))
+
+  it('dates the chase today, the caller never choosing when it happened', async () => {
+    const late = await lateReception()
+
+    const chased = await shipments.chase(OWNER, late.id)
+
+    expect(chased.lastChasedAt).toBe(today())
+    expect(chased.awaitingReply).toBe(true)
+  })
+
+  it('leaves the alert standing, the return being late all the same', async () => {
+    const late = await lateReception()
+
+    const chased = await shipments.chase(OWNER, late.id)
+
+    expect(chased.needsAction).toBe(true)
+    expect(chased.status).toBe('received')
+  })
+
+  it('drops the chased return out of the count, the work having been done', async () => {
+    const late = await lateReception()
+
+    expect((await shipments.list(OWNER)).attentionTotal).toBe(1)
+
+    await shipments.chase(OWNER, late.id)
+
+    expect((await shipments.list(OWNER)).attentionTotal).toBe(0)
+    expect((await shipments.list(OWNER, { attention: true })).total).toBe(0)
+  })
+
+  it('brings it back once the grace period runs out and the store stayed silent', async () => {
+    const late = await lateReception()
+    await shipments.chase(OWNER, late.id)
+
+    await prisma.shipment.update({
+      where: { id: late.id },
+      data: { lastChasedAt: new Date(`${daysAgo(7)}T00:00:00.000Z`) },
+    })
+
+    const back = await shipments.getById(OWNER, late.id)
+
+    expect(back.awaitingReply).toBe(false)
+    expect((await shipments.list(OWNER)).attentionTotal).toBe(1)
+  })
+
+  it('refuses to chase a parcel still sitting at home', async () => {
+    const pending = await shipments.create(OWNER, input())
+
+    expect(await codeOf(() => shipments.chase(OWNER, pending.id))).toBe('CONFLICT')
+  })
+
+  it('refuses to chase an archived return', async () => {
+    const late = await lateReception()
+    await shipments.archive(OWNER, late.id)
+
+    expect(await codeOf(() => shipments.chase(OWNER, late.id))).toBe('CONFLICT')
+  })
+
+  it('says nothing about a return owned by somebody else', async () => {
+    const theirs = await shipments.create(OTHER, input({
+      status: 'received', requestedDate: daysAgo(30), dropoffDate: daysAgo(28), receivedDate: daysAgo(20),
+    }))
+
+    expect(await codeOf(() => shipments.chase(OWNER, theirs.id))).toBe('NOT_FOUND')
+  })
+
+  it('keeps the chase through an undo, the mail having been sent all the same', async () => {
+    const late = await lateReception()
+    await shipments.chase(OWNER, late.id)
+
+    const undone = await shipments.revert(OWNER, late.id)
+
+    expect(undone.status).toBe('dropped_off')
+    expect(undone.lastChasedAt).toBe(today())
+  })
+})
+
 describe('a parcel the store never received', () => {
   it('records the loss and measures the wait from the drop-off instead', async () => {
     const created = await shipments.create(OWNER, input({
@@ -772,15 +864,22 @@ describe('list', () => {
     it('returns exactly the rows that flag themselves, so sql and the badge cannot drift', async () => {
       await aSpreadOfEveryState()
 
+      const chased = await shipments.create(OWNER, input({
+        status: 'received', requestedDate: daysAgo(30), dropoffDate: daysAgo(28), receivedDate: daysAgo(20),
+      }))
+      await shipments.chase(OWNER, chased.id)
+
       const everything = await shipments.list(OWNER)
       const flagged = everything.items
-        .filter((item) => item.needsAction || item.shippingLate || item.labelExpiring)
+        .filter((item) =>
+          (item.needsAction || item.shippingLate || item.labelExpiring) && !item.awaitingReply)
         .map((item) => item.id)
         .sort()
 
       const filtered = await shipments.list(OWNER, { attention: true })
 
       expect(flagged).toHaveLength(3)
+      expect(everything.items.filter((item) => item.awaitingReply)).toHaveLength(1)
       expect(filtered.items.map((item) => item.id).sort()).toEqual(flagged)
     })
 

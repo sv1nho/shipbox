@@ -112,6 +112,10 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               </Field>
             ))}
 
+          {shipment.lastChasedAt !== null && (
+            <Field label='Store chased'>{formatDate(shipment.lastChasedAt)}</Field>
+          )}
+
           {shipment.neverReceived && (
             <Field label='Reception'>Never reached the store</Field>
           )}

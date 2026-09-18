@@ -7,6 +7,7 @@ vi.mock('../../api/shipments.js', () => ({
   listShipments: vi.fn(),
   applyTransition: vi.fn(),
   archiveShipment: vi.fn(),
+  chaseShipment: vi.fn(),
   unarchiveShipment: vi.fn(),
   revertShipment: vi.fn(),
   deleteShipment: vi.fn(),
@@ -28,6 +29,7 @@ import { Shipments } from '../../pages/Shipments.js'
 import {
   applyTransition,
   archiveShipment,
+  chaseShipment,
   createShipment,
   importShipments,
   searchStores,
@@ -872,5 +874,47 @@ describe('chasing a store that has gone quiet', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(updateShipment).not.toHaveBeenCalled()
+  })
+
+  it('records the chase and refreshes the list once the user confirms', async () => {
+    vi.mocked(chaseShipment).mockResolvedValue(makeShipment())
+
+    await openMail()
+
+    const stay = (event: Event) => { event.preventDefault() }
+    document.addEventListener('click', stay)
+    await userEvent.click(screen.getByRole('link', { name: /open in my mail app/i }))
+    document.removeEventListener('click', stay)
+
+    await userEvent.click(screen.getByRole('button', { name: /i sent it/i }))
+
+    await waitFor(() => {
+      expect(chaseShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111')
+    })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(listShipments).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the window open when the chase could not be saved, nothing being lost', async () => {
+    vi.mocked(chaseShipment).mockRejectedValue(new TypeError('Failed to fetch'))
+
+    await openMail()
+
+    const stay = (event: Event) => { event.preventDefault() }
+    document.addEventListener('click', stay)
+    await userEvent.click(screen.getByRole('link', { name: /open in my mail app/i }))
+    document.removeEventListener('click', stay)
+
+    await userEvent.click(screen.getByRole('button', { name: /i sent it/i }))
+
+    await waitFor(() => { expect(chaseShipment).toHaveBeenCalled() })
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('records nothing when the mail was only opened, never confirmed', async () => {
+    await openMail()
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+
+    expect(chaseShipment).not.toHaveBeenCalled()
   })
 })

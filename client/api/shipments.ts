@@ -67,6 +67,9 @@ export const applyTransition = (
   })
 }
 
+export const chaseShipment = (id: string): Promise<ShipmentDto> =>
+  request<ShipmentDto>(`${BASE}/${id}/chase`, { method: 'POST' })
+
 export const revertShipment = (id: string): Promise<ShipmentDto> =>
   request<ShipmentDto>(`${BASE}/${id}/revert`, { method: 'POST' })
 

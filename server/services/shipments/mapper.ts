@@ -25,6 +25,7 @@ export type ShipmentRow = {
   receivedDate: Date | null
   neverReceived: boolean
   decisionDate: Date | null
+  lastChasedAt: Date | null
   orderNumber: string
   note: string | null
   rejectionReason: string | null
@@ -59,6 +60,7 @@ export function toShipmentState (row: ShipmentRow): ShipmentState {
     receivedDate: asIsoDate(row.receivedDate),
     decisionDate: asIsoDate(row.decisionDate),
     rejectionReason: row.rejectionReason,
+    lastChasedAt: asIsoDate(row.lastChasedAt),
   }
 }
 
@@ -85,6 +87,7 @@ export function toShipmentDto (row: ShipmentRow, today: IsoDate): ShipmentDto {
     receivedDate,
     neverReceived: row.neverReceived,
     decisionDate,
+    lastChasedAt: asIsoDate(row.lastChasedAt),
     orderNumber: row.orderNumber,
     note: row.note,
     rejectionReason: row.rejectionReason,
