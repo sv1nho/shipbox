@@ -34,7 +34,7 @@ export function StoreTable ({ stores, measured }: StoreTableProps) {
               <div className='dash-row dash-row-head' aria-hidden='true'>
                 <span>Store</span>
                 <span>Days to decide</span>
-                <span className='dash-cell-number'>Refunded</span>
+                <span>Refunded</span>
               </div>
 
               {judged.map((store) => (

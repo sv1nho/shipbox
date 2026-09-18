@@ -915,7 +915,7 @@ html, body {
 
   .dash-row {
     display: grid;
-    grid-template-columns: 8.5rem 1fr 3.25rem;
+    grid-template-columns: 8.5rem 1fr minmax(4rem, max-content);
     align-items: center;
     gap: 0.75rem;
   }
@@ -927,6 +927,10 @@ html, body {
     letter-spacing: 0.05em;
     color: var(--color-text-subtle);
   }
+
+  .dash-row-head { align-items: end; }
+
+  .dash-row-head > :last-child { text-align: right; }
 
   .dash-cell-label {
     display: flex;
@@ -951,7 +955,7 @@ html, body {
 
   .dash-cell-days {
     display: grid;
-    grid-template-columns: 1fr 2.5rem;
+    grid-template-columns: 1fr minmax(2.5rem, max-content);
     align-items: center;
     gap: 0.625rem;
   }
@@ -980,8 +984,7 @@ html, body {
   }
 
   @media (max-width: 34rem) {
-    .dash-row { grid-template-columns: 6rem 1fr 2.75rem; }
-    .dash-cell-days { grid-template-columns: 1fr 2rem; }
+    .dash-row { grid-template-columns: 6rem 1fr minmax(3.5rem, max-content); }
   }
 
   .shipment-list {
