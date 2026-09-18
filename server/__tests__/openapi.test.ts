@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { openApiDocument } from '../openapi.js'
 import { shipmentsRouter } from '../routes/shipments.js'
 import { storesRouter } from '../routes/stores.js'
+import { dashboardRouter } from '../routes/dashboard.js'
+import { createApp } from '../app.js'
 
 type Layer = { route?: { path: string; methods: Record<string, boolean> } }
 
@@ -17,10 +19,13 @@ const routesOf = (router: { stack: unknown[] }, base: string) =>
         ]
   )
 
-const registered = [
-  ...routesOf(shipmentsRouter, '/api/shipments'),
-  ...routesOf(storesRouter, '/api/stores'),
+const ROUTERS = [
+  { router: shipmentsRouter, base: '/api/shipments' },
+  { router: storesRouter, base: '/api/stores' },
+  { router: dashboardRouter, base: '/api/dashboard' },
 ]
+
+const registered = ROUTERS.flatMap(({ router, base }) => routesOf(router, base))
 
 const documented = openApiDocument.paths as Record<string, Record<string, unknown>>
 
@@ -38,6 +43,14 @@ describe('the document describes the api that actually exists', () => {
         expect(routed).toContain(`${method} ${path}`)
       }
     }
+  })
+
+  it('checks every router the app mounts, so a new one cannot escape the document', () => {
+    const stack = (createApp() as unknown as {
+      router: { stack: { handle?: { stack?: unknown[] } }[] }
+    }).router.stack
+
+    expect(stack.filter((layer) => Array.isArray(layer.handle?.stack))).toHaveLength(ROUTERS.length)
   })
 
   it('covers every registered route', () => {

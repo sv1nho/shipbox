@@ -61,6 +61,13 @@ export function Layout () {
                   >
                     Shipments
                   </NavLink>
+                  <NavLink
+                    to='/dashboard'
+                    className={({ isActive }) =>
+                      isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+                  >
+                    Dashboard
+                  </NavLink>
                   <div className='navbar-user'>
                     <span className='navbar-avatar' aria-hidden='true'>
                       {initialOf(session.user.name, session.user.email)}

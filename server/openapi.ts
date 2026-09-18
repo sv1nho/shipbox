@@ -73,7 +73,7 @@ export const openApiDocument = {
       'Every route requires a session cookie and only ever sees the shipments of the signed-in user. ' +
       'Day counts are calendar days, and the derived ones are null when a source date is missing.',
   },
-  tags: [{ name: 'shipments' }, { name: 'stores' }],
+  tags: [{ name: 'shipments' }, { name: 'stores' }, { name: 'dashboard' }],
   paths: {
     '/api/shipments': {
       get: {
@@ -189,6 +189,48 @@ export const openApiDocument = {
         summary: 'Take the shipment out of the main list without losing it.',
         parameters: [ID_PARAMETER],
         responses: { 200: shipmentResponse, ...errorResponses },
+      },
+    },
+    '/api/dashboard': {
+      get: {
+        tags: ['dashboard'],
+        summary: 'Aggregate every return into the figures the dashboard shows.',
+        responses: {
+          200: {
+            description: 'The summary, counted over every return including the archived ones.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    decided: { type: 'integer' },
+                    refunded: { type: 'integer' },
+                    successRate: { type: ['number', 'null'], minimum: 0, maximum: 1 },
+                    open: { type: 'integer' },
+                    attention: { type: 'integer' },
+                    recoveredCents: { type: 'integer' },
+                    lostCents: { type: 'integer' },
+                    awaitingCents: { type: 'integer' },
+                    measuredDecisions: { type: 'integer' },
+                    byStore: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          store: { type: 'string' },
+                          returns: { type: 'integer' },
+                          measured: { type: 'integer' },
+                          averageDecisionDays: { type: ['number', 'null'] },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          ...errorResponses,
+        },
       },
     },
     '/api/shipments/{id}/chase': {

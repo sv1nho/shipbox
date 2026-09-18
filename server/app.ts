@@ -7,6 +7,7 @@ import { requireUser, currentUser } from './auth/require-user.js'
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
 import { shipmentsRouter } from './routes/shipments.js'
 import { storesRouter } from './routes/stores.js'
+import { dashboardRouter } from './routes/dashboard.js'
 import { openApiDocument } from './openapi.js'
 import { prisma } from './prisma.js'
 import { isProduction } from './env.js'
@@ -44,6 +45,7 @@ export function createApp (): Express {
 
   app.use('/api/shipments', shipmentsRouter)
   app.use('/api/stores', storesRouter)
+  app.use('/api/dashboard', dashboardRouter)
 
   app.use(notFoundHandler)
   app.use(createErrorHandler({ exposeDetails: !isProduction }))

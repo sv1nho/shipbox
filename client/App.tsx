@@ -1,6 +1,7 @@
 import { RouterProvider } from 'react-router/dom'
 import { createBrowserRouter } from 'react-router'
 
+import { Dashboard } from './pages/Dashboard'
 import { Form } from './pages/Form'
 import { Layout } from './components/Layout'
 import { Home } from './pages/Home'
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
           {
             path: '/shipments',
             element: <Shipments />,
+          },
+          {
+            path: '/dashboard',
+            element: <Dashboard />,
           },
         ],
       },
