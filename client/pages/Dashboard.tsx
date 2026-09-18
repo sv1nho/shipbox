@@ -3,20 +3,32 @@ import { Link } from 'react-router'
 import { errorMessage } from '../api/client.js'
 import { getDashboard } from '../api/dashboard.js'
 import { StoreSpeed } from '../dashboard/StoreSpeed.js'
+import { searchFromFilters } from '../shipments/filters.js'
 import { formatAmount } from '../shipments/format.js'
 import type { DashboardSummary } from '../../shared/dashboard.js'
+import type { ListParams } from '../../shared/shipment.js'
+
+const listing = (filters: ListParams): string =>
+  `/shipments?${searchFromFilters(filters).toString()}`
 
 const percent = (rate: number): string => `${String(Math.round(rate * 100))}%`
 
 const returns = (count: number): string => (count === 1 ? '1 return' : `${String(count)} returns`)
 
-function Tile ({ label, value, note }: { label: string; value: string; note: string }) {
+type TileProps = {
+  label: string
+  value: string
+  note: string
+  to: string
+}
+
+function Tile ({ label, value, note, to }: TileProps) {
   return (
-    <div className='dash-tile'>
-      <p className='dash-tile-label'>{label}</p>
-      <p className='dash-tile-value'>{value}</p>
-      <p className='dash-tile-note'>{note}</p>
-    </div>
+    <Link className='dash-tile dash-tile-action' to={to}>
+      <span className='dash-tile-label'>{label}</span>
+      <span className='dash-tile-value'>{value}</span>
+      <span className='dash-tile-note'>{note}</span>
+    </Link>
   )
 }
 
@@ -63,25 +75,26 @@ export function Dashboard () {
               label='Recovered'
               value={formatAmount(summary.recoveredCents, 'EUR')}
               note={`${returns(summary.refunded)} refunded`}
+              to={listing({ status: 'refunded', archived: 'include' })}
             />
             <Tile
               label='Lost'
               value={formatAmount(summary.lostCents, 'EUR')}
               note={`${returns(summary.decided - summary.refunded)} refused`}
+              to={listing({ status: 'rejected', archived: 'include' })}
             />
             <Tile
               label='Still in play'
               value={formatAmount(summary.awaitingCents, 'EUR')}
               note={`${returns(summary.open)} not decided yet`}
+              to={listing({ status: 'open', archived: 'include' })}
             />
-
-            <Link className='dash-tile dash-tile-action' to='/shipments?attention=1'>
-              <span className='dash-tile-label'>Needs attention</span>
-              <span className='dash-tile-value'>{summary.attention}</span>
-              <span className='dash-tile-note'>
-                {summary.attention === 0 ? 'Nothing to chase today' : 'Open the list'}
-              </span>
-            </Link>
+            <Tile
+              label='Needs attention'
+              value={String(summary.attention)}
+              note={summary.attention === 0 ? 'Nothing to chase today' : 'Open the list'}
+              to={listing({ attention: true })}
+            />
           </div>
 
           <StoreSpeed stores={summary.byStore} measured={summary.measuredDecisions} />

@@ -81,14 +81,41 @@ describe('the money', () => {
   })
 })
 
-describe('what needs doing', () => {
-  it('links straight into the filtered list rather than only counting', async () => {
+describe('every tile opens the returns it counted', () => {
+  it.each([
+    ['Recovered', '/shipments?status=refunded&archived=include'],
+    ['Lost', '/shipments?status=rejected&archived=include'],
+    ['Still in play', '/shipments?status=open&archived=include'],
+    ['Needs attention', '/shipments?attention=1'],
+  ])('sends %s to %s', async (label, href) => {
     renderPage()
 
-    const link = await screen.findByRole('link', { name: /needs attention/i })
+    expect(await screen.findByRole('link', { name: new RegExp(label, 'i') }))
+      .toHaveAttribute('href', href)
+  })
 
-    expect(link).toHaveAttribute('href', '/shipments?attention=1')
-    expect(link).toHaveTextContent('11')
+  it('keeps the archived returns in the three historical tiles, which counted them', async () => {
+    renderPage()
+
+    for (const label of ['Recovered', 'Lost', 'Still in play']) {
+      expect(await screen.findByRole('link', { name: new RegExp(label, 'i') }))
+        .toHaveAttribute('href', expect.stringContaining('archived=include'))
+    }
+  })
+
+  it('leaves them out of the attention tile, which never counted them', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('link', { name: /needs attention/i }))
+      .toHaveAttribute('href', expect.not.stringContaining('archived'))
+  })
+})
+
+describe('what needs doing', () => {
+  it('carries the count into the link, so the tile is not a bare label', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('link', { name: /needs attention/i })).toHaveTextContent('11')
   })
 
   it('says there is nothing to do rather than inviting a pointless click', async () => {

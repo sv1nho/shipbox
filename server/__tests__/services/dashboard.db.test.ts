@@ -211,6 +211,51 @@ describe('what needs attention', () => {
   })
 })
 
+describe('every figure can be reproduced by the list the tile links to', () => {
+  const aSpread = async () => {
+    await shipments.create(OWNER, input({ amountCents: 5000, status: 'refunded', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input({ amountCents: 900, status: 'rejected', decisionDate: '2026-02-01' }))
+    await shipments.create(OWNER, input({ amountCents: 300 }))
+
+    const archived = await shipments.create(OWNER, input({
+      amountCents: 700,
+      status: 'refunded',
+      decisionDate: '2026-02-01',
+    }))
+    await shipments.archive(OWNER, archived.id)
+  }
+
+  it.each([
+    ['refunded', 'refunded'],
+    ['rejected', 'rejected'],
+    ['open', 'open'],
+  ] as const)('counts %s as the list filtered on %s does', async (_label, status) => {
+    await aSpread()
+
+    const result = await summary(OWNER)
+    const listed = await shipments.list(OWNER, { status, archived: 'include' })
+
+    const expected =
+      status === 'refunded'
+        ? result.refunded
+        : status === 'rejected'
+          ? result.decided - result.refunded
+          : result.open
+
+    expect(listed.total).toBe(expected)
+  })
+
+  it('would miss the archived ones if the link forgot to ask for them', async () => {
+    await aSpread()
+
+    const result = await summary(OWNER)
+    const withoutArchived = await shipments.list(OWNER, { status: 'refunded' })
+
+    expect(result.refunded).toBe(2)
+    expect(withoutArchived.total).toBe(1)
+  })
+})
+
 describe('what belongs to whom', () => {
   it('counts nothing from another account', async () => {
     await shipments.create(OTHER, input({ status: 'refunded', decisionDate: '2026-02-01' }))
