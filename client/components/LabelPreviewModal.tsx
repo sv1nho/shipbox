@@ -1,9 +1,9 @@
-interface LabelPreviewModalProps {
-  pdfUrl: string;
-  maskedTracking: string | null;
-  onClose: () => void;
-  onDownload: () => void;
-  onTrack: () => void;
+type LabelPreviewModalProps = {
+  pdfUrl: string
+  maskedTracking: string
+  onClose: () => void
+  onDownload: () => void
+  onTrack: () => void
 }
 
 export function LabelPreviewModal ({
@@ -49,12 +49,10 @@ export function LabelPreviewModal ({
             src={pdfUrl}
             height='480'
           />
-          {maskedTracking && (
-            <p className='mt-3 text-sm text-zinc-500'>
-              <span className='font-medium text-zinc-700'>Tracking:</span>{' '}
-              {maskedTracking}
-            </p>
-          )}
+          <p className='mt-3 text-sm text-zinc-500'>
+            <span className='font-medium text-zinc-700'>Tracking:</span>{' '}
+            {maskedTracking}
+          </p>
         </div>
         <div className='modal-footer'>
           <button onClick={onClose} className='btn btn-ghost'>

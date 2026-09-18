@@ -18,10 +18,14 @@ import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
 import { fakerFR_BE, fakerNL_BE, fakerNL } from '@faker-js/faker'
 
+type Preview = {
+  blob: Blob
+  url: string
+  maskedTracking: string
+}
+
 const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
 const randomFaker = () => fakers[Math.floor(Math.random() * fakers.length)]
-
-// ── Shared sub-components ────────────────────────────────────────────────────
 
 const SectionCard = ({
   title,
@@ -53,8 +57,6 @@ const Field = ({
     {error && <p className='field-error'>{error}</p>}
   </div>
 )
-
-// ── PartyFieldset ────────────────────────────────────────────────────────────
 
 interface PartyFieldsetProps {
   prefix: 'sender' | 'recipient';
@@ -196,8 +198,6 @@ const PartyFieldset = ({
   )
 }
 
-// ── Form ─────────────────────────────────────────────────────────────────────
-
 export function Form () {
   const {
     register,
@@ -216,11 +216,8 @@ export function Form () {
     },
   })
 
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null)
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [preview, setPreview] = useState<Preview | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [maskedTracking, setMaskedTracking] = useState<string | null>(null)
   const [labelPayload, setLabelPayload] = useState<LabelPayload | null>(null)
   const [offerOpen, setOfferOpen] = useState(false)
 
@@ -240,35 +237,24 @@ export function Form () {
     try {
       setError(null)
       const svgTemplate = await loadSvgTemplate(data.carrier)
-      const { svg, maskedTracking: masked } = buildLabelSvg(data, svgTemplate)
-      setMaskedTracking(masked)
-
+      const { svg, maskedTracking } = buildLabelSvg(data, svgTemplate)
       const blob = await svgToPdf(svg)
+
       setLabelPayload(data)
-      setPdfBlob(blob)
-      setPdfUrl(URL.createObjectURL(blob))
-      setIsPreviewOpen(true)
+      setPreview({ blob, url: URL.createObjectURL(blob), maskedTracking })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     }
   }
 
-  const handleClose = () => {
-    setIsPreviewOpen(false)
-    if (pdfUrl) URL.revokeObjectURL(pdfUrl)
-    setPdfUrl(null)
-    setPdfBlob(null)
+  const closePreview = (open: Preview) => {
+    URL.revokeObjectURL(open.url)
+    setPreview(null)
   }
 
-  const openOffer = () => {
-    handleClose()
+  const offerTracking = (open: Preview) => {
+    closePreview(open)
     setOfferOpen(true)
-  }
-
-  const handleDownload = () => {
-    if (!pdfBlob) return
-    downloadPdf(pdfBlob, 'label.pdf')
-    openOffer()
   }
 
   return (
@@ -348,13 +334,16 @@ export function Form () {
         </div>
       </form>
 
-      {isPreviewOpen && pdfUrl && (
+      {preview !== null && (
         <LabelPreviewModal
-          pdfUrl={pdfUrl}
-          maskedTracking={maskedTracking}
-          onClose={handleClose}
-          onDownload={handleDownload}
-          onTrack={openOffer}
+          pdfUrl={preview.url}
+          maskedTracking={preview.maskedTracking}
+          onClose={() => { closePreview(preview) }}
+          onDownload={() => {
+            downloadPdf(preview.blob, 'label.pdf')
+            offerTracking(preview)
+          }}
+          onTrack={() => { offerTracking(preview) }}
         />
       )}
 
