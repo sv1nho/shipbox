@@ -180,10 +180,12 @@ export function computeDerived (shipment: ShipmentState, today: IsoDate): Derive
       ? null
       : diffDays(shipment.receivedDate, today)
 
+  const decisionStartedFrom = shipment.receivedDate ?? shipment.dropoffDate
+
   const decisionDelayDays =
-    shipment.receivedDate === null || shipment.decisionDate === null
+    decisionStartedFrom === null || shipment.decisionDate === null
       ? null
-      : diffDays(shipment.receivedDate, shipment.decisionDate)
+      : diffDays(decisionStartedFrom, shipment.decisionDate)
 
   const totalDelayDays =
     shipment.dropoffDate === null || shipment.decisionDate === null

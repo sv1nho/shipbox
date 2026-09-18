@@ -293,6 +293,23 @@ html, body {
     box-shadow: 0 0 0 3px var(--color-primary-ring);
   }
 
+  .form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .form-check input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+
   .form-label {
     display: flex;
     align-items: center;

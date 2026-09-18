@@ -351,7 +351,19 @@ describe('computeDerived', () => {
   })
 
   describe('missing sources produce null, never a substituted value', () => {
-    it('has no decision delay without a reception date', () => {
+    it('falls back to the drop-off when the parcel never reached the store', () => {
+      expect(derived({ dropoffDate: '2026-06-01', decisionDate: '2026-06-08' }).decisionDelayDays)
+        .toBe(7)
+    })
+
+    it('prefers the reception over the drop-off whenever both are known', () => {
+      expect(
+        derived({ dropoffDate: '2026-06-01', receivedDate: '2026-06-04', decisionDate: '2026-06-08' })
+          .decisionDelayDays
+      ).toBe(4)
+    })
+
+    it('has no decision delay when neither a reception nor a drop-off is known', () => {
       expect(derived({ decisionDate: '2026-06-08' }).decisionDelayDays).toBeNull()
     })
 

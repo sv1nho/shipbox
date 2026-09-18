@@ -125,7 +125,10 @@ export function Shipments () {
         await applyTransition(active.shipment.id, 'receive', result.receivedDate)
       }
 
-      await applyTransition(active.shipment.id, result.action, result.date, result.rejectionReason)
+      await applyTransition(active.shipment.id, result.action, result.date, {
+        rejectionReason: result.rejectionReason,
+        neverReceived: result.neverReceived,
+      })
     })
 
     if (done) setPrompt(null)

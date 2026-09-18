@@ -90,6 +90,7 @@ export const createShipmentSchema = z
     requestedDate: isoDateSchema.optional(),
     dropoffDate: isoDateSchema.nullish(),
     receivedDate: isoDateSchema.nullish(),
+    neverReceived: z.boolean().optional(),
     decisionDate: isoDateSchema.nullish(),
     orderNumber: orderNumberSchema,
     note: noteSchema,
@@ -124,11 +125,15 @@ export const dropOffSchema = z.object({ dropoffDate: isoDateSchema })
 
 export const receiveSchema = z.object({ receivedDate: isoDateSchema })
 
-export const refundSchema = z.object({ decisionDate: isoDateSchema })
+export const refundSchema = z.object({
+  decisionDate: isoDateSchema,
+  neverReceived: z.boolean().optional(),
+})
 
 export const rejectSchema = z.object({
   decisionDate: isoDateSchema,
   rejectionReason: z.string().max(2000).optional(),
+  neverReceived: z.boolean().optional(),
 })
 
 export const listQuerySchema = z.object({

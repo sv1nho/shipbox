@@ -44,19 +44,26 @@ export const updateShipment = (id: string, patch: UpdateShipmentInput): Promise<
 export const importShipments = (shipments: Record<string, unknown>[]): Promise<ImportOutcome> =>
   request<ImportOutcome>(`${BASE}/import`, { method: 'POST', body: { shipments } })
 
+type TransitionExtras = {
+  rejectionReason?: string
+  neverReceived?: boolean
+}
+
 export const applyTransition = (
   id: string,
   action: TransitionAction,
   date: IsoDate,
-  rejectionReason?: string
+  extras: TransitionExtras = {}
 ): Promise<ShipmentDto> => {
   const { dateField, path } = TRANSITIONS[action]
 
   return request<ShipmentDto>(`${BASE}/${id}/${path}`, {
     method: 'POST',
-    body: rejectionReason === undefined
-      ? { [dateField]: date }
-      : { [dateField]: date, rejectionReason },
+    body: {
+      [dateField]: date,
+      ...(extras.rejectionReason === undefined ? {} : { rejectionReason: extras.rejectionReason }),
+      ...(extras.neverReceived === true ? { neverReceived: true } : {}),
+    },
   })
 }
 

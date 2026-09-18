@@ -94,6 +94,7 @@ model Shipment {
   requestedDate       DateTime  @map("requested_date") @db.Date
   dropoffDate         DateTime? @map("dropoff_date")  @db.Date
   receivedDate        DateTime? @map("received_date") @db.Date
+  neverReceived       Boolean   @default(false) @map("never_received")
   decisionDate        DateTime? @map("decision_date") @db.Date
 
   orderNumber         String    @map("order_number")

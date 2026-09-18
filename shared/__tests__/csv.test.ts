@@ -16,6 +16,7 @@ const shipment = (overrides: Partial<ShipmentDto> = {}): ShipmentDto => ({
   requestedDate: '2026-06-01',
   dropoffDate: null,
   receivedDate: null,
+  neverReceived: false,
   decisionDate: null,
   orderNumber: 'ZAL-2026-0001',
   note: null,

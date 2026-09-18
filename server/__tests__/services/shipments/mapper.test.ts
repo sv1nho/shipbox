@@ -18,6 +18,7 @@ const row = (overrides: Partial<ShipmentRow> = {}): ShipmentRow => ({
   requestedDate: new Date('2026-06-01T00:00:00.000Z'),
   dropoffDate: null,
   receivedDate: null,
+  neverReceived: false,
   decisionDate: null,
   orderNumber: 'ZAL-2026-0001',
   note: null,

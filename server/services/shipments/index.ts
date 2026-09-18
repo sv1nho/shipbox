@@ -66,6 +66,7 @@ type ShipmentWrite = {
   requestedDate?: Date
   dropoffDate?: Date | null
   receivedDate?: Date | null
+  neverReceived?: boolean
   decisionDate?: Date | null
   archivedAt?: Date | null
 }
@@ -234,6 +235,7 @@ export async function create (userId: string, input: CreateShipmentInput): Promi
     orderNumber: input.orderNumber,
     note: input.note ?? null,
     rejectionReason,
+    neverReceived: dates.receivedDate === null && input.neverReceived === true,
   }
 
   try {
@@ -302,6 +304,7 @@ export async function update (
       dropoffDate: asDate(dates.dropoffDate),
       receivedDate: asDate(dates.receivedDate),
       decisionDate: asDate(dates.decisionDate),
+      ...(dates.receivedDate === null ? {} : { neverReceived: false }),
     },
     now
   )
@@ -326,19 +329,29 @@ export async function correctIdentity (
   }
 }
 
+type TransitionExtras = {
+  rejectionReason?: string
+  neverReceived?: boolean
+}
+
 export async function transition (
   userId: string,
   id: string,
   action: TransitionAction,
   date: IsoDate,
-  rejectionReason?: string
+  extras: TransitionExtras = {}
 ): Promise<ShipmentDto> {
   const row = await editableRow(userId, id)
   const now = today()
+  const next = planTransition(toShipmentState(row), action, date, now, extras.rejectionReason)
 
   return writeOwned(
     row.id,
-    stateWrite(planTransition(toShipmentState(row), action, date, now, rejectionReason)),
+    {
+      ...stateWrite(next),
+      ...(action === 'receive' ? { neverReceived: false } : {}),
+      ...(extras.neverReceived === undefined ? {} : { neverReceived: extras.neverReceived }),
+    },
     now
   )
 }

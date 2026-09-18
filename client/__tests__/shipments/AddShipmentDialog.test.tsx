@@ -292,6 +292,67 @@ describe('what it sends', () => {
   })
 })
 
+describe('a parcel the store never received', () => {
+  const asksLoss = () => screen.queryByLabelText(/never received it/i)
+
+  it.each(['pending', 'dropped_off', 'received'] as const)(
+    'offers nothing to declare while the return is still %s',
+    async (status) => {
+      renderDialog()
+
+      await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), status)
+
+      expect(asksLoss()).not.toBeInTheDocument()
+    }
+  )
+
+  it('stops asking for a reception once the loss is declared', async () => {
+    renderDialog()
+
+    await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'refunded')
+
+    expect(screen.getByLabelText('Received on')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByLabelText(/never received it/i))
+
+    expect(screen.queryByLabelText('Received on')).not.toBeInTheDocument()
+  })
+
+  it('sends the loss and no reception date at all', async () => {
+    const { onSubmit } = renderDialog()
+
+    await fillTheRequired()
+    await userEvent.clear(screen.getByLabelText('Return requested on'))
+    await userEvent.type(screen.getByLabelText('Return requested on'), '2026-06-01')
+    await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'refunded')
+    await userEvent.type(screen.getByLabelText('Dropped off on'), '2026-06-03')
+    await userEvent.click(screen.getByLabelText(/never received it/i))
+    await userEvent.type(screen.getByLabelText('Decided on'), '2026-06-19')
+    await submit()
+
+    const sent = vi.mocked(onSubmit).mock.calls[0][0]
+
+    expect(sent.neverReceived).toBe(true)
+    expect(sent).not.toHaveProperty('receivedDate')
+  })
+
+  it('drops a reception typed before the loss was declared', async () => {
+    const { onSubmit } = renderDialog()
+
+    await fillTheRequired()
+    await userEvent.clear(screen.getByLabelText('Return requested on'))
+    await userEvent.type(screen.getByLabelText('Return requested on'), '2026-06-01')
+    await userEvent.selectOptions(screen.getByLabelText(/where is it already/i), 'refunded')
+    await userEvent.type(screen.getByLabelText('Dropped off on'), '2026-06-03')
+    await userEvent.type(screen.getByLabelText('Received on'), '2026-06-05')
+    await userEvent.click(screen.getByLabelText(/never received it/i))
+    await userEvent.type(screen.getByLabelText('Decided on'), '2026-06-19')
+    await submit()
+
+    expect(vi.mocked(onSubmit).mock.calls[0][0]).not.toHaveProperty('receivedDate')
+  })
+})
+
 describe('the store suggestions', () => {
   it('fills the name of the store that was picked', async () => {
     vi.mocked(searchStores).mockResolvedValue([

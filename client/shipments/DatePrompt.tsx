@@ -9,6 +9,7 @@ export type PromptResult = {
   action: TransitionAction
   date: IsoDate
   receivedDate?: IsoDate
+  neverReceived?: boolean
   rejectionReason?: string
 }
 
@@ -29,13 +30,15 @@ export function DatePrompt (
   const [received, setReceived] = useState(() => today())
   const [date, setDate] = useState(() => today())
   const [reason, setReason] = useState('')
+  const [lost, setLost] = useState(false)
 
   const { label } = TRANSITIONS[action]
 
-  const receptionMissing = reception !== null && received === ''
-  const receptionTooEarly = reception !== null && !receptionMissing && received < reception.earliest
+  const asking = reception !== null && !lost
+  const receptionMissing = asking && received === ''
+  const receptionTooEarly = asking && !receptionMissing && received < reception.earliest
 
-  const floor = reception === null ? earliest : received
+  const floor = asking ? received : earliest
   const dateMissing = date === ''
   const tooEarly = !dateMissing && !receptionMissing && date < floor
 
@@ -70,26 +73,45 @@ export function DatePrompt (
 
         {reception !== null && (
           <>
-            <label className='form-label' htmlFor='reception-date'>
-              When did the store receive it?
+            {asking && (
+              <>
+                <label className='form-label' htmlFor='reception-date'>
+                  When did the store receive it?
+                </label>
+                <input
+                  id='reception-date'
+                  type='date'
+                  className='form-input'
+                  value={received}
+                  max={today()}
+                  min={reception.earliest}
+                  onChange={(event) => { setReceived(event.target.value) }}
+                />
+                <p className='field-hint'>
+                  Without it the waiting time of this store cannot be measured.
+                </p>
+
+                {receptionMissing && <p className='field-error'>Pick the day it was received.</p>}
+
+                {receptionTooEarly && (
+                  <p className='field-error'>This cannot be earlier than the drop-off.</p>
+                )}
+              </>
+            )}
+
+            <label className='form-check'>
+              <input
+                type='checkbox'
+                checked={lost}
+                onChange={(event) => { setLost(event.target.checked) }}
+              />
+              The store never received it
             </label>
-            <input
-              id='reception-date'
-              type='date'
-              className='form-input'
-              value={received}
-              max={today()}
-              min={reception.earliest}
-              onChange={(event) => { setReceived(event.target.value) }}
-            />
-            <p className='field-hint'>
-              Without it the waiting time of this store cannot be measured.
-            </p>
 
-            {receptionMissing && <p className='field-error'>Pick the day it was received.</p>}
-
-            {receptionTooEarly && (
-              <p className='field-error'>This cannot be earlier than the drop-off.</p>
+            {lost && (
+              <p className='field-hint'>
+                The wait will be counted from the drop-off instead of the reception.
+              </p>
             )}
           </>
         )}
@@ -142,7 +164,8 @@ export function DatePrompt (
             onConfirm({
               action,
               date,
-              ...(reception === null ? {} : { receivedDate: received }),
+              ...(asking ? { receivedDate: received } : {}),
+              ...(lost ? { neverReceived: true } : {}),
               ...(reason.trim() === '' ? {} : { rejectionReason: reason.trim() }),
             })
           }}

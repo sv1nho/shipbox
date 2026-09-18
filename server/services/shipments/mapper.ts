@@ -23,6 +23,7 @@ export type ShipmentRow = {
   requestedDate: Date
   dropoffDate: Date | null
   receivedDate: Date | null
+  neverReceived: boolean
   decisionDate: Date | null
   orderNumber: string
   note: string | null
@@ -82,6 +83,7 @@ export function toShipmentDto (row: ShipmentRow, today: IsoDate): ShipmentDto {
     requestedDate,
     dropoffDate,
     receivedDate,
+    neverReceived: row.neverReceived,
     decisionDate,
     orderNumber: row.orderNumber,
     note: row.note,

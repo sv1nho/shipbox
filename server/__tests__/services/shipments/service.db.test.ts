@@ -352,7 +352,7 @@ describe('transition and revert', () => {
 
   it('records a reason when refusing a return, without touching the note', async () => {
     const created = await shipments.create(OWNER, input({ note: 'Bought on sale' }))
-    const rejected = await shipments.transition(OWNER, created.id, 'reject', today(), 'Worn item')
+    const rejected = await shipments.transition(OWNER, created.id, 'reject', today(), { rejectionReason: 'Worn item' })
 
     expect(rejected.status).toBe('rejected')
     expect(rejected.rejectionReason).toBe('Worn item')
@@ -361,7 +361,7 @@ describe('transition and revert', () => {
 
   it('drops the reason once the refusal is undone', async () => {
     const created = await shipments.create(OWNER, input())
-    await shipments.transition(OWNER, created.id, 'reject', today(), 'Worn item')
+    await shipments.transition(OWNER, created.id, 'reject', today(), { rejectionReason: 'Worn item' })
 
     expect((await shipments.revert(OWNER, created.id)).rejectionReason).toBeNull()
   })
@@ -380,6 +380,80 @@ describe('transition and revert', () => {
     const created = await shipments.create(OWNER, input())
 
     expect(await codeOf(() => shipments.revert(OWNER, created.id))).toBe('ILLEGAL_TRANSITION')
+  })
+})
+
+describe('a parcel the store never received', () => {
+  it('records the loss and measures the wait from the drop-off instead', async () => {
+    const created = await shipments.create(OWNER, input({
+      status: 'refunded',
+      requestedDate: '2026-01-01',
+      dropoffDate: '2026-01-03',
+      decisionDate: '2026-01-19',
+      neverReceived: true,
+    }))
+
+    expect(created.neverReceived).toBe(true)
+    expect(created.receivedDate).toBeNull()
+    expect(created.decisionDelayDays).toBe(16)
+  })
+
+  it('ignores the claim when a reception date was given all the same', async () => {
+    const created = await shipments.create(OWNER, input({
+      status: 'received',
+      requestedDate: '2026-01-01',
+      dropoffDate: '2026-01-03',
+      receivedDate: '2026-01-06',
+      neverReceived: true,
+    }))
+
+    expect(created.neverReceived).toBe(false)
+  })
+
+  it('carries the loss through a decision recorded on a parcel in transit', async () => {
+    const dropped = await shipments.create(OWNER, input({
+      status: 'dropped_off',
+      requestedDate: '2026-01-01',
+      dropoffDate: '2026-01-03',
+    }))
+
+    const decided = await shipments.transition(OWNER, dropped.id, 'refund', '2026-01-19', {
+      neverReceived: true,
+    })
+
+    expect(decided.neverReceived).toBe(true)
+    expect(decided.decisionDelayDays).toBe(16)
+  })
+
+  it('takes the claim back as soon as a reception is recorded, the two cannot both hold', async () => {
+    const lost = await shipments.create(OWNER, input({
+      status: 'refunded',
+      requestedDate: '2026-01-01',
+      dropoffDate: '2026-01-03',
+      decisionDate: '2026-01-19',
+      neverReceived: true,
+    }))
+
+    await shipments.revert(OWNER, lost.id)
+    const received = await shipments.transition(OWNER, lost.id, 'receive', '2026-01-06')
+
+    expect(received.neverReceived).toBe(false)
+    expect(received.receivedDate).toBe('2026-01-06')
+  })
+
+  it('takes it back on an edit that fills the reception in, rather than failing', async () => {
+    const lost = await shipments.create(OWNER, input({
+      status: 'refunded',
+      requestedDate: '2026-01-01',
+      dropoffDate: '2026-01-03',
+      decisionDate: '2026-01-19',
+      neverReceived: true,
+    }))
+
+    const fixed = await shipments.update(OWNER, lost.id, { receivedDate: '2026-01-06' })
+
+    expect(fixed.neverReceived).toBe(false)
+    expect(fixed.decisionDelayDays).toBe(13)
   })
 })
 
@@ -658,7 +732,7 @@ describe('list', () => {
 
   it('leaves a decided return out of the open filter, refused as much as refunded', async () => {
     const rejected = await shipments.create(OWNER, input())
-    await shipments.transition(OWNER, rejected.id, 'reject', '2026-06-03', 'Worn shoes')
+    await shipments.transition(OWNER, rejected.id, 'reject', '2026-06-03', { rejectionReason: 'Worn shoes' })
 
     expect((await shipments.list(OWNER, { status: 'open' })).total).toBe(0)
   })

@@ -152,7 +152,11 @@ shipmentsRouter.post(
   '/:id/refund',
   handle(async (req, res) => {
     const body = parse(refundSchema, req.body, 'body')
-    res.json(await shipments.transition(userIdOf(req), idOf(req), 'refund', body.decisionDate))
+    res.json(
+      await shipments.transition(userIdOf(req), idOf(req), 'refund', body.decisionDate, {
+        neverReceived: body.neverReceived,
+      })
+    )
   })
 )
 
@@ -161,7 +165,10 @@ shipmentsRouter.post(
   handle(async (req, res) => {
     const body = parse(rejectSchema, req.body, 'body')
     res.json(
-      await shipments.transition(userIdOf(req), idOf(req), 'reject', body.decisionDate, body.rejectionReason)
+      await shipments.transition(userIdOf(req), idOf(req), 'reject', body.decisionDate, {
+        rejectionReason: body.rejectionReason,
+        neverReceived: body.neverReceived,
+      })
     )
   })
 )

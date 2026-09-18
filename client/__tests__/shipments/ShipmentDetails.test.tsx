@@ -107,7 +107,7 @@ describe('what it leaves out', () => {
   it('hides the delays the api could not derive', () => {
     renderDetails({ decisionDelayDays: null, totalDelayDays: null, daysSinceReceived: null })
 
-    expect(screen.queryByText('The store took')).not.toBeInTheDocument()
+    expect(screen.queryByText('Waited for the decision')).not.toBeInTheDocument()
     expect(screen.queryByText('The whole return took')).not.toBeInTheDocument()
     expect(screen.queryByText('Since the store received it')).not.toBeInTheDocument()
     expect(screen.queryByText('Since the drop-off')).not.toBeInTheDocument()
@@ -138,6 +138,18 @@ describe('what it leaves out', () => {
     expect(screen.queryByText('Refused because')).not.toBeInTheDocument()
   })
 
+  it('says the parcel never reached the store, rather than leaving the gap unexplained', () => {
+    renderDetails({ status: 'refunded', neverReceived: true, decisionDate: '2026-06-09' })
+
+    expect(valueOf('Reception')).toBe('Never reached the store')
+  })
+
+  it('says nothing about a reception that simply has not happened yet', () => {
+    renderDetails({ status: 'dropped_off', neverReceived: false, dropoffDate: '2026-06-03' })
+
+    expect(screen.queryByText('Reception')).not.toBeInTheDocument()
+  })
+
   it('mentions the archive only once the shipment is archived', () => {
     renderDetails({ archivedAt: null })
 
@@ -164,7 +176,7 @@ describe('the full history of a finished return', () => {
     expect(valueOf('Received')).toBe('05/06/2026')
     expect(valueOf('Decided')).toBe('09/06/2026')
     expect(valueOf('Since the drop-off')).toBe('6 days')
-    expect(valueOf('The store took')).toBe('2 days')
+    expect(valueOf('Waited for the decision')).toBe('2 days')
     expect(valueOf('The whole return took')).toBe('4 days')
     expect(valueOf('Note')).toBe('Refunded in full')
     expect(valueOf('Archived')).toBe('10/06/2026')

@@ -112,6 +112,10 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               </Field>
             ))}
 
+          {shipment.neverReceived && (
+            <Field label='Reception'>Never reached the store</Field>
+          )}
+
           {addedApart && (
             <Field label='Added to ShipBox'>{formatDate(zonedDate(shipment.createdAt))}</Field>
           )}
@@ -126,7 +130,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             </Field>
           )}
           {shipment.decisionDelayDays !== null && (
-            <Field label='The store took'>{days(shipment.decisionDelayDays)}</Field>
+            <Field label='Waited for the decision'>{days(shipment.decisionDelayDays)}</Field>
           )}
           {shipment.totalDelayDays !== null && (
             <Field label='The whole return took'>{days(shipment.totalDelayDays)}</Field>

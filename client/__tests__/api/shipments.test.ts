@@ -138,10 +138,25 @@ describe('applyTransition', () => {
 
   it('adds the refusal reason only when there is one', async () => {
     const mock = fetchMock()
-    await api.applyTransition('abc', 'reject', '2026-06-10', 'Worn item')
+    await api.applyTransition('abc', 'reject', '2026-06-10', { rejectionReason: 'Worn item' })
 
     expect(JSON.parse(calledWith(mock).init.body ?? '{}'))
       .toEqual({ decisionDate: '2026-06-10', rejectionReason: 'Worn item' })
+  })
+
+  it('carries the loss alongside the decision, in one request', async () => {
+    const mock = fetchMock()
+    await api.applyTransition('abc', 'refund', '2026-06-10', { neverReceived: true })
+
+    expect(JSON.parse(calledWith(mock).init.body ?? '{}'))
+      .toEqual({ decisionDate: '2026-06-10', neverReceived: true })
+  })
+
+  it('stays silent about a loss that was not declared', async () => {
+    const mock = fetchMock()
+    await api.applyTransition('abc', 'refund', '2026-06-10', { neverReceived: false })
+
+    expect(JSON.parse(calledWith(mock).init.body ?? '{}')).toEqual({ decisionDate: '2026-06-10' })
   })
 
   it('uses the url segment from the shared table, never a hand written one', () => {

@@ -61,6 +61,7 @@ type Draft = {
   status: ShipmentStatus
   dropoffDate: string
   receivedDate: string
+  neverReceived: boolean
   decisionDate: string
   rejectionReason: string
   note: string
@@ -78,12 +79,17 @@ const draftFrom = (prefill: Prefill): Draft => ({
   status: 'pending',
   dropoffDate: '',
   receivedDate: '',
+  neverReceived: false,
   decisionDate: '',
   rejectionReason: '',
   note: '',
 })
 
 const REQUIRES_RECEPTION: ShipmentStatus[] = ['received', 'refunded', 'rejected']
+
+const asksReception = (draft: Draft): boolean =>
+  REQUIRES_RECEPTION.includes(draft.status) &&
+  !(isDecisionStatus(draft.status) && draft.neverReceived)
 
 type Checked = {
   problems: Partial<Record<keyof Draft, string>>
@@ -121,7 +127,7 @@ export function check (draft: Draft, label?: LabelInput): Checked {
     ...(draft.status !== 'pending' && draft.dropoffDate === ''
       ? { dropoffDate: 'Pick the day you dropped the parcel off.' }
       : {}),
-    ...(REQUIRES_RECEPTION.includes(draft.status) && draft.receivedDate === ''
+    ...(asksReception(draft) && draft.receivedDate === ''
       ? { receivedDate: 'Pick the day the store received it.' }
       : {}),
     ...(isDecisionStatus(draft.status) && draft.decisionDate === ''
@@ -145,7 +151,10 @@ export function check (draft: Draft, label?: LabelInput): Checked {
       requestedDate: draft.requestedDate,
       ...(draft.status === 'pending' ? {} : { status: draft.status }),
       ...(draft.dropoffDate === '' ? {} : { dropoffDate: draft.dropoffDate }),
-      ...(draft.receivedDate === '' ? {} : { receivedDate: draft.receivedDate }),
+      ...(draft.receivedDate === '' || !asksReception(draft)
+        ? {}
+        : { receivedDate: draft.receivedDate }),
+      ...(isDecisionStatus(draft.status) && draft.neverReceived ? { neverReceived: true } : {}),
       ...(draft.decisionDate === '' ? {} : { decisionDate: draft.decisionDate }),
       ...(draft.status === 'rejected' && draft.rejectionReason.trim() !== ''
         ? { rejectionReason: draft.rejectionReason.trim() }
@@ -341,7 +350,7 @@ export function AddShipmentDialog (
               />
             </Field>
 
-            {REQUIRES_RECEPTION.includes(draft.status) && (
+            {asksReception(draft) && (
               <Field
                 label='Received on'
                 htmlFor='shipment-received'
@@ -359,6 +368,17 @@ export function AddShipmentDialog (
               </Field>
             )}
           </div>
+        )}
+
+        {isDecisionStatus(draft.status) && (
+          <label className='form-check'>
+            <input
+              type='checkbox'
+              checked={draft.neverReceived}
+              onChange={(event) => { set('neverReceived', event.target.checked) }}
+            />
+            The store never received it
+          </label>
         )}
 
         {isDecisionStatus(draft.status) && (

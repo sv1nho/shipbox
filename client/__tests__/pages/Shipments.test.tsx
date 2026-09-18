@@ -235,7 +235,7 @@ describe('recording a step', () => {
         '11111111-1111-4111-8111-111111111111',
         'drop_off',
         today(),
-        undefined
+        { rejectionReason: undefined, neverReceived: undefined }
       )
     })
     expect(listShipments).toHaveBeenCalledTimes(2)
@@ -342,7 +342,7 @@ describe('the other row actions', () => {
         '11111111-1111-4111-8111-111111111111',
         'refund',
         today(),
-        undefined
+        { rejectionReason: undefined, neverReceived: undefined }
       )
     })
   })
@@ -484,7 +484,33 @@ describe('a decision that skips the reception', () => {
       '11111111-1111-4111-8111-111111111111', 'receive', '2026-06-05',
     ])
     expect(vi.mocked(applyTransition).mock.calls[1]).toEqual([
-      '11111111-1111-4111-8111-111111111111', 'refund', today(), undefined,
+      '11111111-1111-4111-8111-111111111111', 'refund', today(),
+      { rejectionReason: undefined, neverReceived: undefined },
+    ])
+  })
+
+  it('skips the reception entirely once the parcel is declared lost', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'dropped_off', dropoffDate: '2026-06-03' })])
+    )
+    vi.mocked(applyTransition).mockResolvedValue(makeShipment({ status: 'refunded' }))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /more actions/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /record the decision directly/i }))
+
+    await userEvent.click(screen.getByLabelText(/never received it/i))
+
+    expect(screen.queryByLabelText(/when did the store receive it/i)).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    await waitFor(() => { expect(applyTransition).toHaveBeenCalledTimes(1) })
+
+    expect(vi.mocked(applyTransition).mock.calls[0]).toEqual([
+      '11111111-1111-4111-8111-111111111111', 'refund', today(),
+      { rejectionReason: undefined, neverReceived: true },
     ])
   })
 

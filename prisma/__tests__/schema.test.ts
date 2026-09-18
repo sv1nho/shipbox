@@ -146,6 +146,24 @@ describe('shipments constraints', () => {
     })
   })
 
+  describe('a parcel cannot be both received and never received', () => {
+    it('accepts a loss declared with no reception date', async () => {
+      await expect(insertRaw(valid({ never_received: true }))).resolves.toBe(1)
+    })
+
+    it('rejects a loss declared alongside a reception date', async () => {
+      await expect(
+        insertRaw(valid({ never_received: true, received_date: '2026-05-01' }))
+      ).rejects.toThrow()
+    })
+
+    it('rejects a loss declared on a shipment the status says was received', async () => {
+      await expect(
+        insertRaw(valid({ never_received: true, status: 'received', received_date: '2026-05-01' }))
+      ).rejects.toThrow()
+    })
+  })
+
   describe('chronological order', () => {
     it.each([
       ['a drop-off before the return was requested', { dropoff_date: '2026-03-01' }],

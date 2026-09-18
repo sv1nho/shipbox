@@ -30,6 +30,7 @@ export type ShipmentDto = {
   requestedDate: IsoDate
   dropoffDate: IsoDate | null
   receivedDate: IsoDate | null
+  neverReceived: boolean
   decisionDate: IsoDate | null
   orderNumber: string
   note: string | null
@@ -59,6 +60,7 @@ export type CreateShipmentInput = {
   requestedDate?: IsoDate
   dropoffDate?: IsoDate | null
   receivedDate?: IsoDate | null
+  neverReceived?: boolean
   decisionDate?: IsoDate | null
   note?: string | null
   rejectionReason?: string | null
