@@ -54,16 +54,15 @@ export default defineConfig(({ mode }) => {
       coverage: {
         reportsDirectory: 'coverage',
         include: [
-          'client/api/**/*.ts',
-          'client/shipments/**/*.{ts,tsx}',
-          'client/utils/**/*.ts',
-          'client/pages/Shipments.tsx',
+          'client/**/*.{ts,tsx}',
           'server/**/*.ts',
           'shared/**/*.ts',
-          // Add the label form, the layout and the auth pages once they have tests.
         ],
         exclude: [
           ...coverageConfigDefaults.exclude,
+          'client/main.tsx',
+          'client/auth/client.ts',
+          'client/types/**',
           'shared/label-payload.ts',
           'server/generated/**',
           'server/types/**',
