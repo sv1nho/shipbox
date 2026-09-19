@@ -1,6 +1,9 @@
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { signOut, useSession } from '../auth/client.js'
 
+const linkClass = ({ isActive }: { isActive: boolean }): string =>
+  isActive ? 'navbar-link navbar-link-active' : 'navbar-link'
+
 const initialOf = (name: string, email: string): string => {
   const source = name.trim() || email.trim()
   return source ? source.charAt(0).toUpperCase() : '?'
@@ -46,8 +49,7 @@ export function Layout () {
           <div className='navbar-links'>
             <NavLink
               to='/form'
-              className={({ isActive }) =>
-                isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+              className={linkClass}
             >
               Form
             </NavLink>
@@ -56,15 +58,13 @@ export function Layout () {
                 <>
                   <NavLink
                     to='/shipments'
-                    className={({ isActive }) =>
-                      isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+                    className={linkClass}
                   >
                     Shipments
                   </NavLink>
                   <NavLink
                     to='/dashboard'
-                    className={({ isActive }) =>
-                      isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+                    className={linkClass}
                   >
                     Dashboard
                   </NavLink>
@@ -88,8 +88,7 @@ export function Layout () {
               : (
                 <NavLink
                   to='/login'
-                  className={({ isActive }) =>
-                    isActive ? 'navbar-link navbar-link-active' : 'navbar-link'}
+                  className={linkClass}
                 >
                   Sign in
                 </NavLink>
