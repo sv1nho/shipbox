@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router/dom'
 import { createBrowserRouter } from 'react-router'
+import type { RouteObject } from 'react-router'
 
 import { Dashboard } from './pages/Dashboard'
 import { Form } from './pages/Form'
@@ -9,7 +10,7 @@ import { Login } from './pages/Login'
 import { Shipments } from './pages/Shipments'
 import { RequireAuth } from './auth/RequireAuth'
 
-const router = createBrowserRouter([
+export const routes: RouteObject[] = [
   {
     element: <Layout />,
     children: [
@@ -40,7 +41,9 @@ const router = createBrowserRouter([
       },
     ],
   },
-])
+]
+
+const router = createBrowserRouter(routes)
 
 export function App () {
   return <RouterProvider router={router} />
