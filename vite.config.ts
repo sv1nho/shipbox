@@ -60,6 +60,7 @@ export default defineConfig(({ mode }) => {
         ],
         exclude: [
           ...coverageConfigDefaults.exclude,
+          '**/__tests__/**',
           'client/main.tsx',
           'client/auth/client.ts',
           'client/types/**',
