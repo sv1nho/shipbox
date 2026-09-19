@@ -73,8 +73,6 @@ export default defineConfig(({ mode }) => {
           'server/services/shipments/types.ts',
           'server/env.ts',
           'server/auth/auth.ts',
-          // Drop this entry once Supertest covers the routes.
-          'server/app.ts',
         ],
       },
     },
