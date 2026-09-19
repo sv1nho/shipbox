@@ -4,6 +4,7 @@ import { createApp } from '../../app.js'
 import { prisma } from '../../prisma.js'
 import { bodyOf } from './http.js'
 import type { ApiError } from './http.js'
+import { REGISTERED } from '../registered-routes.js'
 
 const app = createApp()
 
@@ -13,27 +14,20 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('every shipment route without a session', () => {
-  it.each([
-    ['GET', '/api/shipments'],
-    ['POST', '/api/shipments'],
-    ['GET', '/api/shipments/exists?carrier=bpost&trackingNumber=323200000000000000000001'],
-    ['GET', '/api/shipments/stores'],
-    ['GET', '/api/shipments/export'],
-    ['GET', `/api/shipments/${SOME_ID}`],
-    ['GET', `/api/shipments/${SOME_ID}/label`],
-    ['PATCH', `/api/shipments/${SOME_ID}`],
-    ['POST', `/api/shipments/${SOME_ID}/correct-identity`],
-    ['POST', `/api/shipments/${SOME_ID}/drop-off`],
-    ['POST', `/api/shipments/${SOME_ID}/receive`],
-    ['POST', `/api/shipments/${SOME_ID}/refund`],
-    ['POST', `/api/shipments/${SOME_ID}/reject`],
-    ['POST', `/api/shipments/${SOME_ID}/revert`],
-    ['POST', `/api/shipments/${SOME_ID}/archive`],
-    ['POST', `/api/shipments/${SOME_ID}/unarchive`],
-    ['DELETE', `/api/shipments/${SOME_ID}`],
-  ])('answers 401 to %s %s', async (method, path) => {
-    const response = await request(app)[method.toLowerCase() as 'get'](path).send({})
+describe('every private route without a session', () => {
+  const PRIVATE = REGISTERED.map(({ method, path }) => ({
+    method,
+    path: path.replace(/\{\w+\}/g, SOME_ID),
+  }))
+
+  it('reaches every router mounted, not only the shipments', () => {
+    expect(PRIVATE.map(({ path }) => path)).toEqual(
+      expect.arrayContaining(['/api/stores', '/api/dashboard', `/api/shipments/${SOME_ID}/chase`])
+    )
+  })
+
+  it.each(PRIVATE)('answers 401 to $method $path', async ({ method, path }) => {
+    const response = await request(app)[method as 'get'](path).send({})
 
     expect(response.status).toBe(401)
     expect(response.body).toEqual({

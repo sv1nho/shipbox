@@ -1,42 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { openApiDocument } from '../openapi.js'
-import { shipmentsRouter } from '../routes/shipments.js'
-import { storesRouter } from '../routes/stores.js'
-import { dashboardRouter } from '../routes/dashboard.js'
 import { createApp } from '../app.js'
-
-type Layer = { route?: { path: string; methods: Record<string, boolean> } }
-
-const routesOf = (router: { stack: unknown[] }, base: string) =>
-  (router.stack as Layer[]).flatMap(({ route }) =>
-    route === undefined
-      ? []
-      : [
-          {
-            path: `${base}${route.path === '/' ? '' : route.path}`.replace(/:(\w+)/g, '{$1}'),
-            method: Object.keys(route.methods)[0],
-          },
-        ]
-  )
-
-const ROUTERS = [
-  { router: shipmentsRouter, base: '/api/shipments' },
-  { router: storesRouter, base: '/api/stores' },
-  { router: dashboardRouter, base: '/api/dashboard' },
-]
-
-const registered = ROUTERS.flatMap(({ router, base }) => routesOf(router, base))
+import { REGISTERED, ROUTERS } from './registered-routes.js'
 
 const documented = openApiDocument.paths as Record<string, Record<string, unknown>>
 
 describe('the document describes the api that actually exists', () => {
-  it.each(registered)('documents $method $path', ({ path, method }) => {
+  it.each(REGISTERED)('documents $method $path', ({ path, method }) => {
     expect(documented[path]).toBeDefined()
     expect(documented[path][method]).toBeDefined()
   })
 
   it('documents nothing that is not routed', () => {
-    const routed = new Set(registered.map(({ path, method }) => `${method} ${path}`))
+    const routed = new Set(REGISTERED.map(({ path, method }) => `${method} ${path}`))
 
     for (const [path, operations] of Object.entries(documented)) {
       for (const method of Object.keys(operations)) {
@@ -54,14 +30,14 @@ describe('the document describes the api that actually exists', () => {
   })
 
   it('covers every registered route', () => {
-    expect(registered.length).toBeGreaterThan(0)
+    expect(REGISTERED.length).toBeGreaterThan(0)
 
     const documentedCount = Object.values(documented).reduce(
       (total, operations) => total + Object.keys(operations).length,
       0
     )
 
-    expect(documentedCount).toBe(registered.length)
+    expect(documentedCount).toBe(REGISTERED.length)
   })
 })
 
