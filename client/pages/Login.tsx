@@ -4,7 +4,7 @@ import { signIn, useSession } from '../auth/client.js'
 import { SOCIAL_PROVIDERS } from '../auth/providers.js'
 import { isSocialProviderId } from '../../shared/auth-providers.js'
 import type { SocialProviderId } from '../../shared/auth-providers.js'
-import { SessionPending } from '../auth/SessionPending.js'
+import { PendingNote } from '../components/PendingNote.js'
 import { Spinner } from '../components/Spinner.js'
 
 const DEFAULT_REDIRECT = '/shipments'
@@ -35,7 +35,7 @@ export function Login () {
   }, [])
 
   if (isPending) {
-    return <SessionPending label='Checking your session…' />
+    return <PendingNote label='Checking your session…' />
   }
 
   if (session) {
@@ -75,7 +75,7 @@ export function Login () {
 
         {error && <div className='alert-error'>{error}</div>}
 
-        {providers === null && <SessionPending label='Loading sign-in options…' />}
+        {providers === null && <PendingNote label='Loading sign-in options…' />}
 
         {providers !== null && providers.length === 0 && (
           <div className='alert-error'>
