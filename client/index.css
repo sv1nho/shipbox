@@ -1149,6 +1149,11 @@ html, body {
     color: #ffffff;
   }
 
+  .icon-btn-random {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
   .icon-btn-info {
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;

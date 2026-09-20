@@ -105,10 +105,14 @@ const PartyFieldset = ({
     </div>
   )
 
+  const fillLabel = `Fill ${prefix} with random data`
+
   const generateBtn = (
     <button
       type='button'
-      className='btn btn-ghost text-xs px-2.5 py-1'
+      className='icon-btn icon-btn-random'
+      aria-label={fillLabel}
+      title={fillLabel}
       onClick={() => {
         const faker = randomFaker()
         if (isCompany) {
@@ -119,7 +123,21 @@ const PartyFieldset = ({
         }
       }}
     >
-      Fill with random data
+      <svg viewBox='0 0 16 16' width='14' height='14' aria-hidden='true'>
+        <rect
+          x='2.25'
+          y='2.25'
+          width='11.5'
+          height='11.5'
+          rx='2.5'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='1.3'
+        />
+        <circle cx='5.5' cy='5.5' r='1.15' fill='currentColor' />
+        <circle cx='8' cy='8' r='1.15' fill='currentColor' />
+        <circle cx='10.5' cy='10.5' r='1.15' fill='currentColor' />
+      </svg>
     </button>
   )
 

@@ -118,11 +118,18 @@ describe('a company instead of a person', () => {
 })
 
 describe('filling with random data', () => {
+  it('explains the dice on hover, since it carries no wording', () => {
+    renderForm()
+
+    expect(section('Recipient').getByRole('button', { name: /random data/i }))
+      .toHaveAttribute('title', 'Fill recipient with random data')
+  })
+
   it('invents a first and a last name for a person', async () => {
     renderForm()
     const sender = section('Sender')
 
-    await userEvent.click(sender.getByRole('button', { name: /fill with random data/i }))
+    await userEvent.click(sender.getByRole('button', { name: /random data/i }))
 
     expect(sender.getByPlaceholderText('First name')).not.toHaveValue('')
     expect(sender.getByPlaceholderText('Last name')).not.toHaveValue('')
@@ -133,7 +140,7 @@ describe('filling with random data', () => {
     const recipient = section('Recipient')
 
     await userEvent.click(recipient.getByRole('button', { name: 'Company' }))
-    await userEvent.click(recipient.getByRole('button', { name: /fill with random data/i }))
+    await userEvent.click(recipient.getByRole('button', { name: /random data/i }))
 
     expect(recipient.getByPlaceholderText('Company name')).not.toHaveValue('')
   })
