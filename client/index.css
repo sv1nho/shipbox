@@ -282,6 +282,7 @@ html, body {
   }
 
   .card-title {
+    min-width: 4.5rem;
     font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
