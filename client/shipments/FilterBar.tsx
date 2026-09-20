@@ -228,8 +228,8 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
                   search: undefined,
                   attention: undefined,
                   ...DEFAULT_FILTERS,
-                  sort: filters.sort,
-                  direction: filters.direction,
+                  sort: filters.sort ?? DEFAULT_FILTERS.sort,
+                  direction: filters.direction ?? DEFAULT_FILTERS.direction,
                 })
               }}
             >
