@@ -33,7 +33,10 @@ export function StoreTable ({ stores, measured }: StoreTableProps) {
             <div className='dash-rows'>
               <div className='dash-row dash-row-head' aria-hidden='true'>
                 <span>Store</span>
-                <span>Days to decide</span>
+                <span>
+                  <span className='dash-head-full'>Days to decide</span>
+                  <span className='dash-head-short'>Days</span>
+                </span>
                 <span>Refunded</span>
               </div>
 

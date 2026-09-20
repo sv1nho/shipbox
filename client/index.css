@@ -1003,6 +1003,8 @@ html, body {
 
   .dash-row-head > :last-child { text-align: right; }
 
+  .dash-head-short { display: none; }
+
   .dash-cell-label {
     display: flex;
     flex-direction: column;
@@ -1056,6 +1058,23 @@ html, body {
 
   @media (max-width: 34rem) {
     .dash-row { grid-template-columns: 6rem 1fr minmax(3.5rem, max-content); }
+  }
+
+  @media (max-width: 30rem) {
+    .dash-row {
+      grid-template-columns: 1fr max-content max-content;
+      gap: 0.625rem;
+    }
+
+    .dash-row-head > :not(:first-child) { text-align: right; }
+
+    .dash-head-full { display: none; }
+
+    .dash-head-short { display: inline; }
+
+    .dash-bar-track { display: none; }
+
+    .dash-cell-days { display: block; text-align: right; }
   }
 
   .shipment-list {
