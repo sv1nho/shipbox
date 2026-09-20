@@ -74,7 +74,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
 
         <dl className='detail-list'>
           <Field label='Tracking number'>
-            <a href={shipment.trackingUrl} target='_blank' rel='noreferrer'>
+            <a className='link' href={shipment.trackingUrl} target='_blank' rel='noreferrer'>
               {shipment.trackingNumber}
             </a>
           </Field>
@@ -82,7 +82,9 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
           <Field label='Store'>{shipment.store}</Field>
           {shipment.storeSupportEmail !== null && (
             <Field label='Customer service'>
-              <a href={`mailto:${shipment.storeSupportEmail}`}>{shipment.storeSupportEmail}</a>
+              <a className='link' href={`mailto:${shipment.storeSupportEmail}`}>
+                {shipment.storeSupportEmail}
+              </a>
             </Field>
           )}
           <Field label='Order number'>{shipment.orderNumber}</Field>

@@ -65,6 +65,7 @@ describe('what the row shows', () => {
     expect(link).toHaveAttribute('href', expect.stringContaining('track.bpost.cloud'))
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', expect.stringContaining('noreferrer'))
+    expect(link).toHaveAttribute('title', 'Track this parcel on bpost')
   })
 
   it.each(SHIPMENT_STATUSES)('names the %s status in words', (status) => {

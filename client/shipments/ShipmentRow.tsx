@@ -45,6 +45,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
         <a
           className='shipment-tracking'
           href={shipment.trackingUrl}
+          title={`Track this parcel on ${CARRIERS[shipment.carrier].label}`}
           target='_blank'
           rel='noreferrer'
         >
