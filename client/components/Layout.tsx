@@ -68,21 +68,6 @@ export function Layout () {
                   >
                     Dashboard
                   </NavLink>
-                  <div className='navbar-user'>
-                    <span className='navbar-avatar' aria-hidden='true'>
-                      {initialOf(session.user.name, session.user.email)}
-                    </span>
-                    <span className='navbar-user-name' title={session.user.email}>
-                      {session.user.name}
-                    </span>
-                    <button
-                      type='button'
-                      className='btn btn-ghost text-xs px-2.5 py-1'
-                      onClick={() => { void handleSignOut() }}
-                    >
-                      Sign out
-                    </button>
-                  </div>
                 </>
                 )
               : (
@@ -94,6 +79,23 @@ export function Layout () {
                 </NavLink>
                 ))}
           </div>
+          {!isPending && session !== null && (
+            <div className='navbar-user'>
+              <span className='navbar-avatar' aria-hidden='true'>
+                {initialOf(session.user.name, session.user.email)}
+              </span>
+              <span className='navbar-user-name' title={session.user.email}>
+                {session.user.name}
+              </span>
+              <button
+                type='button'
+                className='btn btn-ghost text-xs px-2.5 py-1'
+                onClick={() => { void handleSignOut() }}
+              >
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
       </nav>
       <main className='page-content'>
