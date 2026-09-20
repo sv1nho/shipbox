@@ -88,9 +88,9 @@ export function Dashboard () {
               to={listing({ status: 'rejected', archived: 'include' })}
             />
             <Tile
-              label='Still in play'
+              label='Not decided yet'
               value={formatAmount(summary.awaitingCents, 'EUR')}
-              note={`${returns(summary.open)} not decided yet`}
+              note={returns(summary.open)}
               to={listing({ status: 'open', archived: 'include' })}
             />
             <Tile

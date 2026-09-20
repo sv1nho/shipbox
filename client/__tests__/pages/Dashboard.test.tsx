@@ -85,7 +85,7 @@ describe('every tile opens the returns it counted', () => {
   it.each([
     ['Recovered', '/shipments?status=refunded&archived=include'],
     ['Lost', '/shipments?status=rejected&archived=include'],
-    ['Still in play', '/shipments?status=open&archived=include'],
+    ['Not decided yet', '/shipments?status=open&archived=include'],
     ['Needs attention', '/shipments?attention=1'],
   ])('sends %s to %s', async (label, href) => {
     renderPage()
@@ -97,7 +97,7 @@ describe('every tile opens the returns it counted', () => {
   it('keeps the archived returns in the three historical tiles, which counted them', async () => {
     renderPage()
 
-    for (const label of ['Recovered', 'Lost', 'Still in play']) {
+    for (const label of ['Recovered', 'Lost', 'Not decided yet']) {
       expect(await screen.findByRole('link', { name: new RegExp(label, 'i') }))
         .toHaveAttribute('href', expect.stringContaining('archived=include'))
     }
