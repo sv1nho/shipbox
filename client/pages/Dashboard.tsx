@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-import { errorMessage } from '../api/client.js'
+import { errorMessage, isAbort } from '../api/client.js'
 import { getDashboard } from '../api/dashboard.js'
 import { PendingNote } from '../components/PendingNote.js'
 import { StoreTable } from '../dashboard/StoreTable.js'
@@ -42,7 +42,10 @@ export function Dashboard () {
 
     getDashboard(controller.signal)
       .then((found) => { setSummary(found); setError(null) })
-      .catch((cause: unknown) => { setError(errorMessage(cause)) })
+      .catch((cause: unknown) => {
+        if (isAbort(cause)) return
+        setError(errorMessage(cause))
+      })
 
     return () => { controller.abort() }
   }, [])

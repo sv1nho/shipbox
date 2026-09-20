@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router'
+import { isAbort } from '../api/client.js'
 import { signIn, useSession } from '../auth/client.js'
 import { SOCIAL_PROVIDERS } from '../auth/providers.js'
 import { isSocialProviderId } from '../../shared/auth-providers.js'
@@ -27,7 +28,7 @@ export function Login () {
         setProviders(Array.isArray(body.providers) ? body.providers.filter(isSocialProviderId) : [])
       })
       .catch((cause: unknown) => {
-        if (cause instanceof DOMException && cause.name === 'AbortError') return
+        if (isAbort(cause)) return
         setProviders([])
       })
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 
 vi.mock('../../api/dashboard.js', () => ({ getDashboard: vi.fn() }))
@@ -133,6 +133,17 @@ describe('while it loads, and when it cannot', () => {
 
     expect(screen.getByText(/counting your returns/i)).toBeInTheDocument()
     expect(container.querySelector('.pending-note svg')).toBeInTheDocument()
+  })
+
+  it('treats an aborted request as nothing, not as a dashboard that failed', async () => {
+    vi.mocked(getDashboard).mockRejectedValue(new DOMException('Aborted', 'AbortError'))
+
+    const { container } = renderPage()
+
+    await waitFor(() => { expect(getDashboard).toHaveBeenCalled() })
+
+    expect(screen.queryByText(/could not be reached/i)).not.toBeInTheDocument()
+    expect(container.querySelector('.pending-note')).toBeInTheDocument()
   })
 
   it('reports what went wrong instead of an empty dashboard', async () => {

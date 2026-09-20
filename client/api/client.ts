@@ -31,6 +31,9 @@ export const errorMessage = (cause: unknown): string =>
     ? cause.message
     : 'The server could not be reached. Check your connection and try again.'
 
+export const isAbort = (cause: unknown): boolean =>
+  cause instanceof DOMException && cause.name === 'AbortError'
+
 type ErrorBody = {
   error?: { code?: unknown; message?: unknown; details?: unknown }
 }
