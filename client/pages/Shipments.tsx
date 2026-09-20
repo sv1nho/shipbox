@@ -13,6 +13,7 @@ import {
   unarchiveShipment,
   updateShipment,
 } from '../api/shipments.js'
+import { Spinner } from '../components/Spinner.js'
 import { AddShipmentDialog } from '../shipments/AddShipmentDialog.js'
 import { DatePrompt } from '../shipments/DatePrompt.js'
 import { DeleteDialog } from '../shipments/DeleteDialog.js'
@@ -173,6 +174,7 @@ export function Shipments () {
     },
   }
 
+  const listBusy = busy || loading
   const items = result?.items ?? []
   const page = result?.page ?? 1
   const pageCount = result === null ? 1 : Math.max(1, Math.ceil(result.total / result.pageSize))
@@ -185,6 +187,12 @@ export function Shipments () {
           {result !== null && (
             <span className='card-count'>
               {result.total === 1 ? '1 shipment' : `${String(result.total)} shipments`}
+            </span>
+          )}
+
+          {loading && result !== null && (
+            <span className='card-busy' role='status' aria-label='Updating the list'>
+              <Spinner />
             </span>
           )}
           <button
@@ -238,7 +246,10 @@ export function Shipments () {
         )}
 
         {items.length > 0 && (
-          <div className={busy ? 'shipment-list shipment-list-busy' : 'shipment-list'}>
+          <div
+            className={listBusy ? 'shipment-list shipment-list-busy' : 'shipment-list'}
+            aria-busy={listBusy}
+          >
             {items.map((shipment) => (
               <ShipmentRow
                 key={shipment.id}
@@ -255,7 +266,7 @@ export function Shipments () {
             <button
               type='button'
               className='btn btn-ghost'
-              disabled={page <= 1}
+              disabled={page <= 1 || loading}
               onClick={() => { apply({ page: page - 1 }) }}
             >
               Previous
@@ -264,7 +275,7 @@ export function Shipments () {
             <button
               type='button'
               className='btn btn-ghost'
-              disabled={page >= pageCount}
+              disabled={page >= pageCount || loading}
               onClick={() => { apply({ page: page + 1 }) }}
             >
               Next

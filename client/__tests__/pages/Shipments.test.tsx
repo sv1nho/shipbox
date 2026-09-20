@@ -212,6 +212,42 @@ describe('paging', () => {
   })
 })
 
+describe('while a new list is on its way', () => {
+  it('dims the rows and spins instead of leaving a stale list looking live', async () => {
+    const { container } = renderPage()
+    await screen.findByText('Zalando')
+
+    vi.mocked(listShipments).mockReturnValue(new Promise(() => {}))
+    await userEvent.selectOptions(screen.getByLabelText('Carrier'), 'bpost')
+
+    expect(container.querySelector('.shipment-list-busy')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Updating the list' })).toBeInTheDocument()
+    expect(screen.getByText('Zalando')).toBeInTheDocument()
+    expect(screen.getByText('1 shipment')).toBeInTheDocument()
+  })
+
+  it('blocks a second page turn until the first one has landed', async () => {
+    vi.mocked(listShipments).mockResolvedValue(listed([makeShipment()], { total: 45, pageSize: 20 }))
+
+    renderPage()
+    await screen.findByText('Page 1 of 3')
+
+    vi.mocked(listShipments).mockReturnValue(new Promise(() => {}))
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  })
+
+  it('spins only over an existing list, never instead of the first one', async () => {
+    vi.mocked(listShipments).mockReturnValue(new Promise(() => {}))
+
+    renderPage()
+
+    expect(await screen.findByText(/loading your shipments/i)).toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Updating the list' })).not.toBeInTheDocument()
+  })
+})
+
 describe('recording a step', () => {
   const openPrompt = async () => {
     renderPage()
