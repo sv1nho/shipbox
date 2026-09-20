@@ -78,6 +78,15 @@ export function searchFromFilters (filters: ListParams): URLSearchParams {
   return search
 }
 
+const NARROWING_KEYS = ['carrier', 'status', 'store', 'search'] as const
+
+export function activeFilterCount (filters: ListParams): number {
+  return NARROWING_KEYS.filter((key) => {
+    const value = filters[key]
+    return value !== undefined && value !== ''
+  }).length
+}
+
 export function hasActiveFilters (filters: ListParams): boolean {
   return searchFromFilters({
     ...filters,

@@ -824,6 +824,19 @@ html, body {
     border-radius: var(--radius-md);
   }
 
+  .filter-panel {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .filter-toggle { display: none; }
+
+  @media (max-width: 48rem) {
+    .filter-toggle { display: inline-flex; }
+
+    .filter-panel-closed { display: none; }
+  }
+
   .filter-row {
     display: flex;
     flex-wrap: wrap;

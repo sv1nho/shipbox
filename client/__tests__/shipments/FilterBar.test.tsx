@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../api/shipments.js', () => ({
@@ -325,6 +325,44 @@ describe('the store filter', () => {
     renderBar({ ...DEFAULT_FILTERS, store: 'Zalando' })
 
     expect(await storeOptions()).toHaveValue('Zalando')
+  })
+})
+
+describe('the collapsible panel, which only folds on a narrow screen', () => {
+  const panel = () => document.getElementById('filter-panel')
+
+  const toggle = () => screen.getByRole('button', { name: /^filters/i })
+
+  it('starts folded, so a phone opens on the list rather than on the controls', () => {
+    renderBar()
+
+    expect(toggle()).toHaveAttribute('aria-expanded', 'false')
+    expect(panel()).toHaveClass('filter-panel-closed')
+  })
+
+  it('unfolds and folds again on the toggle', async () => {
+    renderBar()
+
+    await userEvent.click(toggle())
+
+    expect(toggle()).toHaveAttribute('aria-expanded', 'true')
+    expect(panel()).not.toHaveClass('filter-panel-closed')
+
+    await userEvent.click(toggle())
+
+    expect(panel()).toHaveClass('filter-panel-closed')
+  })
+
+  it('counts the filters it hides, so a folded panel never hides them silently', () => {
+    renderBar({ ...DEFAULT_FILTERS, carrier: 'postnl', status: 'received', search: 'zal' })
+
+    expect(within(toggle()).getByText('3')).toBeInTheDocument()
+  })
+
+  it('leaves out the views that stay visible next to it', () => {
+    renderBar({ ...DEFAULT_FILTERS, archived: 'only', attention: true }, 4)
+
+    expect(within(toggle()).queryByText(/[0-9]/)).not.toBeInTheDocument()
   })
 })
 
