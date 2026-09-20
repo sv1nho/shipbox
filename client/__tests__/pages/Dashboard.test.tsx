@@ -128,10 +128,11 @@ describe('what needs doing', () => {
 })
 
 describe('while it loads, and when it cannot', () => {
-  it('says it is counting rather than showing empty figures', () => {
-    renderPage()
+  it('spins and says it is counting rather than showing empty figures', () => {
+    const { container } = renderPage()
 
     expect(screen.getByText(/counting your returns/i)).toBeInTheDocument()
+    expect(container.querySelector('.pending-note svg')).toBeInTheDocument()
   })
 
   it('reports what went wrong instead of an empty dashboard', async () => {

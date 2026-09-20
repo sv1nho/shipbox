@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { errorMessage } from '../api/client.js'
 import { getDashboard } from '../api/dashboard.js'
+import { PendingNote } from '../components/PendingNote.js'
 import { StoreTable } from '../dashboard/StoreTable.js'
 import { searchFromFilters } from '../shipments/filters.js'
 import { formatAmount } from '../shipments/format.js'
@@ -54,7 +55,7 @@ export function Dashboard () {
 
       {error !== null && <div className='alert-error'>{error}</div>}
 
-      {error === null && summary === null && <p className='card-text'>Counting your returns…</p>}
+      {error === null && summary === null && <PendingNote label='Counting your returns…' />}
 
       {summary !== null && (
         <div className='space-y-4'>
