@@ -41,6 +41,22 @@ import type {
 
 type Prompt = { shipment: ShipmentDto; actions: NextStep['actions'] }
 
+const Chevron = ({ pointing }: { pointing: 'left' | 'right' }) => (
+  <svg
+    viewBox='0 0 16 16'
+    width='14'
+    height='14'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    aria-hidden='true'
+  >
+    <path d={pointing === 'left' ? 'M10 3 5 8l5 5' : 'M6 3l5 5-5 5'} />
+  </svg>
+)
+
 export function Shipments () {
   const [searchParams, setSearchParams] = useSearchParams()
   const search = searchParams.toString()
@@ -265,20 +281,24 @@ export function Shipments () {
           <nav className='pagination' aria-label='Pages'>
             <button
               type='button'
-              className='btn btn-ghost'
+              className='btn btn-ghost pagination-step'
+              aria-label='Previous page'
+              title='Previous page'
               disabled={page <= 1 || loading}
               onClick={() => { apply({ page: page - 1 }) }}
             >
-              Previous
+              <Chevron pointing='left' />
             </button>
             <span className='pagination-label'>Page {page} of {pageCount}</span>
             <button
               type='button'
-              className='btn btn-ghost'
+              className='btn btn-ghost pagination-step'
+              aria-label='Next page'
+              title='Next page'
               disabled={page >= pageCount || loading}
               onClick={() => { apply({ page: page + 1 }) }}
             >
-              Next
+              <Chevron pointing='right' />
             </button>
           </nav>
         )}

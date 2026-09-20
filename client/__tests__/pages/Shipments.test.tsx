@@ -191,7 +191,7 @@ describe('paging', () => {
     renderPage()
 
     expect(await screen.findByText('Page 1 of 3')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled()
   })
 
   it('asks for the next page and keeps the filters', async () => {
@@ -200,7 +200,7 @@ describe('paging', () => {
     renderPage('/shipments?status=received')
     await screen.findByText('Page 1 of 3')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Next page' }))
 
     await waitFor(() => { expect(lastQuery()).toMatchObject({ page: 2, status: 'received' }) })
   })
@@ -211,7 +211,7 @@ describe('paging', () => {
     renderPage('/shipments?page=2')
     await screen.findByText('Page 2 of 3')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Previous' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Previous page' }))
 
     await waitFor(() => { expect(lastQuery()?.page).toBe(1) })
   })
@@ -249,9 +249,9 @@ describe('while a new list is on its way', () => {
     await screen.findByText('Page 1 of 3')
 
     vi.mocked(listShipments).mockReturnValue(new Promise(() => {}))
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Next page' }))
 
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled()
   })
 
   it('spins only over an existing list, never instead of the first one', async () => {
