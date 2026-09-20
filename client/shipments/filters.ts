@@ -79,5 +79,10 @@ export function searchFromFilters (filters: ListParams): URLSearchParams {
 }
 
 export function hasActiveFilters (filters: ListParams): boolean {
-  return searchFromFilters({ ...filters, page: DEFAULT_FILTERS.page }).toString() !== ''
+  return searchFromFilters({
+    ...filters,
+    page: DEFAULT_FILTERS.page,
+    sort: DEFAULT_FILTERS.sort,
+    direction: DEFAULT_FILTERS.direction,
+  }).toString() !== ''
 }

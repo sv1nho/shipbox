@@ -118,13 +118,19 @@ describe('hasActiveFilters', () => {
   })
 
   it.each([
+    { sort: 'amountCents' },
+    { direction: 'asc' },
+  ] as Partial<ListParams>[])('is false for %o, since sorting hides nothing', (overrides) => {
+    expect(hasActiveFilters({ ...DEFAULT_FILTERS, ...overrides })).toBe(false)
+  })
+
+  it.each([
     { carrier: 'bpost' },
     { status: 'received' },
     { store: 'Zalando' },
     { search: 'zal' },
     { archived: 'only' },
     { attention: true },
-    { sort: 'amountCents' },
   ] as Partial<ListParams>[])('is true for %o', (overrides) => {
     expect(hasActiveFilters({ ...DEFAULT_FILTERS, ...overrides })).toBe(true)
   })

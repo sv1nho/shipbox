@@ -133,6 +133,22 @@ describe('when there is nothing to show', () => {
 
     await waitFor(() => { expect(lastQuery()?.status).toBeUndefined() })
   })
+
+  it('keeps the chosen order when the filters are cleared', async () => {
+    renderPage('/shipments?status=refunded&sort=amountCents&direction=asc')
+
+    await userEvent.click(await screen.findByRole('button', { name: /clear filters/i }))
+
+    await waitFor(() => { expect(lastQuery()?.status).toBeUndefined() })
+    expect(lastQuery()).toMatchObject({ sort: 'amountCents', direction: 'asc' })
+  })
+
+  it('does not blame the filters when only the order was changed', async () => {
+    renderPage('/shipments?sort=amountCents&direction=asc')
+
+    expect(await screen.findByText(/not tracking any shipment yet/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument()
+  })
 })
 
 describe('when the list cannot be loaded', () => {
