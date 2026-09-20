@@ -179,6 +179,24 @@ html, body {
     background: var(--color-primary-light);
   }
 
+  @media (max-width: 48rem) {
+    .navbar-inner {
+      height: auto;
+      min-height: 4rem;
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+      padding: 0.625rem 1rem;
+    }
+
+    .navbar-links { gap: 0.125rem; }
+
+    .navbar-link { padding: 0.5rem 0.625rem; }
+
+    .navbar-user-name { display: none; }
+
+    .navbar-user .btn { white-space: nowrap; }
+  }
+
   /* ── Footer ── */
   .site-footer {
     border-top: 1px solid var(--color-border);
