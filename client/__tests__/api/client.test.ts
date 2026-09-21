@@ -169,6 +169,19 @@ describe('refusalMessage', () => {
     ]))).toBe('This is not a valid email address. Say which store the parcel goes back to.')
   })
 
+  it('leaves out what a field already shows, so nothing is said twice', () => {
+    expect(refusalMessage(refused([
+      { path: 'label.payload.sender_company', message: 'A company name is required.' },
+      { path: 'store', message: 'Say which store the parcel goes back to.' },
+    ]), ['store'])).toBe('A company name is required.')
+  })
+
+  it('falls back to the headline once every message has a field of its own', () => {
+    expect(refusalMessage(refused([
+      { path: 'store', message: 'Say which store the parcel goes back to.' },
+    ]), ['store'])).toBe('Some details were refused.')
+  })
+
   it.each([
     ['no details at all', null],
     ['an empty list of details', []],

@@ -86,6 +86,19 @@ const draftFrom = (prefill: Prefill): Draft => ({
   note: '',
 })
 
+export const FIELDS_WITH_A_PLACE = [
+  'trackingNumber',
+  'store',
+  'amountCents',
+  'recipientPostalCode',
+  'orderNumber',
+  'requestedDate',
+  'dropoffDate',
+  'receivedDate',
+  'decisionDate',
+  'rejectionReason',
+]
+
 const REQUIRES_RECEPTION: ShipmentStatus[] = ['received', 'refunded', 'rejected']
 
 const asksReception = (draft: Draft): boolean =>

@@ -15,7 +15,7 @@ import {
 } from '../api/shipments.js'
 import { Chevron } from '../components/Chevron.js'
 import { Spinner } from '../components/Spinner.js'
-import { AddShipmentDialog } from '../shipments/AddShipmentDialog.js'
+import { AddShipmentDialog, FIELDS_WITH_A_PLACE } from '../shipments/AddShipmentDialog.js'
 import { DatePrompt } from '../shipments/DatePrompt.js'
 import { DeleteDialog } from '../shipments/DeleteDialog.js'
 import { FilterBar } from '../shipments/FilterBar.js'
@@ -86,7 +86,10 @@ export function Shipments () {
     setSearchParams(searchFromFilters({ ...filters, ...patch, page: patch.page ?? 1 }))
   }
 
-  const run = async (operation: () => Promise<unknown>): Promise<boolean> => {
+  const run = async (
+    operation: () => Promise<unknown>,
+    shownByFields: readonly string[] = []
+  ): Promise<boolean> => {
     setBusy(true)
     setActionError(null)
     setRefused(null)
@@ -97,7 +100,7 @@ export function Shipments () {
       reload()
       return true
     } catch (cause) {
-      setActionError(refusalMessage(cause))
+      setActionError(refusalMessage(cause, shownByFields))
       setRefused(cause instanceof ApiError ? cause : null)
       return false
     } finally {
@@ -112,7 +115,7 @@ export function Shipments () {
   }
 
   const confirmAdd = async (input: CreateShipmentInput) => {
-    if (await run(() => createShipment(input))) setAdding(false)
+    if (await run(() => createShipment(input), FIELDS_WITH_A_PLACE)) setAdding(false)
   }
 
   const confirmImport = async (rows: Record<string, unknown>[]) => {

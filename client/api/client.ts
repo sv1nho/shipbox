@@ -31,12 +31,11 @@ export const errorMessage = (cause: unknown): string =>
     ? cause.message
     : 'The server could not be reached. Check your connection and try again.'
 
-export function refusalMessage (cause: unknown): string {
+export function refusalMessage (cause: unknown, shownByFields: readonly string[] = []): string {
   const details = cause instanceof ApiError ? cause.details : null
+  const unplaced = (details ?? []).filter((detail) => !shownByFields.includes(detail.path))
 
-  return details === null || details.length === 0
-    ? errorMessage(cause)
-    : details.map((detail) => detail.message).join(' ')
+  return unplaced.length === 0 ? errorMessage(cause) : unplaced.map((detail) => detail.message).join(' ')
 }
 
 export const isAbort = (cause: unknown): boolean =>

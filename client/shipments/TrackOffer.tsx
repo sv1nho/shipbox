@@ -6,7 +6,7 @@ import { createShipment, shipmentExists } from '../api/shipments.js'
 import { CURRENT_PAYLOAD_VERSION } from '../../shared/label-payload.js'
 import type { LabelPayload } from '../../shared/label-payload.js'
 import type { CreateShipmentInput } from '../../shared/shipment.js'
-import { AddShipmentDialog } from './AddShipmentDialog.js'
+import { AddShipmentDialog, FIELDS_WITH_A_PLACE } from './AddShipmentDialog.js'
 import type { Prefill } from './AddShipmentDialog.js'
 import { Modal } from './Modal.js'
 
@@ -62,7 +62,7 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
       setAdded(true)
       setFilling(false)
     } catch (cause) {
-      setError(refusalMessage(cause))
+      setError(refusalMessage(cause, FIELDS_WITH_A_PLACE))
       setRefused(cause instanceof ApiError ? cause : null)
     } finally {
       setBusy(false)

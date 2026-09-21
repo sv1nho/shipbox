@@ -700,10 +700,9 @@ describe('adding a return by hand', () => {
     await userEvent.type(screen.getByLabelText('Order number'), 'SNP-0099')
     await userEvent.click(screen.getByRole('button', { name: /track it/i }))
 
-    const shown = await screen.findAllByText('already used')
+    const shown = await screen.findByText('already used')
 
-    expect(shown.map((node) => node.className))
-      .toEqual(expect.arrayContaining(['field-error', 'alert-error']))
+    expect(shown).toHaveClass('field-error')
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })
