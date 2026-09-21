@@ -1,10 +1,10 @@
-/// <reference types="node" />
 import { describe, it, expect } from 'vitest'
-import { globSync, readFileSync } from 'node:fs'
 import { FRENCH } from '../../i18n/fr.js'
 
-const SOURCES = globSync('client/**/*.{ts,tsx}')
-  .filter((path) => !path.includes('__tests__') && !path.includes('i18n'))
+const SOURCES = Object.values(import.meta.glob<string>(
+  ['../../**/*.{ts,tsx}', '!../../**/__tests__/**', '!../../i18n/**'],
+  { query: '?raw', import: 'default', eager: true }
+))
 
 const PHRASE = String.raw`'((?:[^'\\]|\\.)*)'`
 
@@ -16,9 +16,7 @@ const unescape = (raw: string): string => raw.replace(/\\'/g, "'").replace(/\\\\
 const phrasesAskedFor = (): Set<string> => {
   const asked = new Set<string>()
 
-  for (const path of SOURCES) {
-    const source = readFileSync(path, 'utf8')
-
+  for (const source of SOURCES) {
     for (const call of source.matchAll(CALL)) {
       const parts = [...`'${call[1]}'${call[2]}`.matchAll(PART)].map((part) => unescape(part[1]))
       asked.add(parts.join(''))
