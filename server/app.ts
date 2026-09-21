@@ -3,7 +3,6 @@ import type { Express } from 'express'
 import swaggerUi from 'swagger-ui-express'
 import { toNodeHandler } from 'better-auth/node'
 import { auth, enabledProviders } from './auth/auth.js'
-import { requireUser, currentUser } from './auth/require-user.js'
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
 import { shipmentsRouter } from './routes/shipments.js'
 import { storesRouter } from './routes/stores.js'
@@ -31,10 +30,6 @@ export function createApp (): Express {
 
   app.get('/api/config', (_req, res) => {
     res.json({ providers: enabledProviders })
-  })
-
-  app.get('/api/me', requireUser, (req, res) => {
-    res.json({ user: currentUser(req) })
   })
 
   app.get('/api/openapi.json', (_req, res) => {

@@ -64,10 +64,6 @@ describe('routes that stay public', () => {
 
     expect(bodyOf(response).openapi).toBe('3.1.0')
   })
-
-  it('answers 401 on the identity route, which needs a session', async () => {
-    await request(app).get('/api/me').expect(401)
-  })
 })
 
 describe('unknown routes', () => {

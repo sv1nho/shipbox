@@ -90,9 +90,8 @@ export const openApiDocument = {
       'user. Day counts are calendar days, and the derived ones are null when a source date is missing.' +
       '\n\nError messages are written in the language the Accept-Language header asks for, French or ' +
       'English, and fall back to English. Field names, codes and every other value stay the same.' +
-      '\n\nOutside this document, /api/health and /api/config answer without a session, ' +
-      '/api/me returns the signed-in user, and the document itself is served at /api/openapi.json ' +
-      'and browsable at /api/docs.',
+      '\n\nOutside this document, /api/health and /api/config answer without a session, and the ' +
+      'document itself is served at /api/openapi.json and browsable at /api/docs.',
   },
   tags: [{ name: 'shipments' }, { name: 'stores' }, { name: 'dashboard' }],
   paths: {
