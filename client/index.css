@@ -1058,7 +1058,7 @@ html, body {
 
   @media (max-width: 30rem) {
     .dash-rows {
-      grid-template-columns: minmax(0, 1fr) minmax(3rem, max-content) minmax(3.5rem, max-content);
+      grid-template-columns: minmax(0, 1fr) max-content minmax(3.5rem, 1fr);
     }
 
     .dash-row-head > :not(:first-child) { text-align: right; }
