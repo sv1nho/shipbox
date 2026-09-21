@@ -1165,7 +1165,9 @@ describe('stores as entities', () => {
     await shipments.create(OWNER, input({ store: 'Zalando' }))
     await shipments.create(OTHER, input({ store: 'Zalando' }))
 
-    expect(await prisma.store.count({ where: { name: 'Zalando' } })).toBe(2)
+    expect(await prisma.store.count({
+      where: { name: 'Zalando', userId: { in: [OWNER, OTHER] } },
+    })).toBe(2)
     expect(await storeService.searchStores(OTHER, 'Zalando')).toHaveLength(1)
   })
 
