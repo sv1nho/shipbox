@@ -22,12 +22,14 @@ export const notFoundHandler: RequestHandler = (req, _res, next) => {
   next(new AppError('NOT_FOUND', `Unknown route: ${req.method} ${req.path}`))
 }
 
-export function createErrorHandler ({ exposeDetails }: { exposeDetails: boolean }): ErrorRequestHandler {
+type HandlerOptions = { exposeDetails: boolean; logRefusals: boolean }
+
+export function createErrorHandler ({ exposeDetails, logRefusals }: HandlerOptions): ErrorRequestHandler {
   return (err, req, res, _next) => {
     if (err instanceof AppError) {
       const english = translate('en', err.message, err.vars)
 
-      if (exposeDetails) {
+      if (logRefusals) {
         console.warn(
           `${req.method} ${req.path} -> ${String(err.status)} ${err.code}: ${english}`,
           err.details ?? ''

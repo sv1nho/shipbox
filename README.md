@@ -76,7 +76,8 @@ but that is a habit rather than a threshold: nothing fails below it.
 
 In development the API prints every refused request, with the route, the code
 and the field at fault, for example
-`POST /api/shipments -> 422 VALIDATION_ERROR: …`. Production keeps them quiet.
+`POST /api/shipments -> 422 VALIDATION_ERROR: …`. Tests and production keep them
+quiet, so a test run only shows what actually went wrong.
 
 The Prisma client is generated into `server/generated`, which is gitignored.
 `npm install` recreates it. If the editor reports unresolved Prisma types

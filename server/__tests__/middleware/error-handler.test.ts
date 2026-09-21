@@ -23,9 +23,9 @@ const fakeResponse = () => {
 const fakeRequest = (method = 'GET', path = '/api/unknown', language?: string) =>
   ({ method, path, get: () => language }) as unknown as Request
 
-const run = (err: unknown, exposeDetails: boolean, language?: string) => {
+const run = (err: unknown, exposeDetails: boolean, language?: string, logRefusals = false) => {
   const { res, captured } = fakeResponse()
-  createErrorHandler({ exposeDetails })(
+  createErrorHandler({ exposeDetails, logRefusals })(
     err,
     fakeRequest('GET', '/api/unknown', language),
     res,
@@ -118,7 +118,7 @@ describe('createErrorHandler', () => {
   it('says in the terminal why it refused, so no refusal is silent', () => {
     const details = [{ path: 'store', message: 'Say which store the parcel goes back to.' }]
 
-    run(new AppError('VALIDATION_ERROR', 'Some details were refused.', details), true)
+    run(new AppError('VALIDATION_ERROR', 'Some details were refused.', details), true, undefined, true)
 
     expect(console.warn).toHaveBeenCalledWith(
       'GET /api/unknown -> 422 VALIDATION_ERROR: Some details were refused.',
@@ -126,8 +126,14 @@ describe('createErrorHandler', () => {
     )
   })
 
-  it('keeps refusals out of the log where details are not exposed', () => {
-    run(new AppError('CONFLICT', 'Already tracked.'), false)
+  it('logs a refusal that names no field without printing undefined after it', () => {
+    run(new AppError('NOT_FOUND', 'Shipment not found.'), true, undefined, true)
+
+    expect(console.warn).toHaveBeenCalledWith('GET /api/unknown -> 404 NOT_FOUND: Shipment not found.', '')
+  })
+
+  it('keeps refusals out of the log outside development, even where details are exposed', () => {
+    run(new AppError('CONFLICT', 'Already tracked.'), true)
 
     expect(console.warn).not.toHaveBeenCalled()
   })

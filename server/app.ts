@@ -10,7 +10,7 @@ import { storesRouter } from './routes/stores.js'
 import { dashboardRouter } from './routes/dashboard.js'
 import { openApiDocument } from './openapi.js'
 import { prisma } from './prisma.js'
-import { isProduction } from './env.js'
+import { isDevelopment, isProduction } from './env.js'
 
 export function createApp (): Express {
   const app = express()
@@ -48,7 +48,7 @@ export function createApp (): Express {
   app.use('/api/dashboard', dashboardRouter)
 
   app.use(notFoundHandler)
-  app.use(createErrorHandler({ exposeDetails: !isProduction }))
+  app.use(createErrorHandler({ exposeDetails: !isProduction, logRefusals: isDevelopment }))
 
   return app
 }
