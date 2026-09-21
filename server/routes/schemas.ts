@@ -54,18 +54,20 @@ const supportEmailSchema = z
 
 export const idParamSchema = z.object({ id: z.uuid() })
 
-const labelPayloadSchema = z.object({
-  sender_firstname: z.string().max(120),
-  sender_lastname: z.string().max(120),
-  sender_company: z.string().max(120),
+const partyNameSchema = z.string().max(120, 'A name cannot be longer than 120 characters.').optional()
+
+const partySchema = z.object({
+  sender_firstname: partyNameSchema,
+  sender_lastname: partyNameSchema,
+  sender_company: partyNameSchema,
   sender_address: z.string().max(200),
   sender_postal: z.string().max(16),
   sender_city: z.string().max(120),
   sender_country: z.enum(asTuple(COUNTRIES)),
   sender_isCompany: z.boolean(),
-  recipient_firstname: z.string().max(120),
-  recipient_lastname: z.string().max(120),
-  recipient_company: z.string().max(120),
+  recipient_firstname: partyNameSchema,
+  recipient_lastname: partyNameSchema,
+  recipient_company: partyNameSchema,
   recipient_address: z.string().max(200),
   recipient_postal: z.string().max(16),
   recipient_city: z.string().max(120),
@@ -75,6 +77,27 @@ const labelPayloadSchema = z.object({
   carrier: carrierSchema,
   tracking_number: trackingNumberSchema,
 })
+
+const named = (value: string | undefined): boolean => value !== undefined && value.trim() !== ''
+
+const eachPartyIsNamed = (payload: z.infer<typeof partySchema>, ctx: z.RefinementCtx): void => {
+  for (const prefix of ['sender', 'recipient'] as const) {
+    const missing = payload[`${prefix}_isCompany`]
+      ? named(payload[`${prefix}_company`])
+        ? []
+        : [[`${prefix}_company`, 'A company name is required.']]
+      : [
+          ...(named(payload[`${prefix}_firstname`]) ? [] : [[`${prefix}_firstname`, 'A first name is required.']]),
+          ...(named(payload[`${prefix}_lastname`]) ? [] : [[`${prefix}_lastname`, 'A last name is required.']]),
+        ]
+
+    for (const [path, message] of missing) {
+      ctx.addIssue({ code: 'custom', path: [path], message })
+    }
+  }
+}
+
+const labelPayloadSchema = partySchema.superRefine(eachPartyIsNamed)
 
 const labelSchema = z.object({
   payload: labelPayloadSchema,

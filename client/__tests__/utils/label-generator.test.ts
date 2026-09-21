@@ -218,6 +218,15 @@ describe('buildLabelSvg', () => {
     expect(svg).toContain('>AD<')
   })
 
+  it('draws nothing where a name was never filled, rather than the word undefined', () => {
+    const { svg } = buildLabelSvg(
+      makePayload({ sender_isCompany: true, sender_company: undefined }),
+      SVG_TEMPLATE
+    )
+
+    expect(svg).not.toContain('undefined')
+  })
+
   it('uses company name for sender when sender_isCompany is true', () => {
     const { svg } = buildLabelSvg(
       makePayload({ sender_isCompany: true, sender_company: 'Acme Corp' }),

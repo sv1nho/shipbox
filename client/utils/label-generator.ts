@@ -116,9 +116,14 @@ const party = (payload: LabelPayload, prefix: Prefix) => (key: string) =>
 
 const nameLines = (payload: LabelPayload, prefix: Prefix): string[] => {
   const p = party(payload, prefix)
+  const text = (key: string): string => {
+    const value = p(key)
+    return typeof value === 'string' ? value : ''
+  }
+
   const name = p('isCompany')
-    ? capitalize(p('company') as string)
-    : `${capitalize(p('firstname') as string)} ${capitalize(p('lastname') as string)}`
+    ? capitalize(text('company'))
+    : `${capitalize(text('firstname'))} ${capitalize(text('lastname'))}`
   return wrapText(name, prefix === 'sender' ? 40 : 35)
 }
 

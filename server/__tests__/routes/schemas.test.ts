@@ -63,6 +63,61 @@ describe('what it says when it refuses', () => {
   })
 })
 
+describe('the name a label carries for each party', () => {
+  const payload = (over: Record<string, unknown>) => ({
+    sender_address: 'Rue de la Paix 1', sender_postal: '1000', sender_city: 'Bruxelles',
+    sender_country: 'BE', sender_isCompany: false,
+    recipient_address: 'Avenue Centrale 45', recipient_postal: '4000', recipient_city: 'Liege',
+    recipient_country: 'BE', recipient_isCompany: false,
+    label_language: 'fr', carrier: 'bpost', tracking_number: '323200000000000000004050',
+    ...over,
+  })
+
+  const refusals = (over: Record<string, unknown>): string[] => {
+    const result = createShipmentSchema.safeParse({
+      ...complete,
+      label: { payload: payload(over), payloadVersion: 1 },
+    })
+
+    return result.success ? [] : result.error.issues.map((issue) => issue.path.join('.'))
+  }
+
+  const PERSON = { firstname: 'Jean', lastname: 'Dupont' }
+
+  it.each([
+    ['two people, with no company anywhere', {
+      sender_firstname: PERSON.firstname, sender_lastname: PERSON.lastname,
+      recipient_firstname: 'Marie', recipient_lastname: 'Martin',
+    }],
+    ['two companies, with no person anywhere', {
+      sender_isCompany: true, sender_company: 'Acme',
+      recipient_isCompany: true, recipient_company: 'Nike',
+    }],
+    ['a company sending to a person', {
+      sender_isCompany: true, sender_company: 'Acme',
+      recipient_firstname: 'Marie', recipient_lastname: 'Martin',
+    }],
+  ])('takes %s', (_label, over) => {
+    expect(refusals(over)).toEqual([])
+  })
+
+  it('asks for the two halves of a name when nobody is named', () => {
+    expect(refusals({})).toEqual([
+      'label.payload.sender_firstname',
+      'label.payload.sender_lastname',
+      'label.payload.recipient_firstname',
+      'label.payload.recipient_lastname',
+    ])
+  })
+
+  it('asks for the company when a company was chosen and left blank', () => {
+    expect(refusals({
+      sender_isCompany: true, sender_company: '   ',
+      recipient_isCompany: true, recipient_company: 'Nike',
+    })).toEqual(['label.payload.sender_company'])
+  })
+})
+
 describe('what an update may not take away', () => {
   it.each([null, ''])('refuses %p, the order number having become required', (given) => {
     expect(updateShipmentSchema.safeParse({ orderNumber: given }).success).toBe(false)
