@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 
 vi.mock('../../api/shipments.js', () => ({
   shipmentExists: vi.fn(),
@@ -24,13 +24,21 @@ const signedIn = (yes: boolean) => {
   } as unknown as ReturnType<typeof useSession>)
 }
 
+function Where () {
+  const location = useLocation()
+  return <p>At {location.pathname}</p>
+}
+
 const renderOffer = (tracking = '323200000000000000004050') => {
   const onClose = vi.fn()
   const payload = makeLabelPayload({ tracking_number: tracking })
 
   render(
-    <MemoryRouter>
-      <TrackOffer payload={payload} onClose={onClose} />
+    <MemoryRouter initialEntries={['/form']}>
+      <Routes>
+        <Route path='/form' element={<TrackOffer payload={payload} onClose={onClose} />} />
+        <Route path='*' element={<Where />} />
+      </Routes>
     </MemoryRouter>
   )
 
@@ -120,15 +128,27 @@ describe('when the parcel is not tracked yet', () => {
     })
   })
 
-  it('says it landed and points at the list', async () => {
+  it('says it landed and opens the list in one click', async () => {
     vi.mocked(createShipment).mockResolvedValue(makeShipment())
 
     renderOffer()
     await openForm()
     await fillAndSubmit()
 
-    expect(await screen.findByRole('link', { name: /open the list/i }))
-      .toHaveAttribute('href', '/shipments')
+    await userEvent.click(await screen.findByRole('button', { name: /open my shipments/i }))
+
+    expect(await screen.findByText('At /shipments')).toBeInTheDocument()
+  })
+
+  it('lets someone printing a second label stay where they are', async () => {
+    vi.mocked(createShipment).mockResolvedValue(makeShipment())
+
+    renderOffer()
+    await openForm()
+    await fillAndSubmit()
+
+    expect(await screen.findByRole('button', { name: /stay on the form/i })).toBeInTheDocument()
+    expect(screen.queryByText('At /shipments')).not.toBeInTheDocument()
   })
 
   it('keeps the form open and names the field the api refused', async () => {

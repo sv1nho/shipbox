@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useSession } from '../auth/client.js'
 import { ApiError, refusalMessage } from '../api/client.js'
 import { createShipment, shipmentExists } from '../api/shipments.js'
@@ -26,6 +26,7 @@ const prefillFrom = (payload: LabelPayload): Prefill => ({
 })
 
 export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
+  const navigate = useNavigate()
   const { data: session, isPending } = useSession()
   const signedIn = !isPending && session !== null
 
@@ -97,8 +98,8 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
 
         {signedIn && added && (
           <p className='card-text'>
-            It is on your list. <Link to='/shipments'>Open the list</Link> to record the drop-off
-            once the parcel is gone.
+            It is on your list. Record the drop-off there once the parcel is gone, and find the
+            label again whenever you need it.
           </p>
         )}
 
@@ -123,8 +124,18 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
 
       <div className='modal-footer'>
         <button type='button' className='btn btn-ghost' onClick={onClose}>
-          {added ? 'Close' : 'Not now'}
+          {added ? 'Stay on the form' : 'Not now'}
         </button>
+
+        {signedIn && added && (
+          <button
+            type='button'
+            className='btn btn-primary'
+            onClick={() => { void navigate('/shipments') }}
+          >
+            Open my shipments
+          </button>
+        )}
 
         {signedIn && !added && (known === null || known === 'unknown' || !known.tracked) && (
           <button
