@@ -47,7 +47,6 @@ API, which avoids CORS and cross-origin cookies during development.
 |---|---|
 | `npm run dev` | frontend and API together |
 | `npm run dev:web` / `dev:api` | either one on its own |
-| `npm run dev:mock` | frontend only, with the label form filled with test data |
 | `npm run start:api` | the API without file watching |
 | `npm run build` / `preview` | production build of the frontend, and a local preview of it |
 | `npm run lint` / `typecheck` / `test` | the same checks CI runs |

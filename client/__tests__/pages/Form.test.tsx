@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
@@ -55,10 +55,6 @@ beforeEach(() => {
   Object.assign(URL, { createObjectURL, revokeObjectURL })
 })
 
-afterEach(() => {
-  vi.unstubAllEnvs()
-})
-
 describe('what it asks for', () => {
   it('asks for a sender, a recipient and the label settings', () => {
     renderForm()
@@ -66,12 +62,6 @@ describe('what it asks for', () => {
     for (const title of ['Sender', 'Recipient', 'Language', 'Carrier', 'Tracking Number']) {
       expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     }
-  })
-
-  it('starts empty, the demo data being for the mock mode only', () => {
-    renderForm()
-
-    expect(section('Sender').getByPlaceholderText('First name')).toHaveValue('')
   })
 
   it('hints at the tracking format of the carrier chosen', async () => {
@@ -283,31 +273,6 @@ describe('leaving the preview', () => {
     await waitFor(() => {
       expect(screen.queryByRole('heading', { name: /keep an eye on this return/i }))
         .not.toBeInTheDocument()
-    })
-  })
-})
-
-describe('the mock mode', () => {
-  it('fills the whole form with demo data, so a label comes out in one click', async () => {
-    vi.stubEnv('VITE_TEST_MODE', 'true')
-
-    renderForm()
-
-    await waitFor(() => {
-      expect(section('Sender').getByPlaceholderText('First name')).toHaveValue('Jean')
-    })
-    expect(section('Tracking Number').getByRole('textbox'))
-      .toHaveValue('323200000000000000004050')
-  })
-
-  it('swaps in a matching tracking number when the carrier changes', async () => {
-    vi.stubEnv('VITE_TEST_MODE', 'true')
-
-    renderForm()
-    await userEvent.selectOptions(section('Carrier').getByRole('combobox'), 'postnl')
-
-    await waitFor(() => {
-      expect(section('Tracking Number').getByRole('textbox')).toHaveValue('3SDDRL000000409')
     })
   })
 })

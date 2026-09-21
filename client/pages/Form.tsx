@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import type {
@@ -12,7 +12,6 @@ import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import { buildLabelSvg } from '../utils/label-generator.js'
 import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
-import { getTestData } from '../test-data.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
@@ -247,14 +246,6 @@ export function Form () {
   const senderIsCompany = useWatch({ control, name: 'sender_isCompany' })
   const recipientIsCompany = useWatch({ control, name: 'recipient_isCompany' })
   const carrier = useWatch({ control, name: 'carrier' })
-
-  useEffect(() => {
-    if (import.meta.env.VITE_TEST_MODE !== 'true') return
-    const testData = getTestData(carrier);
-    (Object.keys(testData) as (keyof typeof testData)[]).forEach((key) => {
-      setValue(key, testData[key] as never)
-    })
-  }, [setValue, carrier])
 
   const onSubmit = async (data: LabelPayload) => {
     try {
