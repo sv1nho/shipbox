@@ -541,7 +541,7 @@ html, body {
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
-    animation: modal-in var(--transition) ease-out;
+    animation: modal-in var(--transition);
   }
 
   .modal-header,
