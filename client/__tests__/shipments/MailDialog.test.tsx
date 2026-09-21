@@ -148,7 +148,7 @@ describe('copying a part of the message', () => {
   it('copies the message on its own, the two going in different fields', async () => {
     renderDialog()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the message' }))
 
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Bonjour,'))
   })
@@ -157,7 +157,7 @@ describe('copying a part of the message', () => {
     renderDialog()
 
     await userEvent.type(screen.getByLabelText('Message'), 'PS.')
-    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the message' }))
 
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('PS.'))
   })
@@ -277,7 +277,7 @@ describe('whether the message actually went out', () => {
   it('asks after a copy too, the message going out through a contact form', async () => {
     renderDialog()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the message' }))
 
     expect(await screen.findByRole('button', { name: /i sent it/i })).toBeInTheDocument()
   })
@@ -286,7 +286,7 @@ describe('whether the message actually went out', () => {
     writeText.mockRejectedValue(new Error('denied'))
 
     renderDialog()
-    await userEvent.click(screen.getByRole('button', { name: 'Copy the body' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Copy the message' }))
 
     await screen.findByText(/select the text and copy it yourself/i)
 

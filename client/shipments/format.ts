@@ -1,4 +1,5 @@
 import { toIsoDateInZone } from '../../shared/time.js'
+import type { Translate } from '../i18n/context.js'
 import { isDecisionStatus } from '../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../shared/shipment-status.js'
 import type { DateField } from '../../shared/transitions.js'
@@ -46,8 +47,8 @@ export function statusLabel (status: ShipmentStatus): string {
   return STATUS_LABELS[status]
 }
 
-export function days (count: number): string {
-  return count === 1 ? '1 day' : `${String(count)} days`
+export function days (t: Translate, count: number): string {
+  return count === 1 ? t('1 day') : t('{count} days', { count })
 }
 
 export function statusDate (shipment: ShipmentDto): { label: string; date: IsoDate } {
@@ -57,40 +58,45 @@ export function statusDate (shipment: ShipmentDto): { label: string; date: IsoDa
   return date === null ? { label: 'Requested', date: shipment.requestedDate } : { label, date }
 }
 
-export function delayInfo (shipment: ShipmentDto): string | null {
+export function delayInfo (t: Translate, shipment: ShipmentDto): string | null {
   if (isDecisionStatus(shipment.status)) {
     const taken = shipment.decisionDelayDays
 
-    return taken === null ? null : `Took ${days(taken)}`
+    return taken === null ? null : t('Took {span}', { span: days(t, taken) })
   }
 
   const left = shipment.daysLeft
 
   if (left === null) return null
-  if (left > 0) return `${days(left)} left`
-  if (left === 0) return 'Due today'
+  if (left > 0) return t('{span} left', { span: days(t, left) })
+  if (left === 0) return t('Due today')
 
-  return `${days(-left)} over`
+  return t('{span} over', { span: days(t, -left) })
 }
 
-function expiryMessage (daysLeft: number): string {
-  if (daysLeft < 0) return `The label expired ${days(-daysLeft)} ago and can no longer be used.`
-  if (daysLeft === 0) return 'The label expires today. Drop the parcel off now.'
+function expiryMessage (t: Translate, daysLeft: number): string {
+  if (daysLeft < 0) {
+    return t('The label expired {span} ago and can no longer be used.', { span: days(t, -daysLeft) })
+  }
 
-  return `The label expires in ${days(daysLeft)}. Drop the parcel off now.`
+  if (daysLeft === 0) return t('The label expires today. Drop the parcel off now.')
+
+  return t('The label expires in {span}. Drop the parcel off now.', { span: days(t, daysLeft) })
 }
 
-export function alertMessage (shipment: ShipmentDto): string | null {
+export function alertMessage (t: Translate, shipment: ShipmentDto): string | null {
   if (shipment.needsAction && shipment.daysSinceReceived !== null) {
-    return `The store has had this parcel for ${days(shipment.daysSinceReceived)} without deciding. Time to chase them.`
+    return t('The store has had this parcel for {span} without deciding. Time to chase them.',
+      { span: days(t, shipment.daysSinceReceived) })
   }
 
   if (shipment.shippingLate && shipment.daysSinceDropoff !== null) {
-    return `The parcel was dropped off ${days(shipment.daysSinceDropoff)} ago and the store has still not received it. Time to contact them.`
+    return t('The parcel was dropped off {span} ago and the store has still not received it. ' +
+      'Time to contact them.', { span: days(t, shipment.daysSinceDropoff) })
   }
 
   if (shipment.labelExpiring && shipment.daysLeft !== null) {
-    return expiryMessage(shipment.daysLeft)
+    return expiryMessage(t, shipment.daysLeft)
   }
 
   return null

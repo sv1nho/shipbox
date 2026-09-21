@@ -14,6 +14,7 @@ import {
   updateShipment,
 } from '../api/shipments.js'
 import { Chevron } from '../components/Chevron.js'
+import { useT } from '../i18n/context.js'
 import { Spinner } from '../components/Spinner.js'
 import { AddShipmentDialog, FIELDS_WITH_A_PLACE } from '../shipments/AddShipmentDialog.js'
 import { DatePrompt } from '../shipments/DatePrompt.js'
@@ -178,6 +179,7 @@ export function Shipments () {
     },
   }
 
+  const t = useT()
   const listBusy = busy || loading
   const items = result?.items ?? []
   const page = result?.page ?? 1
@@ -186,16 +188,16 @@ export function Shipments () {
   return (
     <div className='card'>
       <div className='card-header'>
-        <h3 className='card-title'>Shipments</h3>
+        <h3 className='card-title'>{t('Shipments')}</h3>
         <div className='card-actions'>
           {result !== null && (
             <span className='card-count'>
-              {result.total === 1 ? '1 shipment' : `${String(result.total)} shipments`}
+              {result.total === 1 ? t('1 shipment') : t('{count} shipments', { count: result.total })}
             </span>
           )}
 
           {loading && result !== null && (
-            <span className='card-busy' role='status' aria-label='Updating the list'>
+            <span className='card-busy' role='status' aria-label={t('Updating the list')}>
               <Spinner />
             </span>
           )}
@@ -204,13 +206,13 @@ export function Shipments () {
             className='btn btn-ghost text-xs px-2.5 py-1'
             onClick={() => { setActionError(null); setOutcome(null); setImporting(true) }}
           >
-            Import
+            {t('Import')}
           </button>
           <button
             type='button'
             className='icon-btn icon-btn-add'
-            aria-label='Track a return'
-            title='Track a return'
+            aria-label={t('Track a return')}
+            title={t('Track a return')}
             onClick={openAddForm}
           >
             +
@@ -228,22 +230,26 @@ export function Shipments () {
         {error !== null && (
           <div className='alert-error'>
             {error}{' '}
-            <button type='button' className='link-button' onClick={reload}>Try again</button>
+            <button type='button' className='link-button' onClick={reload}>
+              {t('Try again')}
+            </button>
           </div>
         )}
 
-        {loading && result === null && <p className='card-text'>Loading your shipments…</p>}
+        {loading && result === null && (
+          <p className='card-text'>{t('Loading your shipments…')}</p>
+        )}
 
         {!loading && error === null && items.length === 0 && (
           <div className='empty-state'>
             <p className='card-text'>
               {hasActiveFilters(filters)
-                ? 'No shipment matches these filters. Clear them to see the whole list again.'
-                : 'You are not tracking any shipment yet.'}
+                ? t('No shipment matches these filters. Clear them to see the whole list again.')
+                : t('You are not tracking any shipment yet.')}
             </p>
             {!hasActiveFilters(filters) && (
               <button type='button' className='btn btn-primary' onClick={openAddForm}>
-                Track a return
+                {t('Track a return')}
               </button>
             )}
           </div>
@@ -266,23 +272,25 @@ export function Shipments () {
         )}
 
         {pageCount > 1 && (
-          <nav className='pagination' aria-label='Pages'>
+          <nav className='pagination' aria-label={t('Pages')}>
             <button
               type='button'
               className='btn btn-ghost pagination-step'
-              aria-label='Previous page'
-              title='Previous page'
+              aria-label={t('Previous page')}
+              title={t('Previous page')}
               disabled={page <= 1 || loading}
               onClick={() => { apply({ page: page - 1 }) }}
             >
               <Chevron pointing='left' />
             </button>
-            <span className='pagination-label'>Page {page} of {pageCount}</span>
+            <span className='pagination-label'>
+              {t('Page {page} of {pages}', { page, pages: pageCount })}
+            </span>
             <button
               type='button'
               className='btn btn-ghost pagination-step'
-              aria-label='Next page'
-              title='Next page'
+              aria-label={t('Next page')}
+              title={t('Next page')}
               disabled={page >= pageCount || loading}
               onClick={() => { apply({ page: page + 1 }) }}
             >

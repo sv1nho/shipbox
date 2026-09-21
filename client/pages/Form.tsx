@@ -16,6 +16,8 @@ import { getTestData } from '../test-data.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
+import { useT } from '../i18n/context.js'
+import type { Translate } from '../i18n/context.js'
 import { fakerFR_BE, fakerNL_BE, fakerNL } from '@faker-js/faker'
 
 type Preview = {
@@ -59,6 +61,7 @@ const Field = ({
 )
 
 interface PartyFieldsetProps {
+  t: Translate;
   prefix: 'sender' | 'recipient';
   title: string;
   isCompany: boolean;
@@ -68,6 +71,7 @@ interface PartyFieldsetProps {
 }
 
 const PartyFieldset = ({
+  t,
   prefix,
   title,
   isCompany,
@@ -93,19 +97,19 @@ const PartyFieldset = ({
         onClick={() => setValue(isCompanyKey, false)}
         className={!isCompany ? 'segmented-btn segmented-btn-active' : 'segmented-btn'}
       >
-        Individual
+        {t('Individual')}
       </button>
       <button
         type='button'
         onClick={() => setValue(isCompanyKey, true)}
         className={isCompany ? 'segmented-btn segmented-btn-active' : 'segmented-btn'}
       >
-        Company
+        {t('Company')}
       </button>
     </div>
   )
 
-  const fillLabel = `Fill ${prefix} with random data`
+  const fillLabel = t('Fill {party} with random data', { party: t(prefix) })
 
   const generateBtn = (
     <button
@@ -156,7 +160,7 @@ const PartyFieldset = ({
           <input
             {...register(name('company'))}
             className='form-input'
-            placeholder='Company name'
+            placeholder={t('Company name')}
           />
           )
         : (
@@ -164,19 +168,19 @@ const PartyFieldset = ({
             <Field error={err('firstname')}>
               <input
                 {...register(name('firstname'), {
-                  required: 'First name is required',
+                  required: t('First name is required'),
                 })}
                 className='form-input'
-                placeholder='First name'
+                placeholder={t('First name')}
               />
             </Field>
             <Field error={err('lastname')}>
               <input
                 {...register(name('lastname'), {
-                  required: 'Last name is required',
+                  required: t('Last name is required'),
                 })}
                 className='form-input'
-                placeholder='Last name'
+                placeholder={t('Last name')}
               />
             </Field>
           </>
@@ -184,9 +188,9 @@ const PartyFieldset = ({
 
       <Field error={err('address')}>
         <input
-          {...register(name('address'), { required: 'Address is required' })}
+          {...register(name('address'), { required: t('Address is required') })}
           className='form-input'
-          placeholder='Address'
+          placeholder={t('Address')}
         />
       </Field>
 
@@ -195,14 +199,14 @@ const PartyFieldset = ({
           <input
             {...register(name('postal'), { required: 'Required' })}
             className='form-input'
-            placeholder='Postal code'
+            placeholder={t('Postal code')}
           />
         </Field>
         <Field error={err('city')}>
           <input
             {...register(name('city'), { required: 'Required' })}
             className='form-input'
-            placeholder='City'
+            placeholder={t('City')}
           />
         </Field>
       </div>
@@ -238,6 +242,7 @@ export function Form () {
   const [error, setError] = useState<string | null>(null)
   const [labelPayload, setLabelPayload] = useState<LabelPayload | null>(null)
   const [offerOpen, setOfferOpen] = useState(false)
+  const t = useT()
 
   const senderIsCompany = useWatch({ control, name: 'sender_isCompany' })
   const recipientIsCompany = useWatch({ control, name: 'recipient_isCompany' })
@@ -261,7 +266,7 @@ export function Form () {
       setLabelPayload(data)
       setPreview({ blob, url: URL.createObjectURL(blob), maskedTracking })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err.message : t('Unknown error'))
     }
   }
 
@@ -283,7 +288,8 @@ export function Form () {
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
           <PartyFieldset
             prefix='sender'
-            title='Sender'
+            t={t}
+            title={t('Sender')}
             isCompany={senderIsCompany}
             register={register}
             errors={errors}
@@ -291,7 +297,8 @@ export function Form () {
           />
           <PartyFieldset
             prefix='recipient'
-            title='Recipient'
+            t={t}
+            title={t('Recipient')}
             isCompany={recipientIsCompany}
             register={register}
             errors={errors}
@@ -300,15 +307,15 @@ export function Form () {
         </div>
 
         <div className='grid grid-cols-1 gap-6 sm:grid-cols-3'>
-          <SectionCard title='Language'>
+          <SectionCard title={t('Language')}>
             <select {...register('label_language')} className='form-select'>
-              <option value='fr'>French</option>
-              <option value='nl'>Dutch</option>
-              <option value='en'>English</option>
+              <option value='fr'>{t('French')}</option>
+              <option value='nl'>{t('Dutch')}</option>
+              <option value='en'>{t('English')}</option>
             </select>
           </SectionCard>
 
-          <SectionCard title='Carrier'>
+          <SectionCard title={t('Carrier')}>
             <select {...register('carrier')} className='form-select'>
               {CARRIER_IDS.map((id) => (
                 <option key={id} value={id}>{CARRIERS[id].label}</option>
@@ -316,7 +323,7 @@ export function Form () {
             </select>
           </SectionCard>
 
-          <SectionCard title='Tracking Number'>
+          <SectionCard title={t('Tracking Number')}>
             <Field error={errors.tracking_number?.message}>
               <input
                 {...register('tracking_number', {
@@ -346,7 +353,7 @@ export function Form () {
                 </>
                 )
               : (
-                  'Generate Label'
+                  t('Generate Label')
                 )}
           </button>
         </div>

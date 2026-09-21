@@ -6,6 +6,7 @@ import type { ArchivedFilter, ListParams, SortKey } from '../../shared/shipment.
 import type { StoreDto } from '../../shared/store.js'
 import { exportUrl, searchStores } from '../api/shipments.js'
 import { Chevron } from '../components/Chevron.js'
+import { useT } from '../i18n/context.js'
 import { DEFAULT_FILTERS, activeFilterCount, hasActiveFilters } from './filters.js'
 import { statusLabel } from './format.js'
 
@@ -55,6 +56,7 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
   const [appliedSearch, setAppliedSearch] = useState(filters.search)
   const [stores, setStores] = useState<StoreDto[]>([])
   const [panelOpen, setPanelOpen] = useState(false)
+  const t = useT()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -84,7 +86,7 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
   return (
     <div className='filter-bar'>
       <div className='filter-views'>
-        <div className='segmented' role='group' aria-label='Archive'>
+        <div className='segmented' role='group' aria-label={t('Archive')}>
           {Object.entries(ARCHIVED_LABELS).map(([value, label]) => (
             <button
               key={value}
@@ -97,7 +99,7 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
               aria-pressed={value === (filters.archived ?? DEFAULT_FILTERS.archived)}
               onClick={() => { onChange({ archived: value as ArchivedFilter }) }}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -112,14 +114,14 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
           aria-pressed={filters.attention === true}
           aria-label={
             attentionTotal > 0
-              ? `Needs attention, ${String(attentionTotal)} waiting`
-              : 'Needs attention, nothing waiting'
+              ? t('Needs attention, {count} waiting', { count: attentionTotal })
+              : t('Needs attention, nothing waiting')
           }
           onClick={() => {
             onChange({ attention: filters.attention === true ? undefined : true })
           }}
         >
-          Needs attention
+          {t('Needs attention')}
           {attentionTotal > 0 && <span className='badge-count'>{attentionTotal}</span>}
         </button>
 
@@ -130,7 +132,7 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
           aria-controls='filter-panel'
           onClick={() => { setPanelOpen((open) => !open) }}
         >
-          Filters
+          {t('Filters')}
           {narrowed > 0 && <span className='badge-count'>{narrowed}</span>}
           <Chevron pointing={panelOpen ? 'up' : 'down'} />
         </button>
@@ -148,22 +150,22 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
             onChange({ search: term.trim() === '' ? undefined : term.trim() })
           }}
         >
-          <label className='sr-only' htmlFor='filter-search'>Search</label>
+          <label className='sr-only' htmlFor='filter-search'>{t('Search')}</label>
           <input
             id='filter-search'
             className='form-input'
             type='search'
-            placeholder='Tracking number, store, order number…'
+            placeholder={t('Tracking number, store, order number…')}
             value={term}
             onChange={(event) => { setTerm(event.target.value) }}
           />
-          <button type='submit' className='btn btn-ghost btn-compact' aria-label='Search'>
+          <button type='submit' className='btn btn-ghost btn-compact' aria-label={t('Search')}>
             <SearchIcon />
           </button>
         </form>
 
         <div className='filter-row'>
-          <label className='sr-only' htmlFor='filter-store'>Store</label>
+          <label className='sr-only' htmlFor='filter-store'>{t('Store')}</label>
           <select
             id='filter-store'
             className='form-select'
@@ -173,13 +175,13 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
               onChange({ store: value === '' ? undefined : value })
             }}
           >
-            <option value=''>All stores</option>
+            <option value=''>{t('All stores')}</option>
             {storeNames.map((name) => (
               <option key={name} value={name}>{name}</option>
             ))}
           </select>
 
-          <label className='sr-only' htmlFor='filter-carrier'>Carrier</label>
+          <label className='sr-only' htmlFor='filter-carrier'>{t('Carrier')}</label>
           <select
             id='filter-carrier'
             className='form-select'
@@ -189,13 +191,13 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
               onChange({ carrier: isCarrierId(value) ? value : undefined })
             }}
           >
-            <option value=''>All carriers</option>
+            <option value=''>{t('All carriers')}</option>
             {CARRIER_IDS.map((id) => (
               <option key={id} value={id}>{CARRIERS[id].label}</option>
             ))}
           </select>
 
-          <label className='sr-only' htmlFor='filter-status'>Status</label>
+          <label className='sr-only' htmlFor='filter-status'>{t('Status')}</label>
           <select
             id='filter-status'
             className='form-select'
@@ -205,15 +207,15 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
               onChange({ status: isStatusFilter(value) ? value : undefined })
             }}
           >
-            <option value=''>All statuses</option>
-            <option value='open'>Not decided yet</option>
+            <option value=''>{t('All statuses')}</option>
+            <option value='open'>{t('Not decided yet')}</option>
             {SHIPMENT_STATUSES.map((status) => (
-              <option key={status} value={status}>{statusLabel(status)}</option>
+              <option key={status} value={status}>{t(statusLabel(status))}</option>
             ))}
           </select>
 
           <div className='filter-sort'>
-            <label className='sr-only' htmlFor='filter-sort'>Sort by</label>
+            <label className='sr-only' htmlFor='filter-sort'>{t('Sort by')}</label>
             <select
               id='filter-sort'
               className='form-select'
@@ -221,14 +223,14 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
               onChange={(event) => { onChange({ sort: event.target.value as SortKey }) }}
             >
               {SORT_KEYS.map((key) => (
-                <option key={key} value={key}>{SORT_LABELS[key]}</option>
+                <option key={key} value={key}>{t(SORT_LABELS[key])}</option>
               ))}
             </select>
 
             <button
               type='button'
               className='btn btn-ghost btn-compact'
-              aria-label={direction === 'desc' ? 'Descending' : 'Ascending'}
+              aria-label={direction === 'desc' ? t('Descending') : t('Ascending')}
               onClick={() => { onChange({ direction: direction === 'desc' ? 'asc' : 'desc' }) }}
             >
               {direction === 'desc' ? '↓' : '↑'}
@@ -253,12 +255,16 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
                   })
                 }}
               >
-                Clear filters
+                {t('Clear filters')}
               </button>
             )}
 
-            <a className='btn btn-ghost btn-compact' href={exportUrl(filters, 'csv')}>Export CSV</a>
-            <a className='btn btn-ghost btn-compact' href={exportUrl(filters, 'json')}>Export JSON</a>
+            <a className='btn btn-ghost btn-compact' href={exportUrl(filters, 'csv')}>
+              {t('Export CSV')}
+            </a>
+            <a className='btn btn-ghost btn-compact' href={exportUrl(filters, 'json')}>
+              {t('Export JSON')}
+            </a>
           </div>
         </div>
       </div>

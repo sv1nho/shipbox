@@ -3,6 +3,7 @@ import { TRANSITIONS } from '../../shared/transitions.js'
 import type { NextStep, TransitionAction } from '../../shared/transitions.js'
 import type { IsoDate } from '../../shared/shipment.js'
 import { today } from '../../shared/time.js'
+import { useT } from '../i18n/context.js'
 import { Modal } from './Modal.js'
 
 export type PromptResult = {
@@ -31,6 +32,7 @@ export function DatePrompt (
   const [date, setDate] = useState(() => today())
   const [reason, setReason] = useState('')
   const [lost, setLost] = useState(false)
+  const t = useT()
 
   const { label } = TRANSITIONS[action]
 
@@ -47,7 +49,7 @@ export function DatePrompt (
   return (
     <Modal titleId='date-prompt-title' onClose={onCancel}>
       <div className='modal-header'>
-        <h2 className='modal-title' id='date-prompt-title'>{label}</h2>
+        <h2 className='modal-title' id='date-prompt-title'>{t(label)}</h2>
       </div>
 
       <div className='modal-body space-y-3'>
@@ -65,7 +67,7 @@ export function DatePrompt (
                 aria-pressed={candidate === action}
                 onClick={() => { setAction(candidate) }}
               >
-                {TRANSITIONS[candidate].label}
+                {t(TRANSITIONS[candidate].label)}
               </button>
             ))}
           </div>
@@ -76,7 +78,7 @@ export function DatePrompt (
             {asking && (
               <>
                 <label className='form-label' htmlFor='reception-date'>
-                  When did the store receive it?
+                  {t('When did the store receive it?')}
                 </label>
                 <input
                   id='reception-date'
@@ -88,13 +90,13 @@ export function DatePrompt (
                   onChange={(event) => { setReceived(event.target.value) }}
                 />
                 <p className='field-hint'>
-                  Without it the waiting time of this store cannot be measured.
+                  {t('Without it the waiting time of this store cannot be measured.')}
                 </p>
 
-                {receptionMissing && <p className='field-error'>Pick the day it was received.</p>}
+                {receptionMissing && <p className='field-error'>{t('Pick the day it was received.')}</p>}
 
                 {receptionTooEarly && (
-                  <p className='field-error'>This cannot be earlier than the drop-off.</p>
+                  <p className='field-error'>{t('This cannot be earlier than the drop-off.')}</p>
                 )}
               </>
             )}
@@ -105,19 +107,19 @@ export function DatePrompt (
                 checked={lost}
                 onChange={(event) => { setLost(event.target.checked) }}
               />
-              The store never received it
+              {t('The store never received it')}
             </label>
 
             {lost && (
               <p className='field-hint'>
-                The wait will be counted from the drop-off instead of the reception.
+                {t('The wait will be counted from the drop-off instead of the reception.')}
               </p>
             )}
           </>
         )}
 
         <label className='form-label' htmlFor='transition-date'>
-          On which day?
+          {t('On which day?')}
         </label>
         <input
           id='transition-date'
@@ -129,16 +131,16 @@ export function DatePrompt (
           onChange={(event) => { setDate(event.target.value) }}
         />
 
-        {dateMissing && <p className='field-error'>Pick a day.</p>}
+        {dateMissing && <p className='field-error'>{t('Pick a day.')}</p>}
 
         {tooEarly && (
-          <p className='field-error'>This cannot be earlier than the previous step.</p>
+          <p className='field-error'>{t('This cannot be earlier than the previous step.')}</p>
         )}
 
         {action === 'reject' && (
           <>
             <label className='form-label' htmlFor='transition-reason'>
-              Why was it refused? (optional)
+              {t('Why was it refused? (optional)')}
             </label>
             <input
               id='transition-reason'
@@ -154,7 +156,7 @@ export function DatePrompt (
 
       <div className='modal-footer'>
         <button type='button' className='btn btn-ghost' onClick={onCancel} disabled={busy}>
-          Cancel
+          {t('Cancel')}
         </button>
         <button
           type='button'
@@ -170,7 +172,7 @@ export function DatePrompt (
             })
           }}
         >
-          {busy ? 'Saving…' : 'Confirm'}
+          {busy ? t('Saving…') : t('Confirm')}
         </button>
       </div>
     </Modal>

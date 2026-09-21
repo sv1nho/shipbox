@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ApiError, refusalMessage } from '../api/client.js'
 import { addStore } from '../api/shipments.js'
 import type { StoreDto } from '../../shared/store.js'
+import { useT } from '../i18n/context.js'
 import { Modal } from './Modal.js'
 
 type NewStoreDialogProps = {
@@ -16,6 +17,7 @@ export function NewStoreDialog ({ name, onCancel, onAdded }: NewStoreDialogProps
   const [storeName, setStoreName] = useState(name)
   const [supportEmail, setSupportEmail] = useState('')
   const [attempted, setAttempted] = useState(false)
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [duplicate, setDuplicate] = useState<string | null>(null)
@@ -44,7 +46,7 @@ export function NewStoreDialog ({ name, onCancel, onAdded }: NewStoreDialogProps
   return (
     <Modal titleId='new-store-title' onClose={onCancel}>
       <div className='modal-header'>
-        <h2 className='modal-title' id='new-store-title'>Add a store</h2>
+        <h2 className='modal-title' id='new-store-title'>{t('Add a store')}</h2>
       </div>
 
       <form
@@ -52,7 +54,7 @@ export function NewStoreDialog ({ name, onCancel, onAdded }: NewStoreDialogProps
         noValidate
         onSubmit={(event) => { event.preventDefault(); void submit() }}
       >
-        <label className='form-label' htmlFor='store-name'>Name</label>
+        <label className='form-label' htmlFor='store-name'>{t('Name')}</label>
         <input
           id='store-name'
           className='form-input'
@@ -60,9 +62,9 @@ export function NewStoreDialog ({ name, onCancel, onAdded }: NewStoreDialogProps
           value={storeName}
           onChange={(event) => { setStoreName(event.target.value); setDuplicate(null) }}
         />
-        {attempted && missingName && <p className='field-error'>A name is required.</p>}
+        {attempted && missingName && <p className='field-error'>{t('A name is required.')}</p>}
 
-        <label className='form-label' htmlFor='store-email'>Customer service email</label>
+        <label className='form-label' htmlFor='store-email'>{t('Customer service email')}</label>
         <input
           id='store-email'
           className='form-input'
@@ -73,20 +75,20 @@ export function NewStoreDialog ({ name, onCancel, onAdded }: NewStoreDialogProps
           onChange={(event) => { setSupportEmail(event.target.value) }}
         />
         <p className='field-hint'>
-          ShipBox writes to this address when a return sits too long. It is the whole point of
-          keeping a store.
+          {t('ShipBox writes to this address when a return sits too long. ' +
+            'It is the whole point of keeping a store.')}
         </p>
-        {attempted && badEmail && <p className='field-error'>An email address is required.</p>}
+        {attempted && badEmail && <p className='field-error'>{t('An email address is required.')}</p>}
 
         {duplicate !== null && <p className='field-error'>{duplicate}</p>}
         {error !== null && <div className='alert-error'>{error}</div>}
 
         <div className='modal-footer'>
           <button type='button' className='btn btn-ghost' onClick={onCancel} disabled={busy}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type='submit' className='btn btn-primary' disabled={busy}>
-            {busy ? 'Adding…' : 'Add the store'}
+            {busy ? t('Adding…') : t('Add the store')}
           </button>
         </div>
       </form>

@@ -11,6 +11,8 @@ import { MAX_AMOUNT_CENTS } from '../../shared/shipment.js'
 import type { CreateShipmentInput, LabelInput } from '../../shared/shipment.js'
 import { SHIPMENT_STATUSES, isDecisionStatus } from '../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../shared/shipment-status.js'
+import { useT } from '../i18n/context.js'
+import type { Translate } from '../i18n/context.js'
 import { statusLabel } from './format.js'
 import { Modal } from './Modal.js'
 import { StoreCombobox } from './StoreCombobox.js'
@@ -110,7 +112,7 @@ type Checked = {
   input: CreateShipmentInput | null
 }
 
-export function check (draft: Draft, label?: LabelInput): Checked {
+export function check (t: Translate, draft: Draft, label?: LabelInput): Checked {
   const tracking = normalizeTrackingNumber(draft.trackingNumber)
   const amountCents = parseAmount(draft.amount)
   const { patternHint, pattern } = CARRIERS[draft.carrier]
@@ -125,32 +127,37 @@ export function check (draft: Draft, label?: LabelInput): Checked {
   const broken = draft.requestedDate === '' ? null : findOrderBreak(dates)
 
   const problems = {
-    ...(tracking === '' ? { trackingNumber: 'A tracking number is required.' } : {}),
+    ...(tracking === '' ? { trackingNumber: t('A tracking number is required.') } : {}),
     ...(tracking !== '' && !pattern.test(tracking)
-      ? { trackingNumber: `This is not a ${CARRIERS[draft.carrier].label} number: ${patternHint}.` }
+      ? {
+          trackingNumber: t('This is not a {carrier} number: {hint}.', {
+            carrier: CARRIERS[draft.carrier].label,
+            hint: patternHint,
+          }),
+        }
       : {}),
-    ...(draft.store.trim() === '' ? { store: 'Say which store the parcel goes back to.' } : {}),
+    ...(draft.store.trim() === '' ? { store: t('Say which store the parcel goes back to.') } : {}),
     ...(draft.orderNumber.trim() === ''
-      ? { orderNumber: 'The store searches by its own order number, not by the tracking number.' }
+      ? { orderNumber: t('The store searches by its own order number, not by the tracking number.') }
       : {}),
-    ...(amountCents === null ? { amount: 'An amount like 49.99 is required.' } : {}),
+    ...(amountCents === null ? { amount: t('An amount like 49.99 is required.') } : {}),
     ...(amountCents !== null && amountCents > MAX_AMOUNT_CENTS
-      ? { amount: 'An amount cannot be more than 1,000,000.' }
+      ? { amount: t('An amount cannot be more than 1,000,000.') }
       : {}),
     ...(draft.recipientPostalCode.trim() === ''
-      ? { recipientPostalCode: 'A postal code is required.' }
+      ? { recipientPostalCode: t('A postal code is required.') }
       : {}),
-    ...(draft.requestedDate === '' ? { requestedDate: 'Pick the day you asked for the return.' } : {}),
+    ...(draft.requestedDate === '' ? { requestedDate: t('Pick the day you asked for the return.') } : {}),
     ...(draft.status !== 'pending' && draft.dropoffDate === ''
-      ? { dropoffDate: 'Pick the day you dropped the parcel off.' }
+      ? { dropoffDate: t('Pick the day you dropped the parcel off.') }
       : {}),
     ...(asksReception(draft) && draft.receivedDate === ''
-      ? { receivedDate: 'Pick the day the store received it.' }
+      ? { receivedDate: t('Pick the day the store received it.') }
       : {}),
     ...(isDecisionStatus(draft.status) && draft.decisionDate === ''
-      ? { decisionDate: 'Pick the day the store decided.' }
+      ? { decisionDate: t('Pick the day the store decided.') }
       : {}),
-    ...(broken === null ? {} : { [broken.field]: 'This cannot be earlier than the step before it.' }),
+    ...(broken === null ? {} : { [broken.field]: t('This cannot be earlier than the step before it.') }),
   }
 
   if (Object.keys(problems).length > 0 || amountCents === null) return { problems, input: null }
@@ -188,8 +195,9 @@ export function AddShipmentDialog (
   const [draft, setDraft] = useState(() => draftFrom(prefill))
   const [attempted, setAttempted] = useState(false)
   const [addingStore, setAddingStore] = useState(false)
+  const t = useT()
 
-  const { problems, input } = check(draft, prefill.label)
+  const { problems, input } = check(t, draft, prefill.label)
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft({ ...draft, [key]: value })
   }
@@ -213,7 +221,7 @@ export function AddShipmentDialog (
   return (
     <Modal titleId='add-shipment-title' onClose={onCancel}>
       <div className='modal-header'>
-        <h2 className='modal-title' id='add-shipment-title'>Track a return</h2>
+        <h2 className='modal-title' id='add-shipment-title'>{t('Track a return')}</h2>
       </div>
 
       <form
@@ -239,7 +247,7 @@ export function AddShipmentDialog (
         </div>
 
         <Field
-          label='Tracking number'
+          label={t('Tracking number')}
           htmlFor='shipment-tracking'
           problem={problem('trackingNumber') ?? fieldError('trackingNumber')}
         >
@@ -254,7 +262,7 @@ export function AddShipmentDialog (
         </Field>
 
         <Field
-          label='Store'
+          label={t('Store')}
           htmlFor='shipment-store'
           problem={problem('store') ?? fieldError('store')}
         >
@@ -268,8 +276,8 @@ export function AddShipmentDialog (
             <button
               type='button'
               className='icon-btn icon-btn-add'
-              aria-label='Add a store'
-              title='Add a store'
+              aria-label={t('Add a store')}
+              title={t('Add a store')}
               onClick={() => { setAddingStore(true) }}
             >
               +
@@ -279,7 +287,7 @@ export function AddShipmentDialog (
 
         <div className='form-row form-row-three'>
           <Field
-            label='Amount'
+            label={t('Amount')}
             htmlFor='shipment-amount'
             problem={problem('amount') ?? fieldError('amountCents')}
           >
@@ -294,7 +302,7 @@ export function AddShipmentDialog (
           </Field>
 
           <Field
-            label='Postal code'
+            label={t('Postal code')}
             htmlFor='shipment-postal'
             problem={problem('recipientPostalCode') ?? fieldError('recipientPostalCode')}
           >
@@ -307,7 +315,7 @@ export function AddShipmentDialog (
             />
           </Field>
 
-          <Field label='Country' htmlFor='shipment-country' problem={undefined}>
+          <Field label={t('Country')} htmlFor='shipment-country' problem={undefined}>
             <select
               id='shipment-country'
               className='form-select'
@@ -321,7 +329,7 @@ export function AddShipmentDialog (
 
         <div className='form-row'>
           <Field
-            label='Return requested on'
+            label={t('Return requested on')}
             htmlFor='shipment-requested'
             problem={problem('requestedDate') ?? fieldError('requestedDate')}
           >
@@ -335,7 +343,7 @@ export function AddShipmentDialog (
             />
           </Field>
 
-          <Field label='Where is it already?' htmlFor='shipment-status' problem={undefined}>
+          <Field label={t('Where is it already?')} htmlFor='shipment-status' problem={undefined}>
             <select
               id='shipment-status'
               className='form-select'
@@ -343,7 +351,7 @@ export function AddShipmentDialog (
               onChange={(event) => { set('status', event.target.value as ShipmentStatus) }}
             >
               {SHIPMENT_STATUSES.map((status) => (
-                <option key={status} value={status}>{statusLabel(status)}</option>
+                <option key={status} value={status}>{t(statusLabel(status))}</option>
               ))}
             </select>
           </Field>
@@ -352,7 +360,7 @@ export function AddShipmentDialog (
         {draft.status !== 'pending' && (
           <div className='form-row'>
             <Field
-              label='Dropped off on'
+              label={t('Dropped off on')}
               htmlFor='shipment-dropoff'
               problem={problem('dropoffDate') ?? fieldError('dropoffDate')}
             >
@@ -369,7 +377,7 @@ export function AddShipmentDialog (
 
             {asksReception(draft) && (
               <Field
-                label='Received on'
+                label={t('Received on')}
                 htmlFor='shipment-received'
                 problem={problem('receivedDate') ?? fieldError('receivedDate')}
               >
@@ -394,14 +402,14 @@ export function AddShipmentDialog (
               checked={draft.neverReceived}
               onChange={(event) => { set('neverReceived', event.target.checked) }}
             />
-            The store never received it
+            {t('The store never received it')}
           </label>
         )}
 
         {isDecisionStatus(draft.status) && (
           <div className='form-row'>
             <Field
-              label='Decided on'
+              label={t('Decided on')}
               htmlFor='shipment-decision'
               problem={problem('decisionDate') ?? fieldError('decisionDate')}
             >
@@ -418,7 +426,7 @@ export function AddShipmentDialog (
 
             {draft.status === 'rejected' && (
               <Field
-                label='Refused because (optional)'
+                label={t('Refused because (optional)')}
                 htmlFor='shipment-reason'
                 problem={fieldError('rejectionReason')}
               >
@@ -435,7 +443,7 @@ export function AddShipmentDialog (
 
         <div className='form-row'>
           <Field
-            label='Order number'
+            label={t('Order number')}
             htmlFor='shipment-order'
             problem={problem('orderNumber') ?? fieldError('orderNumber')}
           >
@@ -448,7 +456,7 @@ export function AddShipmentDialog (
             />
           </Field>
 
-          <Field label='Note (optional)' htmlFor='shipment-note' problem={undefined}>
+          <Field label={t('Note (optional)')} htmlFor='shipment-note' problem={undefined}>
             <input
               id='shipment-note'
               className='form-input'
@@ -462,10 +470,10 @@ export function AddShipmentDialog (
 
         <div className='modal-footer'>
           <button type='button' className='btn btn-ghost' onClick={onCancel} disabled={busy}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type='submit' className='btn btn-primary' disabled={busy}>
-            {busy ? 'Adding…' : 'Track it'}
+            {busy ? t('Adding…') : t('Track it')}
           </button>
         </div>
       </form>

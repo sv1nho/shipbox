@@ -3,6 +3,7 @@ import { useSession } from '../auth/client.js'
 import type { ShipmentDto } from '../../shared/shipment.js'
 import { MAIL_LANGUAGES, mailDraft, mailLanguageLabel, mailtoLink } from './mail.js'
 import type { MailLanguage } from './mail.js'
+import { useT } from '../i18n/context.js'
 import { Modal } from './Modal.js'
 
 type MailDialogProps = {
@@ -46,6 +47,7 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
   const [language, setLanguage] = useState<MailLanguage>('fr')
   const [edited, setEdited] = useState<Record<Part, string> | null>(null)
   const [copied, setCopied] = useState<Part | null>(null)
+  const t = useT()
   const [failed, setFailed] = useState(false)
   const [handedOver, setHandedOver] = useState(false)
 
@@ -73,7 +75,9 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
     <button
       type='button'
       className='icon-btn icon-btn-copy'
-      aria-label={copied === part ? `${LABELS[part]} copied` : `Copy the ${part}`}
+      aria-label={copied === part
+        ? t('{part} copied', { part: t(LABELS[part]) })
+        : t('Copy the {part}', { part: t(LABELS[part]).toLowerCase() })}
       onClick={() => { copy(part) }}
     >
       <CopyIcon copied={copied === part} />
@@ -83,7 +87,7 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
   return (
     <Modal titleId='mail-dialog-title' onClose={onClose}>
       <div className='modal-header'>
-        <h2 className='modal-title' id='mail-dialog-title'>Chase {shipment.store}</h2>
+        <h2 className='modal-title' id='mail-dialog-title'>{t('Chase {store}', { store: shipment.store })}</h2>
       </div>
 
       <div className='modal-body space-y-3'>
@@ -105,12 +109,13 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
 
         <p className='field-hint'>
           {shipment.storeSupportEmail === null
-            ? `No address on file for ${shipment.store}. Copy the message into their contact form, or add the address when you add the store.`
-            : `To ${shipment.storeSupportEmail}`}
+            ? t('No address on file for {store}. Copy the message into their contact form, ' +
+              'or add the address when you add the store.', { store: shipment.store })
+            : t('To {address}', { address: shipment.storeSupportEmail })}
         </p>
 
         <div className='mail-field-header'>
-          <label className='form-label' htmlFor='mail-subject'>Subject</label>
+          <label className='form-label' htmlFor='mail-subject'>{t('Subject')}</label>
           {copyButton('subject')}
         </div>
         <input
@@ -121,7 +126,7 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
         />
 
         <div className='mail-field-header'>
-          <label className='form-label' htmlFor='mail-body'>Message</label>
+          <label className='form-label' htmlFor='mail-body'>{t('Message')}</label>
           {copyButton('body')}
         </div>
         <textarea
@@ -134,25 +139,26 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
 
         {failed && (
           <p className='field-error'>
-            The clipboard is not available here. Select the text and copy it yourself.
+            {t('The clipboard is not available here. Select the text and copy it yourself.')}
           </p>
         )}
       </div>
 
       {handedOver && (
         <p className='field-hint mail-sent-ask'>
-          ShipBox cannot tell whether the message went out. Say so and the row will show it.
+          {t('ShipBox cannot tell whether the message went out. ' +
+            'Say so and the row will show it.')}
         </p>
       )}
 
       <div className='modal-footer'>
         <button type='button' className='btn btn-ghost' onClick={onClose} disabled={busy}>
-          {handedOver ? 'Not yet' : 'Close'}
+          {handedOver ? t('Not yet') : t('Close')}
         </button>
 
         {handedOver ? (
           <button type='button' className='btn btn-primary' disabled={busy} onClick={onSent}>
-            {busy ? 'Saving…' : 'I sent it'}
+            {busy ? t('Saving…') : t('I sent it')}
           </button>
         ) : (
           <a
@@ -162,7 +168,7 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
             rel='noreferrer'
             onClick={() => { setHandedOver(true) }}
           >
-            Open in my mail app
+            {t('Open in my mail app')}
           </a>
         )}
       </div>

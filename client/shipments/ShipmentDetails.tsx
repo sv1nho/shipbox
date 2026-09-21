@@ -5,6 +5,7 @@ import { CARRIERS } from '../../shared/carriers.js'
 import { ORDERED_DATED_FIELDS, findOrderBreak } from '../../shared/transitions.js'
 import type { DatedField } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
+import { useT } from '../i18n/context.js'
 import { alertMessage, days, formatAmount, formatDate, zonedDate } from './format.js'
 import { StatusPill } from './StatusPill.js'
 import { Modal } from './Modal.js'
@@ -55,9 +56,10 @@ function Field ({ label, children }: { label: string; children: ReactNode }) {
 
 export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: DetailsProps) {
   const [draft, setDraft] = useState<Draft | null>(null)
+  const t = useT()
 
   const stored = draftOf(shipment)
-  const alert = alertMessage(shipment)
+  const alert = alertMessage(t, shipment)
   const broken = draft !== null && findOrderBreak(draft) !== null
   const erased = draft !== null && ORDERED_DATED_FIELDS.some((f) => draft[f] === '' && stored[f] !== '')
   const addedApart = zonedDate(shipment.createdAt) !== shipment.requestedDate
@@ -65,7 +67,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
   return (
     <Modal titleId='details-title' onClose={onClose}>
       <div className='modal-header'>
-        <h2 className='modal-title' id='details-title'>Shipment details</h2>
+        <h2 className='modal-title' id='details-title'>{t('Shipment details')}</h2>
         <StatusPill status={shipment.status} />
       </div>
 
@@ -73,23 +75,23 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
         {alert !== null && <p className='alert-error detail-alert'>{alert}</p>}
 
         <dl className='detail-list'>
-          <Field label='Tracking number'>
+          <Field label={t('Tracking number')}>
             <a className='link' href={shipment.trackingUrl} target='_blank' rel='noreferrer'>
               {shipment.trackingNumber}
             </a>
           </Field>
-          <Field label='Carrier'>{CARRIERS[shipment.carrier].label}</Field>
-          <Field label='Store'>{shipment.store}</Field>
+          <Field label={t('Carrier')}>{CARRIERS[shipment.carrier].label}</Field>
+          <Field label={t('Store')}>{shipment.store}</Field>
           {shipment.storeSupportEmail !== null && (
-            <Field label='Customer service'>
+            <Field label={t('Customer service')}>
               <a className='link' href={`mailto:${shipment.storeSupportEmail}`}>
                 {shipment.storeSupportEmail}
               </a>
             </Field>
           )}
-          <Field label='Order number'>{shipment.orderNumber}</Field>
-          <Field label='Amount'>{formatAmount(shipment.amountCents, shipment.currency)}</Field>
-          <Field label='Sent to'>
+          <Field label={t('Order number')}>{shipment.orderNumber}</Field>
+          <Field label={t('Amount')}>{formatAmount(shipment.amountCents, shipment.currency)}</Field>
+          <Field label={t('Sent to')}>
             {shipment.recipientPostalCode} {shipment.recipientCountry}
           </Field>
 
@@ -97,16 +99,16 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             ? ORDERED_DATED_FIELDS
               .filter((field) => stored[field] !== '')
               .map((field) => (
-                <Field key={field} label={DATE_LABELS[field]}>
+                <Field key={field} label={t(DATE_LABELS[field])}>
                   {formatDate(stored[field])}
                 </Field>
               ))
             : ORDERED_DATED_FIELDS.map((field) => (
-              <Field key={field} label={DATE_LABELS[field]}>
+              <Field key={field} label={t(DATE_LABELS[field])}>
                 <input
                   type='date'
                   className='form-input'
-                  aria-label={DATE_LABELS[field]}
+                  aria-label={t(DATE_LABELS[field])}
                   value={draft[field]}
                   {...boundsOf(draft, field)}
                   onChange={(event) => { setDraft({ ...draft, [field]: event.target.value }) }}
@@ -115,55 +117,55 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             ))}
 
           {shipment.lastChasedAt !== null && (
-            <Field label='Store chased'>{formatDate(shipment.lastChasedAt)}</Field>
+            <Field label={t('Store chased')}>{formatDate(shipment.lastChasedAt)}</Field>
           )}
 
           {shipment.neverReceived && (
-            <Field label='Reception'>Never reached the store</Field>
+            <Field label={t('Reception')}>{t('Never reached the store')}</Field>
           )}
 
           {addedApart && (
-            <Field label='Added to ShipBox'>{formatDate(zonedDate(shipment.createdAt))}</Field>
+            <Field label={t('Added to ShipBox')}>{formatDate(zonedDate(shipment.createdAt))}</Field>
           )}
 
-          <Field label='Since the request'>{days(shipment.daysSinceRequested)}</Field>
+          <Field label={t('Since the request')}>{days(t, shipment.daysSinceRequested)}</Field>
           {shipment.daysSinceDropoff !== null && (
-            <Field label='Since the drop-off'>{days(shipment.daysSinceDropoff)}</Field>
+            <Field label={t('Since the drop-off')}>{days(t, shipment.daysSinceDropoff)}</Field>
           )}
           {shipment.daysSinceReceived !== null && (
-            <Field label='Since the store received it'>
-              {days(shipment.daysSinceReceived)}
+            <Field label={t('Since the store received it')}>
+              {days(t, shipment.daysSinceReceived)}
             </Field>
           )}
           {shipment.decisionDelayDays !== null && (
-            <Field label='Waited for the decision'>{days(shipment.decisionDelayDays)}</Field>
+            <Field label={t('Waited for the decision')}>{days(t, shipment.decisionDelayDays)}</Field>
           )}
           {shipment.totalDelayDays !== null && (
-            <Field label='The whole return took'>{days(shipment.totalDelayDays)}</Field>
+            <Field label={t('The whole return took')}>{days(t, shipment.totalDelayDays)}</Field>
           )}
 
           {shipment.rejectionReason !== null && (
-            <Field label='Refused because'>{shipment.rejectionReason}</Field>
+            <Field label={t('Refused because')}>{shipment.rejectionReason}</Field>
           )}
-          {shipment.note !== null && <Field label='Note'>{shipment.note}</Field>}
-          <Field label='Stored label'>
-            {shipment.hasLabel ? 'Yes, the PDF can be rebuilt' : 'No, added by hand'}
+          {shipment.note !== null && <Field label={t('Note')}>{shipment.note}</Field>}
+          <Field label={t('Stored label')}>
+            {shipment.hasLabel ? t('Yes, the PDF can be rebuilt') : t('No, added by hand')}
           </Field>
           {shipment.archivedAt !== null && (
-            <Field label='Archived'>{formatDate(zonedDate(shipment.archivedAt))}</Field>
+            <Field label={t('Archived')}>{formatDate(zonedDate(shipment.archivedAt))}</Field>
           )}
-          <Field label='Last change'>{formatDate(zonedDate(shipment.updatedAt))}</Field>
+          <Field label={t('Last change')}>{formatDate(zonedDate(shipment.updatedAt))}</Field>
         </dl>
 
         {broken && (
           <p className='field-error'>
-            The dates must follow the request, drop-off, reception then decision order.
+            {t('The dates must follow the request, drop-off, reception then decision order.')}
           </p>
         )}
 
         {erased && (
           <p className='field-error'>
-            A date already recorded cannot be removed here. Undo the step instead.
+            {t('A date already recorded cannot be removed here. Undo the step instead.')}
           </p>
         )}
 
@@ -173,13 +175,13 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
       <div className='modal-footer'>
         {draft === null ? (
           <>
-            <button type='button' className='btn btn-ghost' onClick={onClose}>Close</button>
+            <button type='button' className='btn btn-ghost' onClick={onClose}>{t('Close')}</button>
             <button
               type='button'
               className='btn btn-primary'
               onClick={() => { setDraft(stored) }}
             >
-              Edit the dates
+              {t('Edit the dates')}
             </button>
           </>
         ) : (
@@ -190,7 +192,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               disabled={busy}
               onClick={() => { setDraft(null) }}
             >
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               type='button'
@@ -206,7 +208,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
                 )
               }}
             >
-              {busy ? 'Saving…' : 'Save the dates'}
+              {busy ? t('Saving…') : t('Save the dates')}
             </button>
           </>
         )}

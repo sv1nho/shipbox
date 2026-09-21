@@ -8,6 +8,7 @@ import type { LabelPayload } from '../../shared/label-payload.js'
 import type { CreateShipmentInput } from '../../shared/shipment.js'
 import { AddShipmentDialog, FIELDS_WITH_A_PLACE } from './AddShipmentDialog.js'
 import type { Prefill } from './AddShipmentDialog.js'
+import { useT } from '../i18n/context.js'
 import { Modal } from './Modal.js'
 
 type TrackOfferProps = {
@@ -36,6 +37,7 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [refused, setRefused] = useState<ApiError | null>(null)
+  const t = useT()
 
   useEffect(() => {
     if (!signedIn) return
@@ -86,45 +88,46 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
   return (
     <Modal titleId='track-offer-title' onClose={onClose}>
       <div className='modal-header'>
-        <h2 className='modal-title' id='track-offer-title'>Keep an eye on this return</h2>
+        <h2 className='modal-title' id='track-offer-title'>{t('Keep an eye on this return')}</h2>
       </div>
 
       <div className='modal-body space-y-3'>
         {!signedIn && (
           <p className='card-text'>
-            <Link to='/login'>Sign in</Link> to follow this parcel from the drop-off to the refund.
+            <Link to='/login'>{t('Sign in')}</Link>{' '}
+            {t('to follow this parcel from the drop-off to the refund.')}
           </p>
         )}
 
         {signedIn && added && (
           <p className='card-text'>
-            It is on your list. Record the drop-off there once the parcel is gone, and find the
-            label again whenever you need it.
+            {t('It is on your list. Record the drop-off there once the parcel is gone, ' +
+              'and find the label again whenever you need it.')}
           </p>
         )}
 
         {signedIn && !added && known === null && (
-          <p className='card-text'>Looking for this parcel in your list…</p>
+          <p className='card-text'>{t('Looking for this parcel in your list…')}</p>
         )}
 
         {signedIn && !added && known !== null && known !== 'unknown' && known.tracked && (
           <p className='card-text'>
-            You already track this parcel.{' '}
-            <Link to={`/shipments?search=${payload.tracking_number}`}>Open it</Link>.
+            {t('You already track this parcel.')}{' '}
+            <Link to={`/shipments?search=${payload.tracking_number}`}>{t('Open it')}</Link>.
           </p>
         )}
 
         {signedIn && !added && known !== null && (known === 'unknown' || !known.tracked) && (
           <p className='card-text'>
-            Add it to your list and ShipBox will keep the label, count the days and warn you when
-            the store sits on it.
+            {t('Add it to your list and ShipBox will keep the label, count the days ' +
+              'and warn you when the store sits on it.')}
           </p>
         )}
       </div>
 
       <div className='modal-footer'>
         <button type='button' className='btn btn-ghost' onClick={onClose}>
-          {added ? 'Stay on the form' : 'Not now'}
+          {added ? t('Stay on the form') : t('Not now')}
         </button>
 
         {signedIn && added && (
@@ -133,7 +136,7 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
             className='btn btn-primary'
             onClick={() => { void navigate('/shipments') }}
           >
-            Open my shipments
+            {t('Open my shipments')}
           </button>
         )}
 
@@ -144,7 +147,7 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
             disabled={known === null}
             onClick={() => { setFilling(true) }}
           >
-            Add to tracking
+            {t('Add to tracking')}
           </button>
         )}
       </div>

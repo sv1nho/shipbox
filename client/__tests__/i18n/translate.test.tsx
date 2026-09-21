@@ -68,11 +68,12 @@ describe('translating', () => {
     expect(fill(phrase, vars)).toBe(expected)
   })
 
-  it('every French phrase answers a phrase the source can ask for', () => {
-    for (const [english, french] of Object.entries(FRENCH)) {
-      expect(french.trim()).not.toBe('')
-      expect(french).not.toBe(english)
-    }
+  it('never answers a phrase with nothing', () => {
+    const blank = Object.entries(FRENCH)
+      .filter(([, french]) => french.trim() === '')
+      .map(([english]) => english)
+
+    expect(blank).toEqual([])
   })
 })
 

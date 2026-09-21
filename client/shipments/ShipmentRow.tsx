@@ -2,6 +2,7 @@ import type { ShipmentDto } from '../../shared/shipment.js'
 import { TRANSITIONS, menuSteps, nextStep, undoLabel } from '../../shared/transitions.js'
 import type { NextStep } from '../../shared/transitions.js'
 import { CARRIERS } from '../../shared/carriers.js'
+import { useT } from '../i18n/context.js'
 import { alertMessage, delayInfo, formatAmount, formatDate, statusDate } from './format.js'
 import { needsMail } from './mail.js'
 import { StatusPill } from './StatusPill.js'
@@ -30,12 +31,13 @@ type RowProps = {
 }
 
 export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
-  const alert = alertMessage(shipment)
+  const t = useT()
+  const alert = alertMessage(t, shipment)
   const step = nextStep(shipment.status)
   const undo = undoLabel(shipment.status)
   const archived = shipment.archivedAt !== null
   const state = statusDate(shipment)
-  const delay = delayInfo(shipment)
+  const delay = delayInfo(t, shipment)
 
   return (
     <article className={archived ? 'shipment-row shipment-row-archived' : 'shipment-row'}>
@@ -45,7 +47,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
         <a
           className='shipment-tracking'
           href={shipment.trackingUrl}
-          title={`Track this parcel on ${CARRIERS[shipment.carrier].label}`}
+          title={t('Track this parcel on {carrier}', { carrier: CARRIERS[shipment.carrier].label })}
           target='_blank'
           rel='noreferrer'
         >
@@ -58,7 +60,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
       <span className='shipment-amount'>{formatAmount(shipment.amountCents, shipment.currency)}</span>
 
       <span className='shipment-dates'>
-        <span className='shipment-date'>{state.label} {formatDate(state.date)}</span>
+        <span className='shipment-date'>{t(state.label)} {formatDate(state.date)}</span>
         {delay !== null && (
           <span className={alert === null ? 'shipment-delay' : 'shipment-delay shipment-delay-alert'}>
             {alert !== null && (
@@ -68,7 +70,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 width='14'
                 height='14'
                 role='img'
-                aria-label='Needs attention'
+                aria-label={t('Needs attention')}
               >
                 <path
                   fill='currentColor'
@@ -89,7 +91,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
             className={`btn status-btn ${stepClass(step)}`}
             onClick={() => { handlers.onTransition(shipment, step.actions) }}
           >
-            {step.label}
+            {t(step.label)}
           </button>
         )}
       </div>
@@ -99,7 +101,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
           <span
             className='chased-mark'
             role='img'
-            aria-label={`Chased on ${formatDate(shipment.lastChasedAt)}`}
+            aria-label={t('Chased on {date}', { date: formatDate(shipment.lastChasedAt) })}
           >
             ✓
           </span>
@@ -109,7 +111,10 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
           <button
             type='button'
             className='icon-btn icon-btn-mail'
-            aria-label={`Chase ${shipment.store} about ${shipment.trackingNumber}`}
+            aria-label={t('Chase {store} about {tracking}', {
+              store: shipment.store,
+              tracking: shipment.trackingNumber,
+            })}
             onClick={() => { handlers.onWriteToStore(shipment) }}
           >
             <svg
@@ -131,7 +136,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
       <button
         type='button'
         className='icon-btn icon-btn-info'
-        aria-label={`Details for ${shipment.trackingNumber}`}
+        aria-label={t('Details for {tracking}', { tracking: shipment.trackingNumber })}
         onClick={() => { handlers.onShowDetails(shipment) }}
       >
         i
@@ -141,7 +146,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
         <button
           type='button'
           className='icon-btn'
-          aria-label={`More actions for ${shipment.trackingNumber}`}
+          aria-label={t('More actions for {tracking}', { tracking: shipment.trackingNumber })}
           aria-expanded={menuOpen}
           onClick={() => { handlers.onToggleMenu(shipment) }}
         >
@@ -159,7 +164,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                   className='row-menu-item'
                   onClick={() => { handlers.onTransition(shipment, entry.actions) }}
                 >
-                  {entry.label}
+                  {t(entry.label)}
                 </button>
               ))}
 
@@ -170,7 +175,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 className='row-menu-item'
                 onClick={() => { handlers.onRevert(shipment) }}
               >
-                {undo}
+                {t(undo)}
               </button>
             )}
 
@@ -181,7 +186,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 className='row-menu-item'
                 onClick={() => { handlers.onDownloadLabel(shipment) }}
               >
-                Download the label again
+                {t('Download the label again')}
               </button>
             )}
 
@@ -194,7 +199,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 else handlers.onArchive(shipment)
               }}
             >
-              {archived ? 'Put back in the list' : 'Archive'}
+              {archived ? t('Put back in the list') : t('Archive')}
             </button>
 
             <button
@@ -203,7 +208,7 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
               className='row-menu-item row-menu-item-danger'
               onClick={() => { handlers.onDelete(shipment) }}
             >
-              Delete for good
+              {t('Delete for good')}
             </button>
           </div>
         )}
