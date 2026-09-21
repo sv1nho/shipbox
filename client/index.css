@@ -980,16 +980,14 @@ html, body {
 
   .dash-rows {
     display: grid;
-    gap: 0.5rem;
+    grid-template-columns: 8.5rem 1fr minmax(4rem, max-content);
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
     margin-top: 0.875rem;
   }
 
-  .dash-row {
-    display: grid;
-    grid-template-columns: 8.5rem 1fr minmax(4rem, max-content);
-    align-items: center;
-    gap: 0.75rem;
-  }
+  .dash-row { display: contents; }
 
   .dash-row-head {
     font-size: 0.6875rem;
@@ -998,8 +996,6 @@ html, body {
     letter-spacing: 0.05em;
     color: var(--color-text-subtle);
   }
-
-  .dash-row-head { align-items: end; }
 
   .dash-row-head > :last-child { text-align: right; }
 
@@ -1057,13 +1053,12 @@ html, body {
   }
 
   @media (max-width: 34rem) {
-    .dash-row { grid-template-columns: 6rem 1fr minmax(3.5rem, max-content); }
+    .dash-rows { grid-template-columns: 6rem 1fr minmax(3.5rem, max-content); }
   }
 
   @media (max-width: 30rem) {
-    .dash-row {
-      grid-template-columns: 1fr max-content max-content;
-      gap: 0.625rem;
+    .dash-rows {
+      grid-template-columns: minmax(0, 1fr) minmax(3rem, max-content) minmax(3.5rem, max-content);
     }
 
     .dash-row-head > :not(:first-child) { text-align: right; }
