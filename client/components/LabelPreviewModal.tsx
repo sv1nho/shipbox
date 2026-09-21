@@ -53,8 +53,8 @@ export function LabelPreviewModal ({
             src={pdfUrl}
             height='480'
           />
-          <p className='mt-3 text-sm text-zinc-500'>
-            <span className='font-medium text-zinc-700'>{t('Tracking:')}</span>{' '}
+          <p className='mt-3 text-sm text-[var(--color-text-muted)]'>
+            <span className='font-medium text-[var(--color-text)]'>{t('Tracking:')}</span>{' '}
             {maskedTracking}
           </p>
         </div>
