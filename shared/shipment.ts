@@ -69,6 +69,8 @@ export type CreateShipmentInput = {
   label?: LabelInput
 }
 
+export const MAX_AMOUNT_CENTS = 100_000_000
+
 export const REQUIRED_CREATE_FIELDS = [
   'trackingNumber',
   'carrier',

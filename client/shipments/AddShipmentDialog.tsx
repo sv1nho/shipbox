@@ -7,6 +7,7 @@ import type { Country } from '../../shared/label-payload.js'
 import { normalizeTrackingNumber, parseAmount } from '../../shared/normalize.js'
 import { findOrderBreak } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
+import { MAX_AMOUNT_CENTS } from '../../shared/shipment.js'
 import type { CreateShipmentInput, LabelInput } from '../../shared/shipment.js'
 import { SHIPMENT_STATUSES, isDecisionStatus } from '../../shared/shipment-status.js'
 import type { ShipmentStatus } from '../../shared/shipment-status.js'
@@ -120,6 +121,9 @@ export function check (draft: Draft, label?: LabelInput): Checked {
       ? { orderNumber: 'The store searches by its own order number, not by the tracking number.' }
       : {}),
     ...(amountCents === null ? { amount: 'An amount like 49.99 is required.' } : {}),
+    ...(amountCents !== null && amountCents > MAX_AMOUNT_CENTS
+      ? { amount: 'An amount cannot be more than 1,000,000.' }
+      : {}),
     ...(draft.recipientPostalCode.trim() === ''
       ? { recipientPostalCode: 'A postal code is required.' }
       : {}),

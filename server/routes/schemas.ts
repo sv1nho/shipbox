@@ -3,7 +3,7 @@ import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import type { CarrierId } from '../../shared/carriers.js'
 import { SHIPMENT_STATUSES, STATUS_FILTERS } from '../../shared/shipment-status.js'
 import { COUNTRIES, LANGUAGES } from '../../shared/label-payload.js'
-import { SORT_KEYS } from '../../shared/shipment.js'
+import { MAX_AMOUNT_CENTS, SORT_KEYS } from '../../shared/shipment.js'
 import { normalizeTrackingNumber } from '../../shared/normalize.js'
 
 const asTuple = <T extends string>(values: readonly T[]): [T, ...T[]] =>
@@ -25,7 +25,10 @@ const postalCodeSchema = z.string().min(1).max(16)
 
 const countryCodeSchema = z.string().length(2)
 
-const amountCentsSchema = z.int().min(0).max(100_000_000)
+const amountCentsSchema = z
+  .int('An amount like 49.99 is required.')
+  .min(0, 'An amount cannot be negative.')
+  .max(MAX_AMOUNT_CENTS, 'An amount cannot be more than 1,000,000.')
 
 const orderNumberSchema = z.string().trim().min(1).max(64)
 

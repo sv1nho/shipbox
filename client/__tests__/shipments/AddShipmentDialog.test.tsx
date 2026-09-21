@@ -108,6 +108,29 @@ describe('what it refuses', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
+  it('refuses an amount no return could carry, rather than let the server do it', async () => {
+    const { onSubmit } = renderDialog()
+
+    await fillTheRequired()
+    await userEvent.clear(screen.getByLabelText('Amount'))
+    await userEvent.type(screen.getByLabelText('Amount'), '1000000.01')
+    await submit()
+
+    expect(screen.getByText('An amount cannot be more than 1,000,000.')).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('accepts the largest amount the server would still take', async () => {
+    const { onSubmit } = renderDialog()
+
+    await fillTheRequired()
+    await userEvent.clear(screen.getByLabelText('Amount'))
+    await userEvent.type(screen.getByLabelText('Amount'), '1000000')
+    await submit()
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 100000000 }))
+  })
+
   it('refuses a number the carrier could never have issued', async () => {
     const { onSubmit } = renderDialog()
 
