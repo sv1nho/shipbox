@@ -19,8 +19,7 @@ describe('the home page', () => {
     renderHome()
 
     expect(screen.getByRole('heading', { name: 'ShipBox' })).toBeInTheDocument()
-    expect(screen.getByText('Bpost')).toBeInTheDocument()
-    expect(screen.getByText('PostNL')).toBeInTheDocument()
+    expect(screen.getByText(/Bpost and PostNL/)).toBeInTheDocument()
   })
 
   it('leads straight to the form', async () => {

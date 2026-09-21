@@ -9,6 +9,7 @@ import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { Shipments } from './pages/Shipments'
 import { RequireAuth } from './auth/RequireAuth'
+import { LocaleProvider } from './i18n/context.js'
 
 export const routes: RouteObject[] = [
   {
@@ -46,5 +47,9 @@ export const routes: RouteObject[] = [
 const router = createBrowserRouter(routes)
 
 export function App () {
-  return <RouterProvider router={router} />
+  return (
+    <LocaleProvider>
+      <RouterProvider router={router} />
+    </LocaleProvider>
+  )
 }

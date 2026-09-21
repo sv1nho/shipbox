@@ -1,3 +1,5 @@
+import { useT } from '../i18n/context.js'
+
 type LabelPreviewModalProps = {
   pdfUrl: string
   maskedTracking: string
@@ -13,6 +15,8 @@ export function LabelPreviewModal ({
   onDownload,
   onTrack,
 }: LabelPreviewModalProps) {
+  const t = useT()
+
   return (
     <div
       className='modal-backdrop'
@@ -22,12 +26,12 @@ export function LabelPreviewModal ({
     >
       <div className='modal-box'>
         <div className='modal-header'>
-          <h2 className='modal-title'>Label Preview</h2>
+          <h2 className='modal-title'>{t('Label Preview')}</h2>
           <button
             onClick={onClose}
             className='btn btn-ghost'
             style={{ padding: '0.375rem' }}
-            aria-label='Close'
+            aria-label={t('Close')}
           >
             <svg
               xmlns='http://www.w3.org/2000/svg'
@@ -50,19 +54,19 @@ export function LabelPreviewModal ({
             height='480'
           />
           <p className='mt-3 text-sm text-zinc-500'>
-            <span className='font-medium text-zinc-700'>Tracking:</span>{' '}
+            <span className='font-medium text-zinc-700'>{t('Tracking:')}</span>{' '}
             {maskedTracking}
           </p>
         </div>
         <div className='modal-footer'>
           <button onClick={onClose} className='btn btn-ghost'>
-            Close
+            {t('Close')}
           </button>
           <button onClick={onTrack} className='btn btn-ghost'>
-            Add to tracking
+            {t('Add to tracking')}
           </button>
           <button onClick={onDownload} className='btn btn-primary'>
-            Download PDF
+            {t('Download PDF')}
           </button>
         </div>
       </div>

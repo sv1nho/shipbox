@@ -6,6 +6,7 @@ import { SOCIAL_PROVIDERS } from '../auth/providers.js'
 import { isSocialProviderId } from '../../shared/auth-providers.js'
 import type { SocialProviderId } from '../../shared/auth-providers.js'
 import { PendingNote } from '../components/PendingNote.js'
+import { useT } from '../i18n/context.js'
 import { Spinner } from '../components/Spinner.js'
 
 const DEFAULT_REDIRECT = '/shipments'
@@ -16,6 +17,7 @@ export function Login () {
   const [providers, setProviders] = useState<SocialProviderId[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pendingProvider, setPendingProvider] = useState<SocialProviderId | null>(null)
+  const t = useT()
 
   const redirectTo = searchParams.get('redirect') ?? DEFAULT_REDIRECT
 
@@ -36,7 +38,7 @@ export function Login () {
   }, [])
 
   if (isPending) {
-    return <PendingNote label='Checking your session…' />
+    return <PendingNote label={t('Checking your session…')} />
   }
 
   if (session) {
@@ -55,32 +57,32 @@ export function Login () {
 
     if (result.error) {
       setPendingProvider(null)
-      setError(result.error.message ?? 'Sign-in failed, please try again.')
+      setError(result.error.message ?? t('Sign-in failed, please try again.'))
     }
   }
 
   return (
     <div className='auth-page'>
       <div className='auth-card'>
-        <h1 className='auth-title'>Sign in</h1>
+        <h1 className='auth-title'>{t('Sign in')}</h1>
         <p className='auth-text'>
-          Sign in to track your returns from drop-off to refund. Generating
-          labels stays free and needs no account.
+          {t('Sign in to track your returns from drop-off to refund. ' +
+            'Generating labels stays free and needs no account.')}
         </p>
 
         {searchParams.get('error') === 'oauth' && (
           <div className='alert-error'>
-            Sign-in was cancelled or refused. You can try again.
+            {t('Sign-in was cancelled or refused. You can try again.')}
           </div>
         )}
 
         {error && <div className='alert-error'>{error}</div>}
 
-        {providers === null && <PendingNote label='Loading sign-in options…' />}
+        {providers === null && <PendingNote label={t('Loading sign-in options…')} />}
 
         {providers !== null && providers.length === 0 && (
           <div className='alert-error'>
-            No sign-in provider is configured on this server.
+            {t('No sign-in provider is configured on this server.')}
           </div>
         )}
 
@@ -96,21 +98,21 @@ export function Login () {
               ? (
                 <>
                   <Spinner />
-                  Redirecting…
+                  {t('Redirecting…')}
                 </>
                 )
               : (
                 <>
                   {SOCIAL_PROVIDERS[provider].icon}
-                  {SOCIAL_PROVIDERS[provider].label}
+                  {t(SOCIAL_PROVIDERS[provider].label)}
                 </>
                 )}
           </button>
         ))}
 
         <p className='auth-note'>
-          No password is ever stored. Signing in only shares your name, email
-          address and profile picture with ShipBox.
+          {t('No password is ever stored. Signing in only shares your name, ' +
+            'email address and profile picture with ShipBox.')}
         </p>
       </div>
     </div>

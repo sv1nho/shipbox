@@ -1,5 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { signOut, useSession } from '../auth/client.js'
+import { LanguageToggle } from '../i18n/LanguageToggle.js'
+import { useT } from '../i18n/context.js'
 
 const linkClass = ({ isActive }: { isActive: boolean }): string =>
   isActive ? 'navbar-link navbar-link-active' : 'navbar-link'
@@ -12,6 +14,7 @@ const initialOf = (name: string, email: string): string => {
 export function Layout () {
   const navigate = useNavigate()
   const { data: session, isPending } = useSession()
+  const t = useT()
 
   const handleSignOut = async () => {
     await signOut()
@@ -51,7 +54,7 @@ export function Layout () {
               to='/form'
               className={linkClass}
             >
-              Form
+              {t('Form')}
             </NavLink>
             {!isPending && (session
               ? (
@@ -60,13 +63,13 @@ export function Layout () {
                     to='/shipments'
                     className={linkClass}
                   >
-                    Shipments
+                    {t('Shipments')}
                   </NavLink>
                   <NavLink
                     to='/dashboard'
                     className={linkClass}
                   >
-                    Dashboard
+                    {t('Dashboard')}
                   </NavLink>
                 </>
                 )
@@ -75,9 +78,10 @@ export function Layout () {
                   to='/login'
                   className={linkClass}
                 >
-                  Sign in
+                  {t('Sign in')}
                 </NavLink>
                 ))}
+            <LanguageToggle />
           </div>
           {!isPending && session !== null && (
             <div className='navbar-user'>
@@ -92,7 +96,7 @@ export function Layout () {
                 className='btn btn-ghost text-xs px-2.5 py-1'
                 onClick={() => { void handleSignOut() }}
               >
-                Sign out
+                {t('Sign out')}
               </button>
             </div>
           )}
@@ -102,9 +106,9 @@ export function Layout () {
         <Outlet />
       </main>
       <div className='site-footer'>
-        <strong>ShipBox</strong> — Bpost &amp; PostNL shipping labels, 100% free
+        <strong>ShipBox</strong> {t('— Bpost & PostNL shipping labels, 100% free')}
         <br />
-        © 2026 ShipBox — All rights reserved
+        {t('© 2026 ShipBox — All rights reserved')}
       </div>
 
     </div>
