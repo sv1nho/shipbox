@@ -18,10 +18,6 @@ to refund. React + Vite on the front, Express + Prisma + PostgreSQL on the back.
 - **French or English** — the interface and the API's error messages follow the
   language picked in the navigation bar, which is remembered for the next visit.
 
-A paid model (label bundles bought through a payment method still to be decided,
-unlocked by a license key sent over email) is planned but set aside for now, while
-the focus stays on the frontend and new features. It will come back later.
-
 ## Repository layout
 
 | Folder | Role |
