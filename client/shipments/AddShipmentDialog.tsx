@@ -421,7 +421,11 @@ export function AddShipmentDialog (
         )}
 
         <div className='form-row'>
-          <Field label='Order number' htmlFor='shipment-order' problem={problem('orderNumber')}>
+          <Field
+            label='Order number'
+            htmlFor='shipment-order'
+            problem={problem('orderNumber') ?? fieldError('orderNumber')}
+          >
             <input
               id='shipment-order'
               className='form-input'

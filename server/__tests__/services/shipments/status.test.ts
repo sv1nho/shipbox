@@ -315,6 +315,17 @@ describe('assertChronology', () => {
   ])('refuses %s', (_label, overrides) => {
     expect(codeOf(() => { assertChronology(dated(overrides)) })).toBe('VALIDATION_ERROR')
   })
+
+  it('names the field it is unhappy about, so a form can point at it', () => {
+    try {
+      assertChronology(dated({ dropoffDate: '2026-06-05', receivedDate: '2026-06-02' }))
+      expect.unreachable()
+    } catch (cause) {
+      expect((cause as AppError).details).toEqual([
+        { path: 'receivedDate', message: 'The reception date cannot be earlier than the drop-off date.' },
+      ])
+    }
+  })
 })
 
 describe('computeDerived', () => {

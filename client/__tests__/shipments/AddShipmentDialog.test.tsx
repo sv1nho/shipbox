@@ -131,6 +131,13 @@ describe('what it refuses', () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 100000000 }))
   })
 
+  it('shows what the server said about the order number, under that field', () => {
+    renderDialog(false, null, { orderNumber: 'An order number cannot be longer than 64 characters.' })
+
+    expect(screen.getByText('An order number cannot be longer than 64 characters.'))
+      .toBeInTheDocument()
+  })
+
   it('refuses a number the carrier could never have issued', async () => {
     const { onSubmit } = renderDialog()
 

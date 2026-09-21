@@ -17,24 +17,40 @@ const isoDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be a YYYY-MM-DD date')
 
-const trackingNumberSchema = z.string().min(1).max(64)
+const trackingNumberSchema = z
+  .string()
+  .min(1, 'A tracking number is required.')
+  .max(64, 'A tracking number cannot be longer than 64 characters.')
 
-const storeSchema = z.string().min(1).max(120)
+const storeSchema = z
+  .string()
+  .min(1, 'Say which store the parcel goes back to.')
+  .max(120, 'A store name cannot be longer than 120 characters.')
 
-const postalCodeSchema = z.string().min(1).max(16)
+const postalCodeSchema = z
+  .string()
+  .min(1, 'A postal code is required.')
+  .max(16, 'A postal code cannot be longer than 16 characters.')
 
-const countryCodeSchema = z.string().length(2)
+const countryCodeSchema = z.string().length(2, 'A country is a two-letter code, such as BE.')
 
 const amountCentsSchema = z
   .int('An amount like 49.99 is required.')
   .min(0, 'An amount cannot be negative.')
   .max(MAX_AMOUNT_CENTS, 'An amount cannot be more than 1,000,000.')
 
-const orderNumberSchema = z.string().trim().min(1).max(64)
+const orderNumberSchema = z
+  .string()
+  .trim()
+  .min(1, 'The store searches by its own order number, not by the tracking number.')
+  .max(64, 'An order number cannot be longer than 64 characters.')
 
-const noteSchema = z.string().max(2000).nullish()
+const noteSchema = z.string().max(2000, 'A note cannot be longer than 2000 characters.').nullish()
 
-const supportEmailSchema = z.email().max(320).nullish()
+const supportEmailSchema = z
+  .email('This is not a valid email address.')
+  .max(320, 'An email address cannot be longer than 320 characters.')
+  .nullish()
 
 export const idParamSchema = z.object({ id: z.uuid() })
 

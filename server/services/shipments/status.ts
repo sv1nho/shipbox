@@ -30,15 +30,26 @@ export type ShipmentState = DatedShipment & {
   lastChasedAt: IsoDate | null
 }
 
+const DATE_LABELS: Record<DatedField, string> = {
+  requestedDate: 'The return date',
+  dropoffDate: 'The drop-off date',
+  receivedDate: 'The reception date',
+  decisionDate: 'The decision date',
+}
+
 const dateFieldRank = (field: DateField): number => ORDERED_DATE_FIELDS.indexOf(field) + 1
+
+const refuseDate = (field: DatedField, message: string): never => {
+  throw new AppError('VALIDATION_ERROR', message, [{ path: field, message }])
+}
 
 function assertDate (field: DatedField, value: string, today: IsoDate): void {
   if (!isIsoDate(value)) {
-    throw new AppError('VALIDATION_ERROR', `${field} must be a YYYY-MM-DD date.`, { [field]: value })
+    refuseDate(field, `${DATE_LABELS[field]} must be a YYYY-MM-DD date.`)
   }
 
   if (diffDays(today, value) > 0) {
-    throw new AppError('VALIDATION_ERROR', `${field} cannot be in the future.`, { [field]: value, today })
+    refuseDate(field, `${DATE_LABELS[field]} cannot be in the future.`)
   }
 }
 
@@ -54,11 +65,10 @@ export function assertChronology (shipment: DatedShipment): void {
 
   if (broken === null) return
 
-  throw new AppError(
-    'VALIDATION_ERROR',
-    `${broken.field} cannot be earlier than ${broken.previous}.`,
-    { [broken.previous]: shipment[broken.previous], [broken.field]: shipment[broken.field] }
-  )
+  const message =
+    `${DATE_LABELS[broken.field]} cannot be earlier than ${DATE_LABELS[broken.previous].toLowerCase()}.`
+
+  throw new AppError('VALIDATION_ERROR', message, [{ path: broken.field, message }])
 }
 
 const DEADLINE_DAYS: Record<ShipmentStatus, number | null> = {
