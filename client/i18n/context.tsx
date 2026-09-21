@@ -1,5 +1,6 @@
 import { createContext, use, useCallback, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { askInLocale } from '../api/client.js'
 import { FRENCH } from './fr.js'
 import { STORAGE_KEY, isLocale, preferredLocale } from './locale.js'
 import type { Locale } from './locale.js'
@@ -42,12 +43,15 @@ export const translate = (locale: Locale, phrase: string, vars?: Vars): string =
 const LocaleContext = createContext<LocaleState | null>(null)
 
 export function LocaleProvider ({ children }: { children: ReactNode }) {
-  const [current, setCurrent] = useState<Locale>(() =>
-    preferredLocale(read(), navigator.languages)
-  )
+  const [current, setCurrent] = useState<Locale>(() => {
+    const chosen = preferredLocale(read(), navigator.languages)
+    askInLocale(chosen)
+    return chosen
+  })
 
   const setLocale = useCallback((next: Locale) => {
     remember(next)
+    askInLocale(next)
     setCurrent(next)
     document.documentElement.lang = next
   }, [])

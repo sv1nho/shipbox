@@ -96,11 +96,20 @@ export function buildUrl (path: string, query: RequestOptions['query']): string 
   return search === '' ? path : `${path}?${search}`
 }
 
+let asking = 'en'
+
+export function askInLocale (locale: string): void {
+  asking = locale
+}
+
 export async function request<T> (path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? 'GET',
     signal: options.signal,
-    headers: options.body === undefined ? undefined : { 'Content-Type': 'application/json' },
+    headers: {
+      'Accept-Language': asking,
+      ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   })
 

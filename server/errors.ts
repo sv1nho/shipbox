@@ -15,16 +15,20 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   INTERNAL_ERROR: 500,
 }
 
+export type Vars = Record<string, string | number>
+
 export class AppError extends Error {
   readonly code: ErrorCode
   readonly status: number
   readonly details: unknown
+  readonly vars: Vars | undefined
 
-  constructor (code: ErrorCode, message: string, details?: unknown) {
+  constructor (code: ErrorCode, message: string, details?: unknown, vars?: Vars) {
     super(message)
     this.name = 'AppError'
     this.code = code
     this.status = STATUS_BY_CODE[code]
     this.details = details
+    this.vars = vars
   }
 }

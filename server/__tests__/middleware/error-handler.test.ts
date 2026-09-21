@@ -20,12 +20,17 @@ const fakeResponse = () => {
   return { res: res as unknown as Response, captured }
 }
 
-const fakeRequest = (method = 'GET', path = '/api/unknown') =>
-  ({ method, path }) as unknown as Request
+const fakeRequest = (method = 'GET', path = '/api/unknown', language?: string) =>
+  ({ method, path, get: () => language }) as unknown as Request
 
-const run = (err: unknown, exposeDetails: boolean) => {
+const run = (err: unknown, exposeDetails: boolean, language?: string) => {
   const { res, captured } = fakeResponse()
-  createErrorHandler({ exposeDetails })(err, fakeRequest(), res, (() => {}) as NextFunction)
+  createErrorHandler({ exposeDetails })(
+    err,
+    fakeRequest('GET', '/api/unknown', language),
+    res,
+    (() => {}) as NextFunction
+  )
   return captured
 }
 
@@ -68,6 +73,46 @@ describe('createErrorHandler', () => {
     expect(captured.body).toEqual({
       error: { code: 'VALIDATION_ERROR', message: 'Invalid body.', details: { field: 'store' } },
     })
+  })
+
+  it('answers in the language the caller asked for, fields and all', () => {
+    const details = [{ path: 'store', message: 'Say which store the parcel goes back to.' }]
+    const captured = run(
+      new AppError('VALIDATION_ERROR', 'A postal code is required.', details),
+      false,
+      'fr-BE,fr;q=0.9'
+    )
+
+    expect(captured.body).toEqual({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Un code postal est obligatoire.',
+        details: [{ path: 'store', message: 'Indiquez à quel magasin le colis retourne.' }],
+      },
+    })
+  })
+
+  it('fills in what a message was about, in that language too', () => {
+    const captured = run(
+      new AppError(
+        'VALIDATION_ERROR',
+        '{date} cannot be in the future.',
+        undefined,
+        { date: 'The drop-off date' }
+      ),
+      false,
+      'fr'
+    )
+
+    expect(captured.body).toMatchObject({
+      error: { message: 'La date de dépôt ne peut pas être dans le futur.' },
+    })
+  })
+
+  it('answers in English when nothing was asked for', () => {
+    const captured = run(new AppError('NOT_FOUND', 'Shipment not found.'), false)
+
+    expect(captured.body).toMatchObject({ error: { message: 'Shipment not found.' } })
   })
 
   it('says in the terminal why it refused, so no refusal is silent', () => {

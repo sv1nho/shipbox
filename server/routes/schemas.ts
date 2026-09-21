@@ -9,7 +9,7 @@ import { normalizeTrackingNumber } from '../../shared/normalize.js'
 const asTuple = <T extends string>(values: readonly T[]): [T, ...T[]] =>
   values as unknown as [T, ...T[]]
 
-const carrierSchema = z.enum(asTuple(CARRIER_IDS))
+const carrierSchema = z.enum(asTuple(CARRIER_IDS), 'Pick a carrier ShipBox knows.')
 
 const statusSchema = z.enum(asTuple(SHIPMENT_STATUSES))
 
@@ -18,21 +18,23 @@ const isoDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'must be a YYYY-MM-DD date')
 
 const trackingNumberSchema = z
-  .string()
+  .string('A tracking number is required.')
   .min(1, 'A tracking number is required.')
   .max(64, 'A tracking number cannot be longer than 64 characters.')
 
 const storeSchema = z
-  .string()
+  .string('Say which store the parcel goes back to.')
   .min(1, 'Say which store the parcel goes back to.')
   .max(120, 'A store name cannot be longer than 120 characters.')
 
 const postalCodeSchema = z
-  .string()
+  .string('A postal code is required.')
   .min(1, 'A postal code is required.')
   .max(16, 'A postal code cannot be longer than 16 characters.')
 
-const countryCodeSchema = z.string().length(2, 'A country is a two-letter code, such as BE.')
+const countryCodeSchema = z
+  .string('A country is a two-letter code, such as BE.')
+  .length(2, 'A country is a two-letter code, such as BE.')
 
 const amountCentsSchema = z
   .int('An amount like 49.99 is required.')
@@ -40,7 +42,7 @@ const amountCentsSchema = z
   .max(MAX_AMOUNT_CENTS, 'An amount cannot be more than 1,000,000.')
 
 const orderNumberSchema = z
-  .string()
+  .string('The store searches by its own order number, not by the tracking number.')
   .trim()
   .min(1, 'The store searches by its own order number, not by the tracking number.')
   .max(64, 'An order number cannot be longer than 64 characters.')

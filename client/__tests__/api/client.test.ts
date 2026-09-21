@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { ApiError, buildUrl, errorMessage, refusalMessage, request } from '../../api/client.js'
+import {
+  ApiError,
+  askInLocale,
+  buildUrl,
+  errorMessage,
+  refusalMessage,
+  request,
+} from '../../api/client.js'
 
 const respondWith = (status: number, body?: unknown, ok = status < 400) => {
   const response = {
@@ -46,12 +53,27 @@ describe('request', () => {
     expect(await request<{ total: number }>('/api/shipments')).toEqual({ total: 3 })
   })
 
-  it('sends no body and no content type on a plain read', async () => {
+  it('sends no body and no content type on a plain read, but says which language it reads in', async () => {
     const fetchMock = respondWith(200, {})
 
     await request('/api/shipments')
 
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'GET', body: undefined, headers: undefined })
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
+      method: 'GET',
+      body: undefined,
+      headers: { 'Accept-Language': 'en' },
+    })
+    expect(fetchMock.mock.calls[0][1]?.headers).not.toHaveProperty('Content-Type')
+  })
+
+  it('asks the api to answer in the language the reader chose', async () => {
+    const fetchMock = respondWith(200, {})
+
+    askInLocale('fr')
+    await request('/api/shipments')
+    askInLocale('en')
+
+    expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({ 'Accept-Language': 'fr' })
   })
 
   it('serialises the body and announces json when writing', async () => {

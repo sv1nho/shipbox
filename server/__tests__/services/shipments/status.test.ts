@@ -322,7 +322,11 @@ describe('assertChronology', () => {
       expect.unreachable()
     } catch (cause) {
       expect((cause as AppError).details).toEqual([
-        { path: 'receivedDate', message: 'The reception date cannot be earlier than the drop-off date.' },
+        {
+          path: 'receivedDate',
+          message: '{date} cannot be earlier than {previous}.',
+          vars: { date: 'The reception date', previous: 'the drop-off date' },
+        },
       ])
     }
   })
