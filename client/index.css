@@ -1057,6 +1057,12 @@ html, body {
   }
 
   @media (max-width: 30rem) {
+    .dash-tiles { grid-template-columns: 1fr 1fr; }
+
+    .dash-tile { padding: 0.75rem; }
+
+    .dash-tile-value { font-size: 1.125rem; }
+
     .dash-rows {
       grid-template-columns: minmax(0, 1fr) max-content minmax(3.5rem, 1fr);
     }
