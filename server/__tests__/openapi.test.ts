@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { openApiDocument } from '../openapi.js'
 import { createApp } from '../app.js'
 import { REGISTERED, ROUTERS } from './registered-routes.js'
+import { ERROR_CODES } from '../errors.js'
+import type { DashboardSummary, StoreStats } from '../../shared/dashboard.js'
 
 const documented = openApiDocument.paths as Record<string, Record<string, unknown>>
 
@@ -88,5 +90,73 @@ describe('the document itself', () => {
 
     expect(create.requestBody.content['application/json'].schema.properties.carrier.enum)
       .toEqual(['bpost', 'postnl'])
+  })
+})
+
+describe('what the document says matches what the api sends', () => {
+  const SUMMARY: DashboardSummary = {
+    decided: 0,
+    refunded: 0,
+    successRate: null,
+    open: 0,
+    attention: 0,
+    recoveredCents: 0,
+    lostCents: 0,
+    awaitingCents: 0,
+    measuredDecisions: 0,
+    byStore: [],
+  }
+
+  const STORE: StoreStats = {
+    store: '',
+    returns: 0,
+    decided: 0,
+    refunded: 0,
+    measured: 0,
+    averageDecisionDays: null,
+  }
+
+  const dashboard = (documented['/api/dashboard'].get as {
+    responses: { 200: { content: Record<string, { schema: {
+      properties: { byStore: { items: { properties: Record<string, unknown> } } }
+    } }> } }
+  }).responses[200].content['application/json'].schema
+
+  it('names every figure of the dashboard summary, and nothing else', () => {
+    expect(Object.keys(dashboard.properties).sort()).toEqual(Object.keys(SUMMARY).sort())
+  })
+
+  it('names every figure a store carries, and nothing else', () => {
+    expect(Object.keys(dashboard.properties.byStore.items.properties).sort())
+      .toEqual(Object.keys(STORE).sort())
+  })
+
+  it('lists the error codes the server can actually answer with', () => {
+    const schemas = openApiDocument.components.schemas
+    expect(schemas.Error.properties.error.properties.code.enum).toEqual(ERROR_CODES)
+  })
+
+  it('points every refusal at the one error body the client reads', () => {
+    const refusals = Object.values(documented).flatMap((byMethod) =>
+      Object.values(byMethod).flatMap((operation) =>
+        Object.entries((operation as { responses: Record<string, { content?: unknown }> }).responses)
+          .filter(([code]) => code.startsWith('4'))
+          .map(([, response]) => response.content)))
+
+    expect(refusals.length).toBeGreaterThan(0)
+    for (const content of refusals) {
+      expect(content).toEqual({
+        'application/json': { schema: { $ref: '#/components/schemas/Error' } },
+      })
+    }
+  })
+
+  it('lets every operation ask for its errors in French', () => {
+    const operations = Object.values(documented).flatMap((byMethod) => Object.values(byMethod))
+
+    for (const operation of operations) {
+      expect((operation as { parameters: unknown[] }).parameters)
+        .toContainEqual({ $ref: '#/components/parameters/AcceptLanguage' })
+    }
   })
 })

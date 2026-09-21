@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ERROR_CODES } from './errors.js'
 import {
   correctIdentitySchema,
   createShipmentSchema,
@@ -47,11 +48,26 @@ const shipmentResponse = {
   description: 'A shipment with its derived fields, tracking url and label presence.',
 }
 
+const ERROR_BODY = {
+  content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+}
+
 const errorResponses = {
-  401: { description: 'No session.' },
-  404: { description: 'Unknown shipment, or one that belongs to another user.' },
-  409: { description: 'Tracking number already registered, or illegal transition.' },
-  422: { description: 'Request failed validation.' },
+  401: { description: 'No session.', ...ERROR_BODY },
+  404: { description: 'Unknown shipment, or one that belongs to another user.', ...ERROR_BODY },
+  409: {
+    description:
+      'The request clashes with what is recorded: a tracking number already registered, a step ' +
+      'the current status does not allow, an archived shipment that must be put back first, or a ' +
+      'store name too close to one that exists.',
+    ...ERROR_BODY,
+  },
+  422: {
+    description:
+      'The request was refused. Each entry of details names the field at fault in path, so a form ' +
+      'can show the message beside it.',
+    ...ERROR_BODY,
+  },
 }
 
 const transitionPath = (summary: string, schema: z.ZodType) => ({
@@ -70,8 +86,13 @@ export const openApiDocument = {
     title: 'ShipBox tracking API',
     version: '1.0.0',
     description:
-      'Every route requires a session cookie and only ever sees the shipments of the signed-in user. ' +
-      'Day counts are calendar days, and the derived ones are null when a source date is missing.',
+      'Every route below requires a session cookie and only ever sees the shipments of the signed-in ' +
+      'user. Day counts are calendar days, and the derived ones are null when a source date is missing.' +
+      '\n\nError messages are written in the language the Accept-Language header asks for, French or ' +
+      'English, and fall back to English. Field names, codes and every other value stay the same.' +
+      '\n\nOutside this document, /api/health and /api/config answer without a session, ' +
+      '/api/me returns the signed-in user, and the document itself is served at /api/openapi.json ' +
+      'and browsable at /api/docs.',
   },
   tags: [{ name: 'shipments' }, { name: 'stores' }, { name: 'dashboard' }],
   paths: {
@@ -85,6 +106,9 @@ export const openApiDocument = {
       post: {
         tags: ['shipments'],
         summary: 'Create a shipment, with its label in the same transaction.',
+        description:
+          'When a label is given, each party needs a name: a company name when isCompany is true, ' +
+          'otherwise a first and a last name. The fields of the other kind may be left out.',
         requestBody: jsonBody(createShipmentSchema),
         responses: { 201: shipmentResponse, ...errorResponses },
       },
@@ -172,7 +196,7 @@ export const openApiDocument = {
       },
     },
     '/api/shipments/{id}/drop-off': transitionPath('Record the drop-off.', dropOffSchema),
-    '/api/shipments/{id}/receive': transitionPath('Record the reception by the handler.', receiveSchema),
+    '/api/shipments/{id}/receive': transitionPath('Record the reception by the store.', receiveSchema),
     '/api/shipments/{id}/refund': transitionPath('Record a refund.', refundSchema),
     '/api/shipments/{id}/reject': transitionPath('Record a refusal, with an optional note.', rejectSchema),
     '/api/shipments/{id}/revert': {
@@ -219,6 +243,8 @@ export const openApiDocument = {
                         properties: {
                           store: { type: 'string' },
                           returns: { type: 'integer' },
+                          decided: { type: 'integer' },
+                          refunded: { type: 'integer' },
                           measured: { type: 'integer' },
                           averageDecisionDays: { type: ['number', 'null'] },
                         },
@@ -250,4 +276,56 @@ export const openApiDocument = {
       },
     },
   },
+  components: {
+    parameters: {
+      AcceptLanguage: {
+        name: 'Accept-Language',
+        in: 'header',
+        required: false,
+        description: 'fr for French error messages; anything else gets English.',
+        schema: { type: 'string', example: 'fr-BE,fr;q=0.9' },
+      },
+    },
+    schemas: {
+      Error: {
+        type: 'object',
+        required: ['error'],
+        properties: {
+          error: {
+            type: 'object',
+            required: ['code', 'message', 'details'],
+            properties: {
+              code: { type: 'string', enum: ERROR_CODES },
+              message: { type: 'string', description: 'Written for the person, in the language asked for.' },
+              details: {
+                description: 'On a refusal, one entry per field at fault; null otherwise.',
+                oneOf: [
+                  {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      required: ['path', 'message'],
+                      properties: {
+                        path: { type: 'string', example: 'label.payload.sender_company' },
+                        message: { type: 'string', example: 'A company name is required.' },
+                      },
+                    },
+                  },
+                  { type: 'null' },
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const ACCEPT_LANGUAGE = { $ref: '#/components/parameters/AcceptLanguage' }
+
+for (const operations of Object.values(openApiDocument.paths)) {
+  for (const operation of Object.values(operations) as { parameters?: unknown[] }[]) {
+    operation.parameters = [...(operation.parameters ?? []), ACCEPT_LANGUAGE]
+  }
 }

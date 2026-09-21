@@ -15,6 +15,8 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   INTERNAL_ERROR: 500,
 }
 
+export const ERROR_CODES = Object.keys(STATUS_BY_CODE) as ErrorCode[]
+
 export type Vars = Record<string, string | number>
 
 export class AppError extends Error {
