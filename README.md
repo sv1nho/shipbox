@@ -3,6 +3,21 @@
 Return label generator for bpost and PostNL, with shipment tracking from drop-off
 to refund. React + Vite on the front, Express + Prisma + PostgreSQL on the back.
 
+## What it does
+
+- **Labels** — fills in a bpost or PostNL return label and downloads it as a PDF,
+  in French, Dutch or English. No account needed.
+- **Tracking** — once signed in, each return is followed from the request to the
+  store's decision, with the dates recorded at each step and a warning when a
+  label is about to expire or a store sits on a parcel too long.
+- **Chasing a store** — writes the reminder email for you, in French or English,
+  and remembers when it was sent.
+- **Dashboard** — how much was refunded, lost or still pending, and how long each
+  store takes to decide.
+- **Import and export** — CSV or JSON, the same layout both ways.
+- **French or English** — the interface and the API's error messages follow the
+  language picked in the navigation bar, which is remembered for the next visit.
+
 A paid model (label bundles bought through a payment method still to be decided,
 unlocked by a license key sent over email) is planned but set aside for now, while
 the focus stays on the frontend and new features. It will come back later.
@@ -18,7 +33,7 @@ the focus stays on the frontend and new features. It will come back later.
 
 ## Local setup
 
-Requires Node >= 20.19 and Docker.
+Requires Node 20.19+, 22.13+ or 24+, and Docker.
 
 ```bash
 cp .env.example .env      # then fill it in
@@ -36,17 +51,32 @@ API, which avoids CORS and cross-origin cookies during development.
 |---|---|
 | `npm run dev` | frontend and API together |
 | `npm run dev:web` / `dev:api` | either one on its own |
+| `npm run dev:mock` | frontend only, with the label form filled with test data |
+| `npm run start:api` | the API without file watching |
+| `npm run build` / `preview` | production build of the frontend, and a local preview of it |
 | `npm run lint` / `typecheck` / `test` | the same checks CI runs |
+| `npm run lint:fix` | lint and fix what can be fixed automatically |
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
+| `npm run db:deploy` | applies existing migrations without creating new ones |
+| `npm run db:reset` | **drops the development database** and replays every migration |
+| `npm run db:generate` | regenerates the Prisma client |
 | `npm run db:studio` | Prisma database browser |
 | `npm run db:seed` | fills the database with sample shipments |
 | `npm run db:backup` | dumps the database to `backups/` |
 | `npm run db:restore` | restores a dump, see below |
+| `npm run clear` | deletes `node_modules`, the builds, the Prisma client **and `package-lock.json`** |
 
 `npm test` runs three suites: `client` and `server` need nothing, while `db`
 checks the constraints against a real PostgreSQL. That one creates and migrates
 `<your database>_test` on its own, so the development data is never touched.
+
+It also prints a coverage report. The project keeps all four figures at 100%,
+but that is a habit rather than a threshold: nothing fails below it.
+
+In development the API prints every refused request, with the route, the code
+and the field at fault, for example
+`POST /api/shipments -> 422 VALIDATION_ERROR: …`. Production keeps them quiet.
 
 The Prisma client is generated into `server/generated`, which is gitignored.
 `npm install` recreates it. If the editor reports unresolved Prisma types
@@ -55,6 +85,44 @@ stale: run `npm run db:generate` and reload the TypeScript server.
 
 The PostgreSQL host port is **5433** rather than 5432, so the container can live
 alongside a native Postgres install.
+
+## API documentation
+
+With the API running, the full document is browsable at
+<http://localhost:5173/api/docs> and served as JSON at `/api/openapi.json`. Both
+answer without a session, so they are public once the app is deployed; they
+describe the shape of the API, never any data.
+
+The request bodies are generated from the same Zod schemas the routes validate
+with, so they cannot drift. The rest is kept honest by `server/__tests__/openapi.test.ts`,
+which fails when a route is added without being documented, when the document
+lists one that does not exist, or when the dashboard figures and error codes it
+describes stop matching what the server sends.
+
+Every refusal comes back in the same shape:
+
+```json
+{ "error": { "code": "VALIDATION_ERROR", "message": "…", "details": [{ "path": "store", "message": "…" }] } }
+```
+
+`details` names the field at fault, so a form can put each message beside it.
+Send `Accept-Language: fr` to get the messages in French.
+
+## Languages
+
+English is the source language: every string in the code is written in English
+and wrapped in `t('…')` on the frontend. French lives in two catalogues keyed by
+that English phrase, `client/i18n/fr.ts` for the interface and `server/i18n/fr.ts`
+for the API's error messages. A phrase missing from a catalogue falls back to
+English rather than showing a blank or a key.
+
+`client/__tests__/i18n/coverage.test.ts` reads the frontend sources and fails if
+a phrase passed to `t()` has no French line, or if a translation drops one of the
+`{placeholders}` its English phrase carries. Adding text to the interface
+therefore means adding its French line in the same change.
+
+The label PDF has its own language setting, chosen in the form, which is
+independent of the interface language.
 
 ## Backups
 
