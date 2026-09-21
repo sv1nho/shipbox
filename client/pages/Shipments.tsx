@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { ApiError, errorMessage } from '../api/client.js'
+import { ApiError, refusalMessage } from '../api/client.js'
 import {
   applyTransition,
   archiveShipment,
@@ -97,7 +97,7 @@ export function Shipments () {
       reload()
       return true
     } catch (cause) {
-      setActionError(errorMessage(cause))
+      setActionError(refusalMessage(cause))
       setRefused(cause instanceof ApiError ? cause : null)
       return false
     } finally {

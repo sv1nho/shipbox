@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ApiError, errorMessage } from '../api/client.js'
+import { ApiError, refusalMessage } from '../api/client.js'
 import { addStore } from '../api/shipments.js'
 import type { StoreDto } from '../../shared/store.js'
 import { Modal } from './Modal.js'
@@ -35,7 +35,7 @@ export function NewStoreDialog ({ name, onCancel, onAdded }: NewStoreDialogProps
       onAdded(await addStore(storeName.trim(), supportEmail.trim()))
     } catch (cause) {
       if (cause instanceof ApiError && cause.isConflict) setDuplicate(cause.message)
-      else setError(errorMessage(cause))
+      else setError(refusalMessage(cause))
     } finally {
       setBusy(false)
     }

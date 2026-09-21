@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { useSession } from '../auth/client.js'
-import { ApiError, errorMessage } from '../api/client.js'
+import { ApiError, refusalMessage } from '../api/client.js'
 import { createShipment, shipmentExists } from '../api/shipments.js'
 import { CURRENT_PAYLOAD_VERSION } from '../../shared/label-payload.js'
 import type { LabelPayload } from '../../shared/label-payload.js'
@@ -62,7 +62,7 @@ export function TrackOffer ({ payload, onClose }: TrackOfferProps) {
       setAdded(true)
       setFilling(false)
     } catch (cause) {
-      setError(errorMessage(cause))
+      setError(refusalMessage(cause))
       setRefused(cause instanceof ApiError ? cause : null)
     } finally {
       setBusy(false)

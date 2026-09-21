@@ -6,8 +6,15 @@ export const notFoundHandler: RequestHandler = (req, _res, next) => {
 }
 
 export function createErrorHandler ({ exposeDetails }: { exposeDetails: boolean }): ErrorRequestHandler {
-  return (err, _req, res, _next) => {
+  return (err, req, res, _next) => {
     if (err instanceof AppError) {
+      if (exposeDetails) {
+        console.warn(
+          `${req.method} ${req.path} -> ${String(err.status)} ${err.code}: ${err.message}`,
+          err.details ?? ''
+        )
+      }
+
       res.status(err.status).json({
         error: { code: err.code, message: err.message, details: err.details ?? null },
       })

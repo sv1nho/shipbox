@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { NextFunction, Request, Response } from 'express'
 import { createErrorHandler, notFoundHandler } from '../../middleware/error-handler.js'
 import { AppError } from '../../errors.js'
@@ -28,6 +28,10 @@ const run = (err: unknown, exposeDetails: boolean) => {
   createErrorHandler({ exposeDetails })(err, fakeRequest(), res, (() => {}) as NextFunction)
   return captured
 }
+
+beforeEach(() => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {})
+})
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -64,6 +68,23 @@ describe('createErrorHandler', () => {
     expect(captured.body).toEqual({
       error: { code: 'VALIDATION_ERROR', message: 'Invalid body.', details: { field: 'store' } },
     })
+  })
+
+  it('says in the terminal why it refused, so no refusal is silent', () => {
+    const details = [{ path: 'store', message: 'Say which store the parcel goes back to.' }]
+
+    run(new AppError('VALIDATION_ERROR', 'Some details were refused.', details), true)
+
+    expect(console.warn).toHaveBeenCalledWith(
+      'GET /api/unknown -> 422 VALIDATION_ERROR: Some details were refused.',
+      details
+    )
+  })
+
+  it('keeps refusals out of the log where details are not exposed', () => {
+    run(new AppError('CONFLICT', 'Already tracked.'), false)
+
+    expect(console.warn).not.toHaveBeenCalled()
   })
 
   it('turns an unexpected error into a 500 that reveals nothing by itself', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { ApiError, buildUrl, errorMessage, request } from '../../api/client.js'
+import { ApiError, buildUrl, errorMessage, refusalMessage, request } from '../../api/client.js'
 
 const respondWith = (status: number, body?: unknown, ok = status < 400) => {
   const response = {
@@ -155,6 +155,29 @@ describe('request, when the api refuses', () => {
 
     expect(error.isUnauthorized).toBe(false)
     expect(error.isConflict).toBe(false)
+  })
+})
+
+describe('refusalMessage', () => {
+  const refused = (details: { path: string; message: string }[] | null) =>
+    new ApiError(422, 'VALIDATION_ERROR', 'Some details were refused.', details)
+
+  it('repeats what the api said about each field, so none is swallowed', () => {
+    expect(refusalMessage(refused([
+      { path: 'weirdField', message: 'This is not a valid email address.' },
+      { path: 'store', message: 'Say which store the parcel goes back to.' },
+    ]))).toBe('This is not a valid email address. Say which store the parcel goes back to.')
+  })
+
+  it.each([
+    ['no details at all', null],
+    ['an empty list of details', []],
+  ])('falls back to the headline on %s', (_case, details) => {
+    expect(refusalMessage(refused(details))).toBe('Some details were refused.')
+  })
+
+  it('still reports a failure that never reached the api', () => {
+    expect(refusalMessage(new TypeError('Failed to fetch'))).toContain('could not be reached')
   })
 })
 

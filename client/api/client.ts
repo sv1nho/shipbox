@@ -31,6 +31,14 @@ export const errorMessage = (cause: unknown): string =>
     ? cause.message
     : 'The server could not be reached. Check your connection and try again.'
 
+export function refusalMessage (cause: unknown): string {
+  const details = cause instanceof ApiError ? cause.details : null
+
+  return details === null || details.length === 0
+    ? errorMessage(cause)
+    : details.map((detail) => detail.message).join(' ')
+}
+
 export const isAbort = (cause: unknown): boolean =>
   cause instanceof DOMException && cause.name === 'AbortError'
 

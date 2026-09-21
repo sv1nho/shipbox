@@ -142,7 +142,10 @@ describe('when the parcel is not tracked yet', () => {
     await openForm()
     await fillAndSubmit()
 
-    expect(await screen.findByText('already used')).toBeInTheDocument()
+    const shown = await screen.findAllByText('already used')
+
+    expect(shown.map((node) => node.className))
+      .toEqual(expect.arrayContaining(['field-error', 'alert-error']))
     expect(screen.getByLabelText('Store')).toBeInTheDocument()
   })
 
