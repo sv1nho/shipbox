@@ -85,6 +85,7 @@ html, body {
 /* ━━ PAGE LAYOUT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 .page-content {
+  width: 100%;
   max-width: 960px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
