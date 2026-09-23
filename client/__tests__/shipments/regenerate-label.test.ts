@@ -8,6 +8,7 @@ import { regenerateLabel } from '../../shipments/regenerate-label.js'
 import { loadSvgTemplate } from '../../utils/svg-loader.js'
 import { buildLabelSvg } from '../../utils/label-generator.js'
 import { svgToPdf, downloadPdf } from '../../utils/pdf-generator.js'
+import { labelFileName } from '../../utils/label-file-name.js'
 import { makeLabelPayload } from '../fixtures.js'
 
 const blob = new Blob(['%PDF'], { type: 'application/pdf' })
@@ -31,10 +32,10 @@ describe('regenerateLabel', () => {
     expect(svgToPdf).toHaveBeenCalledWith('<svg>label</svg>')
   })
 
-  it('names the file after the tracking number, so two labels never collide', async () => {
-    await regenerateLabel(makeLabelPayload({ tracking_number: '323200000000000000004050' }))
+  it('names the file after the carrier and the day it was printed', async () => {
+    await regenerateLabel(makeLabelPayload({ carrier: 'postnl' }))
 
-    expect(downloadPdf).toHaveBeenCalledWith(blob, 'label-323200000000000000004050.pdf')
+    expect(downloadPdf).toHaveBeenCalledWith(blob, labelFileName('postnl'))
   })
 
   it('lets a rendering failure surface instead of downloading a broken file', async () => {

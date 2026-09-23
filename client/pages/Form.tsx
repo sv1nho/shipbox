@@ -9,9 +9,11 @@ import type {
 } from 'react-hook-form'
 import type { LabelPayload } from '../types/index.js'
 import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
+import type { CarrierId } from '../../shared/carriers.js'
 import { buildLabelSvg } from '../utils/label-generator.js'
 import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
+import { labelFileName } from '../utils/label-file-name.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
@@ -23,6 +25,7 @@ type Preview = {
   blob: Blob
   url: string
   maskedTracking: string
+  carrier: CarrierId
 }
 
 const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
@@ -255,7 +258,7 @@ export function Form () {
       const blob = await svgToPdf(svg)
 
       setLabelPayload(data)
-      setPreview({ blob, url: URL.createObjectURL(blob), maskedTracking })
+      setPreview({ blob, url: URL.createObjectURL(blob), maskedTracking, carrier: data.carrier })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('Unknown error'))
     }
@@ -356,7 +359,7 @@ export function Form () {
           maskedTracking={preview.maskedTracking}
           onClose={() => { closePreview(preview) }}
           onDownload={() => {
-            downloadPdf(preview.blob, 'label.pdf')
+            downloadPdf(preview.blob, labelFileName(preview.carrier))
             offerTracking(preview)
           }}
           onTrack={() => { offerTracking(preview) }}

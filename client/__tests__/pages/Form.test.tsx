@@ -14,6 +14,7 @@ import { Form } from '../../pages/Form.js'
 import { loadSvgTemplate } from '../../utils/svg-loader.js'
 import { buildLabelSvg } from '../../utils/label-generator.js'
 import { downloadPdf, svgToPdf } from '../../utils/pdf-generator.js'
+import { labelFileName } from '../../utils/label-file-name.js'
 
 const PDF = new Blob(['%PDF'], { type: 'application/pdf' })
 const createObjectURL = vi.fn(() => 'about:blank#label')
@@ -248,7 +249,7 @@ describe('leaving the preview', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /download pdf/i }))
 
-    expect(downloadPdf).toHaveBeenCalledWith(PDF, 'label.pdf')
+    expect(downloadPdf).toHaveBeenCalledWith(PDF, labelFileName('bpost'))
     expect(revokeObjectURL).toHaveBeenCalledWith('about:blank#label')
     expect(await screen.findByRole('heading', { name: /keep an eye on this return/i }))
       .toBeInTheDocument()

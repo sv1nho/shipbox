@@ -39,7 +39,7 @@ export const svgToPdf = async (svgString: string): Promise<Blob> => {
   }
 }
 
-export const downloadPdf = (blob: Blob, filename: string = 'label.pdf') => {
+export const downloadPdf = (blob: Blob, filename: string) => {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url

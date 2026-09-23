@@ -92,19 +92,4 @@ describe('downloadPdf', () => {
     expect(removeSpy).toHaveBeenCalledWith(mockLink)
     expect(revokeSpy).toHaveBeenCalledWith(mockUrl)
   })
-
-  it("defaults the filename to 'label.pdf' when none is provided", () => {
-    const clickSpy = vi.fn()
-    const mockLink = { href: '', download: '', click: clickSpy } as unknown as HTMLAnchorElement
-
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock')
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
-    vi.spyOn(document, 'createElement').mockReturnValue(mockLink)
-    vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node)
-    vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node)
-
-    downloadPdf(new Blob())
-
-    expect(mockLink.download).toBe('label.pdf')
-  })
 })
