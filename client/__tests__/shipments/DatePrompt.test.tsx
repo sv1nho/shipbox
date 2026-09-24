@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { DatePrompt } from '../../shipments/DatePrompt.js'
 import type { NextStep } from '../../../shared/transitions.js'
 import { today } from '../../../shared/time.js'
+import { makeShipment } from '../fixtures.js'
 
 type Options = {
   actions?: NextStep['actions']
@@ -27,6 +28,7 @@ const renderPrompt = (
 
   render(
     <DatePrompt
+      shipment={makeShipment({ store: 'Zalando', trackingNumber: '323200000000000000004050' })}
       actions={actions}
       earliest={earliest}
       reception={reception}
@@ -41,6 +43,15 @@ const renderPrompt = (
 }
 
 const dateInput = () => screen.getByLabelText(/which day/i)
+
+describe('which return it is about', () => {
+  it('names the store and the tracking number, so no one records the wrong one', () => {
+    renderPrompt()
+
+    expect(screen.getByText('Zalando')).toBeInTheDocument()
+    expect(screen.getByText(/323200000000000000004050/)).toBeInTheDocument()
+  })
+})
 
 describe('the day it proposes', () => {
   it('starts on today, the answer in almost every case', () => {

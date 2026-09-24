@@ -1,7 +1,7 @@
 import type { ShipmentDto } from '../../shared/shipment.js'
 import { useT } from '../i18n/context.js'
-import { formatAmount } from './format.js'
 import { Modal } from './Modal.js'
+import { ShipmentLine } from './ShipmentLine.js'
 
 type DeleteDialogProps = {
   shipment: ShipmentDto
@@ -20,10 +20,7 @@ export function DeleteDialog ({ shipment, busy, onCancel, onConfirm }: DeleteDia
       </div>
 
       <div className='modal-body space-y-3'>
-        <p className='card-text'>
-          <strong>{shipment.store}</strong> — {shipment.trackingNumber} —{' '}
-          {formatAmount(shipment.amountCents, shipment.currency)}
-        </p>
+        <ShipmentLine shipment={shipment} />
 
         <p className='card-text'>{t('This cannot be undone. You will lose:')}</p>
 

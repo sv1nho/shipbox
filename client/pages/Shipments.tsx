@@ -323,6 +323,7 @@ export function Shipments () {
       {prompt !== null && (
         <DatePrompt
           key={`${prompt.shipment.id}-${prompt.actions.join('-')}`}
+          shipment={prompt.shipment}
           actions={prompt.actions}
           earliest={earliestDateFor(prompt.shipment, prompt.actions[0])}
           busy={busy}

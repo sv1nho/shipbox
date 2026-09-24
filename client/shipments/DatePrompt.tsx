@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { TRANSITIONS } from '../../shared/transitions.js'
 import type { NextStep, TransitionAction } from '../../shared/transitions.js'
-import type { IsoDate } from '../../shared/shipment.js'
+import type { IsoDate, ShipmentDto } from '../../shared/shipment.js'
 import { today } from '../../shared/time.js'
 import { useT } from '../i18n/context.js'
 import { Modal } from './Modal.js'
+import { ShipmentLine } from './ShipmentLine.js'
 
 export type PromptResult = {
   action: TransitionAction
@@ -15,6 +16,7 @@ export type PromptResult = {
 }
 
 type DatePromptProps = {
+  shipment: ShipmentDto
   actions: NextStep['actions']
   earliest: IsoDate
   reception: { earliest: IsoDate } | null
@@ -25,7 +27,7 @@ type DatePromptProps = {
 }
 
 export function DatePrompt (
-  { actions, earliest, reception, busy, error, onCancel, onConfirm }: DatePromptProps
+  { shipment, actions, earliest, reception, busy, error, onCancel, onConfirm }: DatePromptProps
 ) {
   const [action, setAction] = useState<TransitionAction>(actions[0])
   const [received, setReceived] = useState(() => today())
@@ -53,6 +55,8 @@ export function DatePrompt (
       </div>
 
       <div className='modal-body space-y-3'>
+        <ShipmentLine shipment={shipment} />
+
         {actions.length > 1 && (
           <div className='segmented' role='group' aria-label='Outcome'>
             {actions.map((candidate) => (
