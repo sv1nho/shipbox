@@ -138,8 +138,10 @@ export const FRENCH: Record<string, string> = {
   'Track a return': 'Suivre un retour',
   'Try again': 'Réessayer',
   'Loading your shipments…': 'Chargement de vos suivis…',
-  'No shipment matches these filters. Clear them to see the whole list again.':
-    'Aucun suivi ne correspond à ces filtres. Videz-les pour revoir toute la liste.',
+  'No shipment matches these filters.': 'Aucun suivi ne correspond à ces filtres.',
+  'Track a parcel you have already sent back, or make its label first.':
+    'Suivez un colis déjà renvoyé, ou créez d’abord son étiquette.',
+  'Make a label': 'Créer une étiquette',
   'You are not tracking any shipment yet.': 'Vous ne suivez encore aucun retour.',
   'Page {page} of {pages}': 'Page {page} sur {pages}',
   Pages: 'Pages',

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { ApiError, refusalMessage } from '../api/client.js'
 import {
   applyTransition,
@@ -25,7 +25,12 @@ import { MailDialog } from '../shipments/MailDialog.js'
 import { ShipmentDetails } from '../shipments/ShipmentDetails.js'
 import { ShipmentRow } from '../shipments/ShipmentRow.js'
 import type { RowHandlers } from '../shipments/ShipmentRow.js'
-import { filtersFromSearch, hasActiveFilters, searchFromFilters } from '../shipments/filters.js'
+import {
+  clearedFilters,
+  filtersFromSearch,
+  hasActiveFilters,
+  searchFromFilters,
+} from '../shipments/filters.js'
 import { regenerateLabel } from '../shipments/regenerate-label.js'
 import { useShipmentList } from '../shipments/useShipmentList.js'
 import { earliestDateFor } from '../../shared/transitions.js'
@@ -242,16 +247,35 @@ export function Shipments () {
 
         {!loading && error === null && items.length === 0 && (
           <div className='empty-state'>
-            <p className='card-text'>
-              {hasActiveFilters(filters)
-                ? t('No shipment matches these filters. Clear them to see the whole list again.')
-                : t('You are not tracking any shipment yet.')}
-            </p>
-            {!hasActiveFilters(filters) && (
-              <button type='button' className='btn btn-primary' onClick={openAddForm}>
-                {t('Track a return')}
-              </button>
-            )}
+            {hasActiveFilters(filters)
+              ? (
+                <>
+                  <p className='card-text'>
+                    {t('No shipment matches these filters.')}
+                  </p>
+                  <button
+                    type='button'
+                    className='btn btn-primary'
+                    onClick={() => { apply(clearedFilters(filters)) }}
+                  >
+                    {t('Clear filters')}
+                  </button>
+                </>
+                )
+              : (
+                <>
+                  <p className='card-text'>{t('You are not tracking any shipment yet.')}</p>
+                  <p className='card-text'>
+                    {t('Track a parcel you have already sent back, or make its label first.')}
+                  </p>
+                  <div className='empty-state-actions'>
+                    <button type='button' className='btn btn-primary' onClick={openAddForm}>
+                      {t('Track a return')}
+                    </button>
+                    <Link className='btn btn-ghost' to='/form'>{t('Make a label')}</Link>
+                  </div>
+                </>
+                )}
           </div>
         )}
 

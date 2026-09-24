@@ -123,13 +123,15 @@ describe('when there is nothing to show', () => {
     renderPage('/shipments?status=refunded')
 
     expect(await screen.findByText(/no shipment matches these filters/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /clear filters/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /clear filters/i })).toHaveLength(2)
   })
 
-  it('reloads without the filters once they are cleared', async () => {
+  it('reloads without the filters once they are cleared from the empty list', async () => {
     renderPage('/shipments?status=refunded')
 
-    await userEvent.click(await screen.findByRole('button', { name: /clear filters/i }))
+    await screen.findByText(/no shipment matches these filters/i)
+    const buttons = screen.getAllByRole('button', { name: /clear filters/i })
+    await userEvent.click(buttons[buttons.length - 1])
 
     await waitFor(() => { expect(lastQuery()?.status).toBeUndefined() })
   })

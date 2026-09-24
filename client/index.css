@@ -1573,6 +1573,13 @@ h1, h2, h3 { font-family: var(--font-display); }
     text-align: center;
   }
 
+  .empty-state-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
   .pagination {
     display: flex;
     align-items: center;

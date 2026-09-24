@@ -95,3 +95,16 @@ export function hasActiveFilters (filters: ListParams): boolean {
     direction: DEFAULT_FILTERS.direction,
   }).toString() !== ''
 }
+
+export function clearedFilters (filters: ListParams): ListParams {
+  return {
+    carrier: undefined,
+    status: undefined,
+    store: undefined,
+    search: undefined,
+    attention: undefined,
+    ...DEFAULT_FILTERS,
+    sort: filters.sort ?? DEFAULT_FILTERS.sort,
+    direction: filters.direction ?? DEFAULT_FILTERS.direction,
+  }
+}

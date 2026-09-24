@@ -7,7 +7,7 @@ import type { StoreDto } from '../../shared/store.js'
 import { exportUrl, searchStores } from '../api/shipments.js'
 import { Chevron } from '../components/Chevron.js'
 import { useT } from '../i18n/context.js'
-import { DEFAULT_FILTERS, activeFilterCount, hasActiveFilters } from './filters.js'
+import { DEFAULT_FILTERS, activeFilterCount, clearedFilters, hasActiveFilters } from './filters.js'
 import { statusLabel } from './format.js'
 
 const ARCHIVED_LABELS: Record<ArchivedFilter, string> = {
@@ -242,18 +242,7 @@ export function FilterBar ({ filters, attentionTotal, onChange }: FilterBarProps
               <button
                 type='button'
                 className='btn btn-ghost btn-compact'
-                onClick={() => {
-                  onChange({
-                    carrier: undefined,
-                    status: undefined,
-                    store: undefined,
-                    search: undefined,
-                    attention: undefined,
-                    ...DEFAULT_FILTERS,
-                    sort: filters.sort ?? DEFAULT_FILTERS.sort,
-                    direction: filters.direction ?? DEFAULT_FILTERS.direction,
-                  })
-                }}
+                onClick={() => { onChange(clearedFilters(filters)) }}
               >
                 {t('Clear filters')}
               </button>
