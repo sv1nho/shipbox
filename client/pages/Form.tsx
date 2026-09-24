@@ -14,7 +14,7 @@ import { buildLabelSvg } from '../utils/label-generator.js'
 import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
 import { labelFileName } from '../utils/label-file-name.js'
-import { Field, problemMarks } from '../components/Field.js'
+import { Field, fieldMarks } from '../components/Field.js'
 import { recallDraft, rememberDraft } from '../utils/label-draft.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
@@ -224,6 +224,7 @@ export function Form () {
     control,
     setValue,
     setFocus,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<LabelPayload>({
     shouldFocusError: false,
@@ -244,9 +245,7 @@ export function Form () {
   const [offerOpen, setOfferOpen] = useState(false)
   const t = useT()
 
-  const filled = useWatch({ control })
-
-  useEffect(() => { rememberDraft(filled) }, [filled])
+  useEffect(() => () => { rememberDraft(getValues()) }, [getValues])
 
   const senderIsCompany = useWatch({ control, name: 'sender_isCompany' })
   const recipientIsCompany = useWatch({ control, name: 'recipient_isCompany' })
@@ -289,7 +288,11 @@ export function Form () {
     <>
       {error && <div className='alert-error mb-6'>{error}</div>}
 
-      <form onSubmit={(e) => { void handleSubmit(onSubmit, focusFirstProblem)(e) }} className='space-y-6'>
+      <form
+        onSubmit={(e) => { void handleSubmit(onSubmit, focusFirstProblem)(e) }}
+        onBlur={() => { rememberDraft(getValues()) }}
+        className='space-y-6'
+      >
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
           <PartyFieldset
             prefix='sender'

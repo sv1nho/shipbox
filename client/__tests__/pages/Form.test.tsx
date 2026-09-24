@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
@@ -49,15 +49,12 @@ const generate = async () => {
 }
 
 beforeEach(() => {
+  globalThis.localStorage.clear()
   vi.clearAllMocks()
   vi.mocked(loadSvgTemplate).mockResolvedValue('<svg/>')
   vi.mocked(buildLabelSvg).mockReturnValue({ svg: '<svg/>', maskedTracking: '3232 **** 4050' })
   vi.mocked(svgToPdf).mockResolvedValue(PDF)
   Object.assign(URL, { createObjectURL, revokeObjectURL })
-})
-
-afterEach(() => {
-  globalThis.localStorage.clear()
 })
 
 describe('the draft it keeps', () => {
@@ -73,10 +70,11 @@ describe('the draft it keeps', () => {
     expect(section('Carrier').getByRole('combobox')).toHaveValue('postnl')
   })
 
-  it('writes down every change, so a refresh costs nothing', async () => {
+  it('writes down a field as soon as it is left, so a refresh costs nothing', async () => {
     renderForm()
 
     await userEvent.type(section('Sender').getByLabelText('City'), 'Namur')
+    await userEvent.tab()
 
     await waitFor(() => {
       expect(globalThis.localStorage.getItem('shipbox.label-draft'))
