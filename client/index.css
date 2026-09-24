@@ -1573,6 +1573,36 @@ h1, h2, h3 { font-family: var(--font-display); }
     text-align: center;
   }
 
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.25rem;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    padding: 0.625rem 0.875rem;
+    transform: translateX(-50%);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+    font-size: 0.8125rem;
+    animation: rise var(--transition) ease-out;
+  }
+
+  .toast-message {
+    color: var(--color-text);
+    min-width: 0;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translate(-50%, 0.75rem); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
   .empty-state-actions {
     display: flex;
     flex-wrap: wrap;

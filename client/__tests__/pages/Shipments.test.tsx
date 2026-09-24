@@ -385,6 +385,85 @@ describe('the other row actions', () => {
     })
   })
 
+  it('offers to archive again what it just put back', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ archivedAt: '2026-06-05T00:00:00.000Z' })])
+    )
+    vi.mocked(unarchiveShipment).mockResolvedValue(makeShipment())
+    vi.mocked(archiveShipment).mockResolvedValue(makeShipment())
+
+    renderPage('/shipments?archived=only')
+    await screen.findByText('Zalando')
+    await chooseFromMenu(/put back in the list/i)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+
+    await waitFor(() => {
+      expect(archiveShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111')
+    })
+  })
+
+  it('offers nothing to undo when putting back failed', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ archivedAt: '2026-06-05T00:00:00.000Z' })])
+    )
+    vi.mocked(unarchiveShipment).mockRejectedValue(new Error('offline'))
+
+    renderPage('/shipments?archived=only')
+    await screen.findByText('Zalando')
+    await chooseFromMenu(/put back in the list/i)
+
+    await waitFor(() => { expect(unarchiveShipment).toHaveBeenCalled() })
+
+    expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeInTheDocument()
+  })
+
+  it('offers to undo what it just archived', async () => {
+    vi.mocked(archiveShipment).mockResolvedValue(makeShipment())
+    vi.mocked(unarchiveShipment).mockResolvedValue(makeShipment())
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await chooseFromMenu(/archive/i)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+
+    await waitFor(() => {
+      expect(unarchiveShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111')
+    })
+    expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeInTheDocument()
+  })
+
+  it('says which step it recorded, with a way back', async () => {
+    vi.mocked(applyTransition).mockResolvedValue(makeShipment({ status: 'refunded' }))
+    vi.mocked(revertShipment).mockResolvedValue(makeShipment({ status: 'received' }))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await chooseFromMenu(/record the decision directly/i)
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    expect(await screen.findByText('Recorded: Refunded')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
+
+    await waitFor(() => {
+      expect(revertShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111')
+    })
+  })
+
+  it('lets the notice be dismissed by hand', async () => {
+    vi.mocked(archiveShipment).mockResolvedValue(makeShipment())
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await chooseFromMenu(/archive/i)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Close' }))
+
+    expect(screen.queryByText('Shipment archived.')).not.toBeInTheDocument()
+  })
+
   it('records a skipped step straight from the menu', async () => {
     vi.mocked(applyTransition).mockResolvedValue(makeShipment({ status: 'refunded' }))
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ApiError, refusalMessage } from '../api/client.js'
 import {
@@ -16,6 +16,7 @@ import {
 import { Chevron } from '../components/Chevron.js'
 import { useT } from '../i18n/context.js'
 import { Spinner } from '../components/Spinner.js'
+import { Toast } from '../components/Toast.js'
 import { AddShipmentDialog, FIELDS_WITH_A_PLACE } from '../shipments/AddShipmentDialog.js'
 import { DatePrompt } from '../shipments/DatePrompt.js'
 import { DeleteDialog } from '../shipments/DeleteDialog.js'
@@ -66,6 +67,10 @@ export function Shipments () {
   const [refused, setRefused] = useState<ApiError | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ message: string; undo: () => void } | null>(null)
+
+  const forget = useCallback(() => { setNotice(null) }, [])
+  const t = useT()
 
   useEffect(() => {
     if (openMenu === null) return
@@ -100,6 +105,7 @@ export function Shipments () {
     setActionError(null)
     setRefused(null)
     setOpenMenu(null)
+    setNotice(null)
 
     try {
       await operation()
@@ -143,7 +149,13 @@ export function Shipments () {
       })
     })
 
-    if (done) setPrompt(null)
+    if (done) {
+      setPrompt(null)
+      setNotice({
+        message: t('Recorded: {step}', { step: t(TRANSITIONS[result.action].label) }),
+        undo: () => { void run(() => revertShipment(active.shipment.id)) },
+      })
+    }
   }
 
   const recordChase = async (shipment: ShipmentDto) => {
@@ -170,8 +182,26 @@ export function Shipments () {
       setPrompt({ shipment, actions })
     },
     onRevert: (shipment) => { void run(() => revertShipment(shipment.id)) },
-    onArchive: (shipment) => { void run(() => archiveShipment(shipment.id)) },
-    onUnarchive: (shipment) => { void run(() => unarchiveShipment(shipment.id)) },
+    onArchive: (shipment) => {
+      void run(() => archiveShipment(shipment.id)).then((done) => {
+        if (done) {
+          setNotice({
+            message: t('Shipment archived.'),
+            undo: () => { void run(() => unarchiveShipment(shipment.id)) },
+          })
+        }
+      })
+    },
+    onUnarchive: (shipment) => {
+      void run(() => unarchiveShipment(shipment.id)).then((done) => {
+        if (done) {
+          setNotice({
+            message: t('Shipment put back in the list.'),
+            undo: () => { void run(() => archiveShipment(shipment.id)) },
+          })
+        }
+      })
+    },
     onDelete: (shipment) => { setOpenMenu(null); setActionError(null); setDeleting(shipment) },
     onShowDetails: (shipment) => { setActionError(null); setDetails(shipment) },
     onWriteToStore: (shipment) => { setActionError(null); setChasing(shipment) },
@@ -184,7 +214,6 @@ export function Shipments () {
     },
   }
 
-  const t = useT()
   const listBusy = busy || loading
   const items = result?.items ?? []
   const page = result?.page ?? 1
@@ -360,6 +389,14 @@ export function Shipments () {
               : null
           }
           onConfirm={(result) => { void confirmTransition(prompt, result) }}
+        />
+      )}
+
+      {notice !== null && (
+        <Toast
+          message={notice.message}
+          onUndo={() => { const undo = notice.undo; setNotice(null); undo() }}
+          onDismiss={forget}
         />
       )}
 

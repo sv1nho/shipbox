@@ -142,6 +142,10 @@ export const FRENCH: Record<string, string> = {
   'Track a parcel you have already sent back, or make its label first.':
     'Suivez un colis déjà renvoyé, ou créez d’abord son étiquette.',
   'Make a label': 'Créer une étiquette',
+  'Recorded: {step}': 'Enregistré : {step}',
+  'Shipment archived.': 'Suivi archivé.',
+  'Shipment put back in the list.': 'Suivi remis dans la liste.',
+  Undo: 'Annuler',
   'You are not tracking any shipment yet.': 'Vous ne suivez encore aucun retour.',
   'Page {page} of {pages}': 'Page {page} sur {pages}',
   Pages: 'Pages',
