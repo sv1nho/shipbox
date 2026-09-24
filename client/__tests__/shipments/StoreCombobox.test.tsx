@@ -14,7 +14,7 @@ const renderCombobox = (value = '') => {
   const onChange = vi.fn()
   const onPick = vi.fn()
 
-  render(<StoreCombobox value={value} invalid={false} onChange={onChange} onPick={onPick} />)
+  render(<StoreCombobox value={value} problem={undefined} onChange={onChange} onPick={onPick} />)
 
   return { onChange, onPick }
 }
@@ -56,13 +56,13 @@ describe('asking the api', () => {
     vi.mocked(searchStores).mockImplementationOnce(() => new Promise((resolve) => { settle = resolve }))
 
     const { rerender } = render(
-      <StoreCombobox value='Z' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />
+      <StoreCombobox value='Z' problem={undefined} onChange={vi.fn()} onPick={vi.fn()} />
     )
 
     await waitFor(() => { expect(searchStores).toHaveBeenCalledOnce() })
 
     vi.mocked(searchStores).mockResolvedValue([store('Snipes')])
-    rerender(<StoreCombobox value='Sni' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />)
+    rerender(<StoreCombobox value='Sni' problem={undefined} onChange={vi.fn()} onPick={vi.fn()} />)
 
     settle([store('Zalando'), store('Zara')])
     await userEvent.click(box())
@@ -76,13 +76,13 @@ describe('asking the api', () => {
     vi.mocked(searchStores).mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = reject }))
 
     const { rerender } = render(
-      <StoreCombobox value='Z' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />
+      <StoreCombobox value='Z' problem={undefined} onChange={vi.fn()} onPick={vi.fn()} />
     )
 
     await waitFor(() => { expect(searchStores).toHaveBeenCalledOnce() })
 
     vi.mocked(searchStores).mockResolvedValue([store('Snipes')])
-    rerender(<StoreCombobox value='Sni' invalid={false} onChange={vi.fn()} onPick={vi.fn()} />)
+    rerender(<StoreCombobox value='Sni' problem={undefined} onChange={vi.fn()} onPick={vi.fn()} />)
 
     fail(new Error('offline'))
     await userEvent.click(box())

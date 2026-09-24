@@ -13,7 +13,7 @@ import type { ShipmentStatus } from '../../shared/shipment-status.js'
 import { useT } from '../i18n/context.js'
 import type { Translate } from '../i18n/context.js'
 import { statusLabel } from './format.js'
-import { Field } from '../components/Field.js'
+import { Field, fieldMarks } from '../components/Field.js'
 import { Modal } from './Modal.js'
 import { StoreCombobox } from './StoreCombobox.js'
 import { NewStoreDialog } from './NewStoreDialog.js'
@@ -188,6 +188,19 @@ export function AddShipmentDialog (
   const problem = (key: keyof Draft): string | undefined =>
     attempted ? problems[key] : undefined
 
+  const trouble = {
+    trackingNumber: problem('trackingNumber') ?? fieldError('trackingNumber'),
+    store: problem('store') ?? fieldError('store'),
+    amount: problem('amount') ?? fieldError('amountCents'),
+    recipientPostalCode: problem('recipientPostalCode') ?? fieldError('recipientPostalCode'),
+    requestedDate: problem('requestedDate') ?? fieldError('requestedDate'),
+    dropoffDate: problem('dropoffDate') ?? fieldError('dropoffDate'),
+    receivedDate: problem('receivedDate') ?? fieldError('receivedDate'),
+    decisionDate: problem('decisionDate') ?? fieldError('decisionDate'),
+    rejectionReason: fieldError('rejectionReason'),
+    orderNumber: problem('orderNumber') ?? fieldError('orderNumber'),
+  }
+
   if (addingStore) {
     return (
       <NewStoreDialog
@@ -232,11 +245,11 @@ export function AddShipmentDialog (
         <Field
           label={t('Tracking number')}
           htmlFor='shipment-tracking'
-          problem={problem('trackingNumber') ?? fieldError('trackingNumber')}
+          problem={trouble.trackingNumber}
         >
           <input
             id='shipment-tracking'
-            className='form-input'
+            {...fieldMarks('shipment-tracking', trouble.trackingNumber)}
             autoComplete='off'
             placeholder={CARRIERS[draft.carrier].placeholder}
             value={draft.trackingNumber}
@@ -247,12 +260,12 @@ export function AddShipmentDialog (
         <Field
           label={t('Store')}
           htmlFor='shipment-store'
-          problem={problem('store') ?? fieldError('store')}
+          problem={trouble.store}
         >
           <div className='combobox-row'>
             <StoreCombobox
               value={draft.store}
-              invalid={problem('store') !== undefined}
+              problem={trouble.store}
               onChange={(store) => { set('store', store) }}
               onPick={(store) => { set('store', store.name) }}
             />
@@ -272,11 +285,11 @@ export function AddShipmentDialog (
           <Field
             label={t('Amount')}
             htmlFor='shipment-amount'
-            problem={problem('amount') ?? fieldError('amountCents')}
+            problem={trouble.amount}
           >
             <input
               id='shipment-amount'
-              className='form-input'
+              {...fieldMarks('shipment-amount', trouble.amount)}
               inputMode='decimal'
               placeholder='49.99'
               value={draft.amount}
@@ -287,11 +300,11 @@ export function AddShipmentDialog (
           <Field
             label={t('Postal code')}
             htmlFor='shipment-postal'
-            problem={problem('recipientPostalCode') ?? fieldError('recipientPostalCode')}
+            problem={trouble.recipientPostalCode}
           >
             <input
               id='shipment-postal'
-              className='form-input'
+              {...fieldMarks('shipment-postal', trouble.recipientPostalCode)}
               autoComplete='off'
               value={draft.recipientPostalCode}
               onChange={(event) => { set('recipientPostalCode', event.target.value) }}
@@ -314,12 +327,12 @@ export function AddShipmentDialog (
           <Field
             label={t('Return requested on')}
             htmlFor='shipment-requested'
-            problem={problem('requestedDate') ?? fieldError('requestedDate')}
+            problem={trouble.requestedDate}
           >
             <input
               id='shipment-requested'
               type='date'
-              className='form-input'
+              {...fieldMarks('shipment-requested', trouble.requestedDate)}
               value={draft.requestedDate}
               max={today()}
               onChange={(event) => { set('requestedDate', event.target.value) }}
@@ -345,12 +358,12 @@ export function AddShipmentDialog (
             <Field
               label={t('Dropped off on')}
               htmlFor='shipment-dropoff'
-              problem={problem('dropoffDate') ?? fieldError('dropoffDate')}
+              problem={trouble.dropoffDate}
             >
               <input
                 id='shipment-dropoff'
                 type='date'
-                className='form-input'
+                {...fieldMarks('shipment-dropoff', trouble.dropoffDate)}
                 value={draft.dropoffDate}
                 min={draft.requestedDate}
                 max={today()}
@@ -362,12 +375,12 @@ export function AddShipmentDialog (
               <Field
                 label={t('Received on')}
                 htmlFor='shipment-received'
-                problem={problem('receivedDate') ?? fieldError('receivedDate')}
+                problem={trouble.receivedDate}
               >
                 <input
                   id='shipment-received'
                   type='date'
-                  className='form-input'
+                  {...fieldMarks('shipment-received', trouble.receivedDate)}
                   value={draft.receivedDate}
                   min={draft.dropoffDate === '' ? draft.requestedDate : draft.dropoffDate}
                   max={today()}
@@ -394,12 +407,12 @@ export function AddShipmentDialog (
             <Field
               label={t('Decided on')}
               htmlFor='shipment-decision'
-              problem={problem('decisionDate') ?? fieldError('decisionDate')}
+              problem={trouble.decisionDate}
             >
               <input
                 id='shipment-decision'
                 type='date'
-                className='form-input'
+                {...fieldMarks('shipment-decision', trouble.decisionDate)}
                 value={draft.decisionDate}
                 min={draft.receivedDate === '' ? draft.requestedDate : draft.receivedDate}
                 max={today()}
@@ -411,11 +424,11 @@ export function AddShipmentDialog (
               <Field
                 label={t('Refused because (optional)')}
                 htmlFor='shipment-reason'
-                problem={fieldError('rejectionReason')}
+                problem={trouble.rejectionReason}
               >
                 <input
                   id='shipment-reason'
-                  className='form-input'
+                  {...fieldMarks('shipment-reason', trouble.rejectionReason)}
                   value={draft.rejectionReason}
                   onChange={(event) => { set('rejectionReason', event.target.value) }}
                 />
@@ -428,11 +441,11 @@ export function AddShipmentDialog (
           <Field
             label={t('Order number')}
             htmlFor='shipment-order'
-            problem={problem('orderNumber') ?? fieldError('orderNumber')}
+            problem={trouble.orderNumber}
           >
             <input
               id='shipment-order'
-              className='form-input'
+              {...fieldMarks('shipment-order', trouble.orderNumber)}
               autoComplete='off'
               value={draft.orderNumber}
               onChange={(event) => { set('orderNumber', event.target.value) }}

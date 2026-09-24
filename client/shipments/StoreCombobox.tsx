@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { fieldMarks } from '../components/Field.js'
 import { searchStores } from '../api/shipments.js'
 import type { StoreDto } from '../../shared/store.js'
 
@@ -6,12 +7,12 @@ const DEBOUNCE_MS = 250
 
 type StoreComboboxProps = {
   value: string
-  invalid: boolean
+  problem: string | undefined
   onChange: (value: string) => void
   onPick: (store: StoreDto) => void
 }
 
-export function StoreCombobox ({ value, invalid, onChange, onPick }: StoreComboboxProps) {
+export function StoreCombobox ({ value, problem, onChange, onPick }: StoreComboboxProps) {
   const listId = useId()
   const [suggestions, setSuggestions] = useState<StoreDto[]>([])
   const [open, setOpen] = useState(false)
@@ -62,7 +63,7 @@ export function StoreCombobox ({ value, invalid, onChange, onPick }: StoreCombob
     <div className='combobox'>
       <input
         id='shipment-store'
-        className={invalid ? 'form-input form-input-invalid' : 'form-input'}
+        {...fieldMarks('shipment-store', problem)}
         role='combobox'
         autoComplete='off'
         aria-expanded={listOpen}

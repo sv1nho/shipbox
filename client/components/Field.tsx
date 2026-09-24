@@ -18,7 +18,17 @@ export function Field ({ label, htmlFor, problem, hideLabel = false, children }:
   )
 }
 
-type Marks = { 'aria-invalid'?: true, 'aria-describedby'?: string }
+type Marks = {
+  className: string
+  'aria-invalid'?: true
+  'aria-describedby'?: string
+}
 
-export const problemMarks = (htmlFor: string, problem: string | undefined): Marks =>
-  problem === undefined ? {} : { 'aria-invalid': true, 'aria-describedby': `${htmlFor}-error` }
+export const fieldMarks = (htmlFor: string, problem: string | undefined): Marks =>
+  problem === undefined
+    ? { className: 'form-input' }
+    : {
+        className: 'form-input form-input-invalid',
+        'aria-invalid': true,
+        'aria-describedby': `${htmlFor}-error`,
+      }

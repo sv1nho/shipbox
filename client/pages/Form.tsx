@@ -158,8 +158,7 @@ const PartyFieldset = ({
             <input
               {...register(name('company'), { required: t('A company name is required.') })}
               id={fieldId('company')}
-              className='form-input'
-              {...problemMarks(fieldId('company'), err('company'))}
+              {...fieldMarks(fieldId('company'), err('company'))}
             />
           </Field>
           )
@@ -169,16 +168,14 @@ const PartyFieldset = ({
               <input
                 {...register(name('firstname'), { required: t('A first name is required.') })}
                 id={fieldId('firstname')}
-                className='form-input'
-                {...problemMarks(fieldId('firstname'), err('firstname'))}
+                {...fieldMarks(fieldId('firstname'), err('firstname'))}
               />
             </Field>
             <Field label={t('Last name')} htmlFor={fieldId('lastname')} problem={err('lastname')}>
               <input
                 {...register(name('lastname'), { required: t('A last name is required.') })}
                 id={fieldId('lastname')}
-                className='form-input'
-                {...problemMarks(fieldId('lastname'), err('lastname'))}
+                {...fieldMarks(fieldId('lastname'), err('lastname'))}
               />
             </Field>
           </>
@@ -188,8 +185,7 @@ const PartyFieldset = ({
         <input
           {...register(name('address'), { required: t('An address is required.') })}
           id={fieldId('address')}
-          className='form-input'
-          {...problemMarks(fieldId('address'), err('address'))}
+          {...fieldMarks(fieldId('address'), err('address'))}
         />
       </Field>
 
@@ -198,16 +194,14 @@ const PartyFieldset = ({
           <input
             {...register(name('postal'), { required: t('A postal code is required.') })}
             id={fieldId('postal')}
-            className='form-input'
-            {...problemMarks(fieldId('postal'), err('postal'))}
+            {...fieldMarks(fieldId('postal'), err('postal'))}
           />
         </Field>
         <Field label={t('City')} htmlFor={fieldId('city')} problem={err('city')}>
           <input
             {...register(name('city'), { required: t('A city is required.') })}
             id={fieldId('city')}
-            className='form-input'
-            {...problemMarks(fieldId('city'), err('city'))}
+            {...fieldMarks(fieldId('city'), err('city'))}
           />
         </Field>
       </div>
@@ -356,8 +350,7 @@ export function Form () {
                     }),
                 })}
                 id='label-tracking'
-                className='form-input'
-                {...problemMarks('label-tracking', errors.tracking_number?.message)}
+                {...fieldMarks('label-tracking', errors.tracking_number?.message)}
                 placeholder={CARRIERS[carrier].placeholder}
               />
             </Field>

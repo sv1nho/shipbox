@@ -225,6 +225,45 @@ describe('what it refuses', () => {
   })
 })
 
+describe('how a refusal shows', () => {
+  it('outlines every field it refused, not just the store', async () => {
+    renderDialog()
+
+    await submit()
+
+    for (const label of ['Tracking number', 'Store', 'Amount', 'Postal code', 'Order number']) {
+      expect(screen.getByLabelText(label)).toHaveClass('form-input-invalid')
+    }
+  })
+
+  it('tells a screen reader which field is at fault and why', async () => {
+    renderDialog()
+
+    await submit()
+
+    const tracking = screen.getByLabelText('Tracking number')
+
+    expect(tracking).toHaveAttribute('aria-invalid', 'true')
+    expect(tracking).toHaveAccessibleDescription('A tracking number is required.')
+  })
+
+  it('outlines a field the api refused, not only the ones checked here', () => {
+    renderDialog(false, null, { orderNumber: 'This order number is already followed.' })
+
+    const orderNumber = screen.getByLabelText('Order number')
+
+    expect(orderNumber).toHaveClass('form-input-invalid')
+    expect(orderNumber).toHaveAccessibleDescription('This order number is already followed.')
+  })
+
+  it('leaves the untouched fields alone', () => {
+    renderDialog()
+
+    expect(screen.getByLabelText('Tracking number')).not.toHaveClass('form-input-invalid')
+    expect(screen.getByLabelText('Tracking number')).not.toHaveAttribute('aria-invalid')
+  })
+})
+
 describe('what it sends', () => {
   it('sends the normalised number and the amount in cents', async () => {
     const { onSubmit } = renderDialog()
