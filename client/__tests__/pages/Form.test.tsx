@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
@@ -54,6 +54,35 @@ beforeEach(() => {
   vi.mocked(buildLabelSvg).mockReturnValue({ svg: '<svg/>', maskedTracking: '3232 **** 4050' })
   vi.mocked(svgToPdf).mockResolvedValue(PDF)
   Object.assign(URL, { createObjectURL, revokeObjectURL })
+})
+
+afterEach(() => {
+  globalThis.localStorage.clear()
+})
+
+describe('the draft it keeps', () => {
+  it('brings back what was typed before a refresh', () => {
+    globalThis.localStorage.setItem(
+      'shipbox.label-draft',
+      JSON.stringify({ sender_city: 'Liège', carrier: 'postnl' })
+    )
+
+    renderForm()
+
+    expect(section('Sender').getByLabelText('City')).toHaveValue('Liège')
+    expect(section('Carrier').getByRole('combobox')).toHaveValue('postnl')
+  })
+
+  it('writes down every change, so a refresh costs nothing', async () => {
+    renderForm()
+
+    await userEvent.type(section('Sender').getByLabelText('City'), 'Namur')
+
+    await waitFor(() => {
+      expect(globalThis.localStorage.getItem('shipbox.label-draft'))
+        .toContain('"sender_city":"Namur"')
+    })
+  })
 })
 
 describe('what it asks for', () => {

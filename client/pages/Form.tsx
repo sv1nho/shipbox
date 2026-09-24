@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import type {
@@ -15,6 +15,7 @@ import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
 import { labelFileName } from '../utils/label-file-name.js'
 import { Field, problemMarks } from '../components/Field.js'
+import { recallDraft, rememberDraft } from '../utils/label-draft.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
@@ -239,6 +240,7 @@ export function Form () {
       carrier: 'bpost',
       sender_isCompany: false,
       recipient_isCompany: false,
+      ...recallDraft(),
     },
   })
 
@@ -247,6 +249,10 @@ export function Form () {
   const [labelPayload, setLabelPayload] = useState<LabelPayload | null>(null)
   const [offerOpen, setOfferOpen] = useState(false)
   const t = useT()
+
+  const filled = useWatch({ control })
+
+  useEffect(() => { rememberDraft(filled) }, [filled])
 
   const senderIsCompany = useWatch({ control, name: 'sender_isCompany' })
   const recipientIsCompany = useWatch({ control, name: 'recipient_isCompany' })
