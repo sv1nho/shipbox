@@ -4,6 +4,8 @@ import type { ShipmentDto } from '../../shared/shipment.js'
 import { MAIL_LANGUAGES, mailDraft, mailLanguageLabel, mailtoLink } from './mail.js'
 import type { MailLanguage } from './mail.js'
 import { useT } from '../i18n/context.js'
+import { CopyIcon } from '../components/CopyIcon.js'
+import { copyText } from '../utils/clipboard.js'
 import { Modal } from './Modal.js'
 
 type MailDialogProps = {
@@ -16,31 +18,6 @@ type MailDialogProps = {
 type Part = 'subject' | 'body'
 
 const LABELS: Record<Part, string> = { subject: 'Subject', body: 'Message' }
-
-function CopyIcon ({ copied }: { copied: boolean }) {
-  return (
-    <svg
-      viewBox='0 0 16 16'
-      width='12'
-      height='12'
-      fill='none'
-      stroke='currentColor'
-      strokeWidth='1.6'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-      aria-hidden='true'
-    >
-      {copied
-        ? <path d='M3 8.6 6.4 12 13 4.8' />
-        : (
-          <>
-            <rect x='5.6' y='2.2' width='8.2' height='9.6' rx='1.2' />
-            <path d='M10.4 13.8H3.4a1.2 1.2 0 0 1-1.2-1.2V5.2' />
-          </>
-        )}
-    </svg>
-  )
-}
 
 export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps) {
   const { data: session } = useSession()
@@ -66,9 +43,16 @@ export function MailDialog ({ shipment, busy, onClose, onSent }: MailDialogProps
   }
 
   const copy = (part: Part) => {
-    navigator.clipboard.writeText(draft[part])
-      .then(() => { setCopied(part); setFailed(false); setHandedOver(true) })
-      .catch(() => { setCopied(null); setFailed(true) })
+    void copyText(draft[part]).then((done) => {
+      if (done) {
+        setCopied(part)
+        setFailed(false)
+        setHandedOver(true)
+      } else {
+        setCopied(null)
+        setFailed(true)
+      }
+    })
   }
 
   const copyButton = (part: Part) => (

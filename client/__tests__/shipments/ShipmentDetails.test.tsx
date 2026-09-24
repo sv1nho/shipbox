@@ -101,6 +101,35 @@ describe('what the panel always shows', () => {
   })
 })
 
+describe('copying the tracking number', () => {
+  it('hands it to the clipboard, so it can be pasted on the carrier site', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+
+    renderDetails({ trackingNumber: '323200000000000000004050' })
+    await userEvent.click(screen.getByRole('button', { name: /copy the tracking number/i }))
+
+    expect(writeText).toHaveBeenCalledWith('323200000000000000004050')
+    expect(await screen.findByRole('button', { name: /tracking number copied/i })).toBeInTheDocument()
+
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps offering the copy when the browser refuses the clipboard', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+    })
+
+    renderDetails()
+    await userEvent.click(screen.getByRole('button', { name: /copy the tracking number/i }))
+
+    expect(await screen.findByRole('button', { name: /copy the tracking number/i })).toBeInTheDocument()
+
+    vi.unstubAllGlobals()
+  })
+})
+
 describe('what it leaves out', () => {
   it('shows the steps still ahead as waiting instead of hiding them', () => {
     renderDetails({ status: 'pending' })

@@ -7,6 +7,8 @@ import type { DatedField } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
 import { useT } from '../i18n/context.js'
 import { alertMessage, days, formatAmount, formatDate, zonedDate } from './format.js'
+import { CopyIcon } from '../components/CopyIcon.js'
+import { copyText } from '../utils/clipboard.js'
 import { StatusPill } from './StatusPill.js'
 import { Modal } from './Modal.js'
 import { Timeline } from './Timeline.js'
@@ -58,6 +60,7 @@ function Field ({ label, children }: { label: string; children: ReactNode }) {
 
 export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: DetailsProps) {
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [copied, setCopied] = useState(false)
   const t = useT()
 
   const stored = draftOf(shipment)
@@ -98,9 +101,23 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
 
         <dl className='detail-list'>
           <Field label={t('Tracking number')}>
-            <a className='link' href={shipment.trackingUrl} target='_blank' rel='noreferrer'>
-              {shipment.trackingNumber}
-            </a>
+            <span className='detail-copy'>
+              <a className='link' href={shipment.trackingUrl} target='_blank' rel='noreferrer'>
+                {shipment.trackingNumber}
+              </a>
+              <button
+                type='button'
+                className='icon-btn icon-btn-copy'
+                aria-label={copied
+                  ? t('{part} copied', { part: t('Tracking number') })
+                  : t('Copy the {part}', { part: t('Tracking number').toLowerCase() })}
+                onClick={() => {
+                  void copyText(shipment.trackingNumber).then((done) => { setCopied(done) })
+                }}
+              >
+                <CopyIcon copied={copied} />
+              </button>
+            </span>
           </Field>
           <Field label={t('Carrier')}>{CARRIERS[shipment.carrier].label}</Field>
           <Field label={t('Store')}>{shipment.store}</Field>
