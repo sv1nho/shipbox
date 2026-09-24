@@ -17,3 +17,8 @@ export function Field ({ label, htmlFor, problem, hideLabel = false, children }:
     </div>
   )
 }
+
+type Marks = { 'aria-invalid'?: true, 'aria-describedby'?: string }
+
+export const problemMarks = (htmlFor: string, problem: string | undefined): Marks =>
+  problem === undefined ? {} : { 'aria-invalid': true, 'aria-describedby': `${htmlFor}-error` }

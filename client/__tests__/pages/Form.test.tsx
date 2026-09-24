@@ -172,6 +172,17 @@ describe('what it refuses', () => {
     expect(section('Sender').queryByText('A first name is required.')).not.toBeInTheDocument()
   })
 
+  it('tells a screen reader which field was refused and why', async () => {
+    renderForm()
+
+    await generate()
+
+    const firstName = await section('Sender').findByLabelText('First name')
+
+    expect(firstName).toHaveAttribute('aria-invalid', 'true')
+    expect(firstName).toHaveAccessibleDescription('A first name is required.')
+  })
+
   it('puts the cursor in the first field it refused', async () => {
     renderForm()
 
