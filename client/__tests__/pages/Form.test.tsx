@@ -28,11 +28,11 @@ const section = (title: string) =>
 const fillParty = async (title: string) => {
   const party = section(title)
 
-  await userEvent.type(party.getByPlaceholderText('First name'), 'Marie')
-  await userEvent.type(party.getByPlaceholderText('Last name'), 'Martin')
-  await userEvent.type(party.getByPlaceholderText('Address'), 'Avenue Centrale 45')
-  await userEvent.type(party.getByPlaceholderText('Postal code'), '4000')
-  await userEvent.type(party.getByPlaceholderText('City'), 'Liège')
+  await userEvent.type(party.getByLabelText('First name'), 'Marie')
+  await userEvent.type(party.getByLabelText('Last name'), 'Martin')
+  await userEvent.type(party.getByLabelText('Address'), 'Avenue Centrale 45')
+  await userEvent.type(party.getByLabelText('Postal code'), '4000')
+  await userEvent.type(party.getByLabelText('City'), 'Liège')
 }
 
 const fillEverything = async () => {
@@ -65,6 +65,19 @@ describe('what it asks for', () => {
     }
   })
 
+  it('labels every field, so nothing relies on a placeholder that disappears', () => {
+    renderForm()
+
+    const party = section('Sender')
+
+    for (const label of ['First name', 'Last name', 'Address', 'Postal code', 'City', 'Country']) {
+      expect(party.getByLabelText(label)).toBeInTheDocument()
+    }
+    expect(screen.getByLabelText('Tracking Number')).toBeInTheDocument()
+    expect(screen.getByLabelText('Carrier')).toBeInTheDocument()
+    expect(screen.getByLabelText('Language')).toBeInTheDocument()
+  })
+
   it('hints at the tracking format of the carrier chosen', async () => {
     renderForm()
 
@@ -85,8 +98,8 @@ describe('a company instead of a person', () => {
 
     await userEvent.click(sender.getByRole('button', { name: 'Company' }))
 
-    expect(sender.getByPlaceholderText('Company name')).toBeInTheDocument()
-    expect(sender.queryByPlaceholderText('First name')).not.toBeInTheDocument()
+    expect(sender.getByLabelText('Company name')).toBeInTheDocument()
+    expect(sender.queryByLabelText('First name')).not.toBeInTheDocument()
   })
 
   it('goes back to the two names', async () => {
@@ -96,7 +109,7 @@ describe('a company instead of a person', () => {
     await userEvent.click(sender.getByRole('button', { name: 'Company' }))
     await userEvent.click(sender.getByRole('button', { name: 'Individual' }))
 
-    expect(sender.getByPlaceholderText('First name')).toBeInTheDocument()
+    expect(sender.getByLabelText('First name')).toBeInTheDocument()
   })
 
   it('switches one party without touching the other', async () => {
@@ -104,7 +117,7 @@ describe('a company instead of a person', () => {
 
     await userEvent.click(section('Sender').getByRole('button', { name: 'Company' }))
 
-    expect(section('Recipient').getByPlaceholderText('First name')).toBeInTheDocument()
+    expect(section('Recipient').getByLabelText('First name')).toBeInTheDocument()
   })
 })
 
@@ -122,8 +135,8 @@ describe('filling with random data', () => {
 
     await userEvent.click(sender.getByRole('button', { name: /random data/i }))
 
-    expect(sender.getByPlaceholderText('First name')).not.toHaveValue('')
-    expect(sender.getByPlaceholderText('Last name')).not.toHaveValue('')
+    expect(sender.getByLabelText('First name')).not.toHaveValue('')
+    expect(sender.getByLabelText('Last name')).not.toHaveValue('')
   })
 
   it('invents a company name for a company', async () => {
@@ -133,7 +146,7 @@ describe('filling with random data', () => {
     await userEvent.click(recipient.getByRole('button', { name: 'Company' }))
     await userEvent.click(recipient.getByRole('button', { name: /random data/i }))
 
-    expect(recipient.getByPlaceholderText('Company name')).not.toHaveValue('')
+    expect(recipient.getByLabelText('Company name')).not.toHaveValue('')
   })
 })
 
@@ -143,10 +156,30 @@ describe('what it refuses', () => {
 
     await generate()
 
-    expect(await screen.findAllByText('First name is required')).toHaveLength(2)
-    expect(screen.getAllByText('Last name is required')).toHaveLength(2)
-    expect(screen.getAllByText('Address is required')).toHaveLength(2)
+    expect(await screen.findAllByText('A first name is required.')).toHaveLength(2)
+    expect(screen.getAllByText('A last name is required.')).toHaveLength(2)
+    expect(screen.getAllByText('An address is required.')).toHaveLength(2)
     expect(loadSvgTemplate).not.toHaveBeenCalled()
+  })
+
+  it('asks a company for its name, and stops asking for the two it no longer shows', async () => {
+    renderForm()
+
+    await userEvent.click(section('Sender').getByRole('button', { name: 'Company' }))
+    await generate()
+
+    expect(await screen.findByText('A company name is required.')).toBeInTheDocument()
+    expect(section('Sender').queryByText('A first name is required.')).not.toBeInTheDocument()
+  })
+
+  it('puts the cursor in the first field it refused', async () => {
+    renderForm()
+
+    await generate()
+
+    await waitFor(() => {
+      expect(section('Sender').getByLabelText('First name')).toHaveFocus()
+    })
   })
 
   it('refuses a number the carrier could never have issued', async () => {
@@ -157,7 +190,7 @@ describe('what it refuses', () => {
     await userEvent.type(section('Tracking Number').getByRole('textbox'), '3SDDRL000000409')
     await generate()
 
-    expect(await screen.findByText(/must match: 24 digits/i)).toBeInTheDocument()
+    expect(await screen.findByText(/not a bpost number: 24 digits/i)).toBeInTheDocument()
     expect(loadSvgTemplate).not.toHaveBeenCalled()
   })
 })
@@ -213,7 +246,7 @@ describe('generating the label', () => {
     await generate()
 
     expect(await screen.findByText('The template could not be read.')).toBeInTheDocument()
-    expect(section('Sender').getByPlaceholderText('First name')).toHaveValue('Marie')
+    expect(section('Sender').getByLabelText('First name')).toHaveValue('Marie')
   })
 
   it('still says something when the failure carries no message', async () => {

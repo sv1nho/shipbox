@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
 import { CARRIERS, CARRIER_IDS } from '../../shared/carriers.js'
 import type { CarrierId } from '../../shared/carriers.js'
 import { COUNTRIES } from '../../shared/label-payload.js'
@@ -14,26 +13,10 @@ import type { ShipmentStatus } from '../../shared/shipment-status.js'
 import { useT } from '../i18n/context.js'
 import type { Translate } from '../i18n/context.js'
 import { statusLabel } from './format.js'
+import { Field } from '../components/Field.js'
 import { Modal } from './Modal.js'
 import { StoreCombobox } from './StoreCombobox.js'
 import { NewStoreDialog } from './NewStoreDialog.js'
-
-type FieldProps = {
-  label: string
-  htmlFor: string
-  problem: string | undefined
-  children: ReactNode
-}
-
-function Field ({ label, htmlFor, problem, children }: FieldProps) {
-  return (
-    <div className='form-field'>
-      <label className='form-label' htmlFor={htmlFor}>{label}</label>
-      {children}
-      {problem !== undefined && <p className='field-error'>{problem}</p>}
-    </div>
-  )
-}
 
 export type Prefill = {
   trackingNumber?: string

@@ -14,6 +14,7 @@ import { buildLabelSvg } from '../utils/label-generator.js'
 import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
 import { labelFileName } from '../utils/label-file-name.js'
+import { Field } from '../components/Field.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
@@ -29,6 +30,11 @@ type Preview = {
 }
 
 const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
+
+const READING_ORDER = (['sender', 'recipient'] as const).flatMap((party) =>
+  ['company', 'firstname', 'lastname', 'address', 'postal', 'city']
+    .map((field) => `${party}_${field}` as Path<LabelPayload>)
+).concat('tracking_number')
 const randomFaker = () => fakers[Math.floor(Math.random() * fakers.length)]
 
 const SectionCard = ({
@@ -46,19 +52,6 @@ const SectionCard = ({
       {right}
     </div>
     <div className='space-y-3'>{children}</div>
-  </div>
-)
-
-const Field = ({
-  error,
-  children,
-}: {
-  error?: string;
-  children: ReactNode;
-}) => (
-  <div>
-    {children}
-    {error && <p className='field-error'>{error}</p>}
   </div>
 )
 
@@ -82,6 +75,7 @@ const PartyFieldset = ({
   setValue,
 }: PartyFieldsetProps) => {
   const name = (field: string): Path<LabelPayload> => `${prefix}_${field}` as Path<LabelPayload>
+  const fieldId = (field: string): string => `${prefix}-${field}`
   const err = (field: string): string | undefined => {
     const e = errors[name(field)]
     return e && typeof e === 'object' && 'message' in e
@@ -159,65 +153,65 @@ const PartyFieldset = ({
     >
       {isCompany
         ? (
-          <input
-            {...register(name('company'))}
-            className='form-input'
-            placeholder={t('Company name')}
-          />
+          <Field label={t('Company name')} htmlFor={fieldId('company')} problem={err('company')}>
+            <input
+              {...register(name('company'), { required: t('A company name is required.') })}
+              id={fieldId('company')}
+              className='form-input'
+            />
+          </Field>
           )
         : (
           <>
-            <Field error={err('firstname')}>
+            <Field label={t('First name')} htmlFor={fieldId('firstname')} problem={err('firstname')}>
               <input
-                {...register(name('firstname'), {
-                  required: t('First name is required'),
-                })}
+                {...register(name('firstname'), { required: t('A first name is required.') })}
+                id={fieldId('firstname')}
                 className='form-input'
-                placeholder={t('First name')}
               />
             </Field>
-            <Field error={err('lastname')}>
+            <Field label={t('Last name')} htmlFor={fieldId('lastname')} problem={err('lastname')}>
               <input
-                {...register(name('lastname'), {
-                  required: t('Last name is required'),
-                })}
+                {...register(name('lastname'), { required: t('A last name is required.') })}
+                id={fieldId('lastname')}
                 className='form-input'
-                placeholder={t('Last name')}
               />
             </Field>
           </>
           )}
 
-      <Field error={err('address')}>
+      <Field label={t('Address')} htmlFor={fieldId('address')} problem={err('address')}>
         <input
-          {...register(name('address'), { required: t('Address is required') })}
+          {...register(name('address'), { required: t('An address is required.') })}
+          id={fieldId('address')}
           className='form-input'
-          placeholder={t('Address')}
         />
       </Field>
 
       <div className='grid grid-cols-2 gap-3'>
-        <Field error={err('postal')}>
+        <Field label={t('Postal code')} htmlFor={fieldId('postal')} problem={err('postal')}>
           <input
-            {...register(name('postal'), { required: 'Required' })}
+            {...register(name('postal'), { required: t('A postal code is required.') })}
+            id={fieldId('postal')}
             className='form-input'
-            placeholder={t('Postal code')}
           />
         </Field>
-        <Field error={err('city')}>
+        <Field label={t('City')} htmlFor={fieldId('city')} problem={err('city')}>
           <input
-            {...register(name('city'), { required: 'Required' })}
+            {...register(name('city'), { required: t('A city is required.') })}
+            id={fieldId('city')}
             className='form-input'
-            placeholder={t('City')}
           />
         </Field>
       </div>
 
-      <select {...register(name('country'))} className='form-select'>
-        <option value='BE'>Belgium</option>
-        <option value='NL'>The Netherlands</option>
-        <option value='DE'>Germany</option>
-      </select>
+      <Field label={t('Country')} htmlFor={fieldId('country')} problem={undefined}>
+        <select {...register(name('country'))} id={fieldId('country')} className='form-select'>
+          <option value='BE'>Belgium</option>
+          <option value='NL'>The Netherlands</option>
+          <option value='DE'>Germany</option>
+        </select>
+      </Field>
     </SectionCard>
   )
 }
@@ -228,8 +222,10 @@ export function Form () {
     handleSubmit,
     control,
     setValue,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<LabelPayload>({
+    shouldFocusError: false,
     defaultValues: {
       sender_country: 'BE',
       recipient_country: 'BE',
@@ -249,6 +245,15 @@ export function Form () {
   const senderIsCompany = useWatch({ control, name: 'sender_isCompany' })
   const recipientIsCompany = useWatch({ control, name: 'recipient_isCompany' })
   const carrier = useWatch({ control, name: 'carrier' })
+
+  const focusFirstProblem = (problems: FieldErrors<LabelPayload>): void => {
+    for (const field of READING_ORDER) {
+      if (field in problems) {
+        setFocus(field)
+        return
+      }
+    }
+  }
 
   const onSubmit = async (data: LabelPayload) => {
     try {
@@ -278,7 +283,7 @@ export function Form () {
     <>
       {error && <div className='alert-error mb-6'>{error}</div>}
 
-      <form onSubmit={(e) => { void handleSubmit(onSubmit)(e) }} className='space-y-6'>
+      <form onSubmit={(e) => { void handleSubmit(onSubmit, focusFirstProblem)(e) }} className='space-y-6'>
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
           <PartyFieldset
             prefix='sender'
@@ -302,30 +307,43 @@ export function Form () {
 
         <div className='grid grid-cols-1 gap-6 sm:grid-cols-3'>
           <SectionCard title={t('Language')}>
-            <select {...register('label_language')} className='form-select'>
-              <option value='fr'>{t('French')}</option>
-              <option value='nl'>{t('Dutch')}</option>
-              <option value='en'>{t('English')}</option>
-            </select>
+            <Field label={t('Language')} htmlFor='label-language' problem={undefined} hideLabel>
+              <select {...register('label_language')} id='label-language' className='form-select'>
+                <option value='fr'>{t('French')}</option>
+                <option value='nl'>{t('Dutch')}</option>
+                <option value='en'>{t('English')}</option>
+              </select>
+            </Field>
           </SectionCard>
 
           <SectionCard title={t('Carrier')}>
-            <select {...register('carrier')} className='form-select'>
-              {CARRIER_IDS.map((id) => (
-                <option key={id} value={id}>{CARRIERS[id].label}</option>
-              ))}
-            </select>
+            <Field label={t('Carrier')} htmlFor='label-carrier' problem={undefined} hideLabel>
+              <select {...register('carrier')} id='label-carrier' className='form-select'>
+                {CARRIER_IDS.map((id) => (
+                  <option key={id} value={id}>{CARRIERS[id].label}</option>
+                ))}
+              </select>
+            </Field>
           </SectionCard>
 
           <SectionCard title={t('Tracking Number')}>
-            <Field error={errors.tracking_number?.message}>
+            <Field
+              label={t('Tracking Number')}
+              htmlFor='label-tracking'
+              problem={errors.tracking_number?.message}
+              hideLabel
+            >
               <input
                 {...register('tracking_number', {
-                  required: 'Required',
+                  required: t('A tracking number is required.'),
                   validate: (value) =>
                     CARRIERS[carrier].pattern.test(value) ||
-                    `Must match: ${CARRIERS[carrier].patternHint}`,
+                    t('This is not a {carrier} number: {hint}.', {
+                      carrier: CARRIERS[carrier].label,
+                      hint: CARRIERS[carrier].patternHint,
+                    }),
                 })}
+                id='label-tracking'
                 className='form-input'
                 placeholder={CARRIERS[carrier].placeholder}
               />
