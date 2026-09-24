@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ShipmentDetails } from '../../shipments/ShipmentDetails.js'
 import { makeShipment } from '../fixtures.js'
@@ -30,6 +30,13 @@ const startEditing = async () => {
 
 const valueOf = (label: string) =>
   screen.getByText(label).parentElement?.querySelector('.detail-value')?.textContent
+
+const step = (label: string): HTMLElement => {
+  const timeline = document.querySelector('.timeline') as HTMLElement
+  return within(timeline).getByText(label).closest('.timeline-step') as HTMLElement
+}
+
+const stepValue = (label: string) => step(label).querySelector('.timeline-value')?.textContent
 
 describe('what the panel always shows', () => {
   it('identifies the shipment beyond doubt', () => {
@@ -71,7 +78,7 @@ describe('what the panel always shows', () => {
   it('always dates the shipment, even one that never moved', () => {
     renderDetails({ status: 'pending', requestedDate: '2026-06-01' })
 
-    expect(valueOf('Return requested')).toBe('01/06/2026')
+    expect(stepValue('Return requested')).toBe('01/06/2026')
   })
 
   it('stays quiet about the day it entered ShipBox when that is the request day', () => {
@@ -83,7 +90,7 @@ describe('what the panel always shows', () => {
   it('shows both days on a back-filled return, where they tell different things', () => {
     renderDetails({ requestedDate: '2025-11-20', createdAt: '2026-06-01T10:00:00.000Z' })
 
-    expect(valueOf('Return requested')).toBe('20/11/2025')
+    expect(stepValue('Return requested')).toBe('20/11/2025')
     expect(valueOf('Added to ShipBox')).toBe('01/06/2026')
   })
 
@@ -95,13 +102,15 @@ describe('what the panel always shows', () => {
 })
 
 describe('what it leaves out', () => {
-  it('hides the steps that never happened rather than showing dashes', () => {
+  it('shows the steps still ahead as waiting instead of hiding them', () => {
     renderDetails({ status: 'pending' })
 
-    expect(screen.queryByText('Dropped off')).not.toBeInTheDocument()
-    expect(screen.queryByText('Received')).not.toBeInTheDocument()
-    expect(screen.queryByText('Decided')).not.toBeInTheDocument()
-    expect(screen.queryByText('—')).not.toBeInTheDocument()
+    expect(step('Return requested').className).toContain('timeline-step-done')
+
+    for (const ahead of ['Dropped off', 'Received', 'Decided']) {
+      expect(stepValue(ahead)).toBe('Not yet')
+      expect(step(ahead).className).not.toContain('timeline-step-done')
+    }
   })
 
   it('hides the delays the api could not derive', () => {
@@ -184,9 +193,9 @@ describe('the full history of a finished return', () => {
       archivedAt: '2026-06-10T08:00:00.000Z',
     })
 
-    expect(valueOf('Dropped off')).toBe('03/06/2026')
-    expect(valueOf('Received')).toBe('05/06/2026')
-    expect(valueOf('Decided')).toBe('09/06/2026')
+    expect(stepValue('Dropped off')).toBe('03/06/2026')
+    expect(stepValue('Received')).toBe('05/06/2026')
+    expect(stepValue('Decided')).toBe('09/06/2026')
     expect(valueOf('Since the drop-off')).toBe('6 days')
     expect(valueOf('Waited for the decision')).toBe('2 days')
     expect(valueOf('The whole return took')).toBe('4 days')

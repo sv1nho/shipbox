@@ -9,6 +9,8 @@ import { useT } from '../i18n/context.js'
 import { alertMessage, days, formatAmount, formatDate, zonedDate } from './format.js'
 import { StatusPill } from './StatusPill.js'
 import { Modal } from './Modal.js'
+import { Timeline } from './Timeline.js'
+import type { Step } from './Timeline.js'
 
 type DetailsProps = {
   shipment: ShipmentDto
@@ -64,6 +66,24 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
   const erased = draft !== null && ORDERED_DATED_FIELDS.some((f) => draft[f] === '' && stored[f] !== '')
   const addedApart = zonedDate(shipment.createdAt) !== shipment.requestedDate
 
+  const steps: Step[] = ORDERED_DATED_FIELDS.map((field) => ({
+    field,
+    label: t(DATE_LABELS[field]),
+    done: stored[field] !== '',
+    value: draft === null
+      ? (stored[field] === '' ? t('Not yet') : formatDate(stored[field]))
+      : (
+        <input
+          type='date'
+          className='form-input'
+          aria-label={t(DATE_LABELS[field])}
+          value={draft[field]}
+          {...boundsOf(draft, field)}
+          onChange={(event) => { setDraft({ ...draft, [field]: event.target.value }) }}
+        />
+        ),
+  }))
+
   return (
     <Modal titleId='details-title' onClose={onClose}>
       <div className='modal-header'>
@@ -73,6 +93,8 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
 
       <div className='modal-body space-y-3'>
         {alert !== null && <p className='alert-error detail-alert'>{alert}</p>}
+
+        <Timeline steps={steps} />
 
         <dl className='detail-list'>
           <Field label={t('Tracking number')}>
@@ -94,27 +116,6 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
           <Field label={t('Sent to')}>
             {shipment.recipientPostalCode} {shipment.recipientCountry}
           </Field>
-
-          {draft === null
-            ? ORDERED_DATED_FIELDS
-              .filter((field) => stored[field] !== '')
-              .map((field) => (
-                <Field key={field} label={t(DATE_LABELS[field])}>
-                  {formatDate(stored[field])}
-                </Field>
-              ))
-            : ORDERED_DATED_FIELDS.map((field) => (
-              <Field key={field} label={t(DATE_LABELS[field])}>
-                <input
-                  type='date'
-                  className='form-input'
-                  aria-label={t(DATE_LABELS[field])}
-                  value={draft[field]}
-                  {...boundsOf(draft, field)}
-                  onChange={(event) => { setDraft({ ...draft, [field]: event.target.value }) }}
-                />
-              </Field>
-            ))}
 
           {shipment.lastChasedAt !== null && (
             <Field label={t('Store chased')}>{formatDate(shipment.lastChasedAt)}</Field>
