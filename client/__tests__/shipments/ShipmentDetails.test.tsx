@@ -5,7 +5,7 @@ vi.mock('../../api/shipments.js', () => ({ searchStores: vi.fn().mockResolvedVal
 
 import { ShipmentDetails, draftOf, patchOf } from '../../shipments/ShipmentDetails.js'
 import { makeShipment } from '../fixtures.js'
-import { searchStores } from '../../api/shipments.js'
+import { addStore, searchStores } from '../../api/shipments.js'
 import { today } from '../../../shared/time.js'
 import type { ShipmentDto, UpdateShipmentInput } from '../../../shared/shipment.js'
 
@@ -491,6 +491,36 @@ describe('what the patch carries', () => {
     await userEvent.click(await screen.findByRole('option', { name: 'Zalando' }))
 
     expect(screen.getByLabelText('Store')).toHaveValue('Zalando')
+  })
+
+  it('opens the add-store form from the combobox, since a new store needs an address', async () => {
+    renderDetails({ store: 'Zalando' })
+    await startEditing()
+
+    await userEvent.click(screen.getByRole('button', { name: /add a store/i }))
+
+    expect(screen.getByRole('heading', { name: /add a store/i })).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('Zalando')
+    expect(screen.getByLabelText(/customer service email/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.getByLabelText('Store')).toHaveValue('Zalando')
+  })
+
+  it('comes back with the store it just added, address and all', async () => {
+    vi.mocked(addStore).mockResolvedValue({ name: 'Nike', supportEmail: 'help@nike.com' })
+
+    renderDetails({ store: 'Zalando' })
+    await startEditing()
+
+    await userEvent.click(screen.getByRole('button', { name: /add a store/i }))
+    await userEvent.clear(screen.getByLabelText('Name'))
+    await userEvent.type(screen.getByLabelText('Name'), 'Nike')
+    await userEvent.type(screen.getByLabelText(/customer service email/i), 'help@nike.com')
+    await userEvent.click(screen.getByRole('button', { name: /add the store/i }))
+
+    expect(await screen.findByLabelText('Store')).toHaveValue('Nike')
   })
 
   it('carries a corrected store and order number, trimmed', () => {

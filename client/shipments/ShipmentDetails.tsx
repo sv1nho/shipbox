@@ -16,6 +16,7 @@ import { CopyIcon } from '../components/CopyIcon.js'
 import { copyText } from '../utils/clipboard.js'
 import { StatusPill } from './StatusPill.js'
 import { StoreCombobox } from './StoreCombobox.js'
+import { NewStoreDialog } from './NewStoreDialog.js'
 import { Modal } from './Modal.js'
 import { Timeline } from './Timeline.js'
 import type { Step } from './Timeline.js'
@@ -128,6 +129,7 @@ export const patchOf = (shipment: ShipmentDto, draft: Draft): UpdateShipmentInpu
 export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: DetailsProps) {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [copied, setCopied] = useState(false)
+  const [addingStore, setAddingStore] = useState(false)
   const t = useT()
 
   const stored = draftOf(shipment)
@@ -155,6 +157,19 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
         />
         ),
   }))
+
+  if (addingStore && draft !== null) {
+    return (
+      <NewStoreDialog
+        name={draft.store}
+        onCancel={() => { setAddingStore(false) }}
+        onAdded={(store) => {
+          setDraft({ ...draft, store: store.name })
+          setAddingStore(false)
+        }}
+      />
+    )
+  }
 
   return (
     <Modal titleId='details-title' onClose={onClose}>
@@ -200,6 +215,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
                   problem={wrong.store}
                   onChange={(store) => { setDraft({ ...draft, store }) }}
                   onPick={(store) => { setDraft({ ...draft, store: store.name }) }}
+                  onAdd={() => { setAddingStore(true) }}
                 />
                 )}
           </Field>

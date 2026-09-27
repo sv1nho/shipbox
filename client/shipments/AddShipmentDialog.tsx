@@ -262,25 +262,15 @@ export function AddShipmentDialog (
           htmlFor='shipment-store'
           problem={trouble.store}
         >
-          <div className='combobox-row'>
-            <StoreCombobox
-              id='shipment-store'
-              label={t('Store')}
-              value={draft.store}
-              problem={trouble.store}
-              onChange={(store) => { set('store', store) }}
-              onPick={(store) => { set('store', store.name) }}
-            />
-            <button
-              type='button'
-              className='icon-btn icon-btn-add'
-              aria-label={t('Add a store')}
-              title={t('Add a store')}
-              onClick={() => { setAddingStore(true) }}
-            >
-              +
-            </button>
-          </div>
+          <StoreCombobox
+            id='shipment-store'
+            label={t('Store')}
+            value={draft.store}
+            problem={trouble.store}
+            onChange={(store) => { set('store', store) }}
+            onPick={(store) => { set('store', store.name) }}
+            onAdd={() => { setAddingStore(true) }}
+          />
         </Field>
 
         <div className='form-row form-row-three'>

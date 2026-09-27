@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { fieldMarks } from '../components/Field.js'
 import { searchStores } from '../api/shipments.js'
+import { useT } from '../i18n/context.js'
 import type { StoreDto } from '../../shared/store.js'
 
 const DEBOUNCE_MS = 250
@@ -12,9 +13,12 @@ type StoreComboboxProps = {
   problem: string | undefined
   onChange: (value: string) => void
   onPick: (store: StoreDto) => void
+  onAdd: () => void
 }
 
-export function StoreCombobox ({ id, label, value, problem, onChange, onPick }: StoreComboboxProps) {
+export function StoreCombobox (
+  { id, label, value, problem, onChange, onPick, onAdd }: StoreComboboxProps
+) {
   const listId = useId()
   const [suggestions, setSuggestions] = useState<StoreDto[]>([])
   const [open, setOpen] = useState(false)
@@ -61,54 +65,68 @@ export function StoreCombobox ({ id, label, value, problem, onChange, onPick }: 
 
   const listOpen = open && suggestions.length > 0
 
+  const t = useT()
+
   return (
-    <div className='combobox'>
-      <input
-        id={id}
-        {...fieldMarks(id, problem)}
-        role='combobox'
-        aria-label={label}
-        autoComplete='off'
-        aria-expanded={listOpen}
-        aria-controls={listId}
-        aria-autocomplete='list'
-        aria-activedescendant={active < 0 ? undefined : `${listId}-${String(active)}`}
-        value={value}
-        onChange={(event) => { onChange(event.target.value); setOpen(true) }}
-        onFocus={() => { setOpen(true) }}
-        onBlur={() => { setOpen(false) }}
-        onKeyDown={(event) => {
-          if (event.key === 'ArrowDown') { event.preventDefault(); move(1) }
-          if (event.key === 'ArrowUp') { event.preventDefault(); move(-1) }
+    <div className='combobox-row'>
+      <div className='combobox'>
+        <input
+          id={id}
+          {...fieldMarks(id, problem)}
+          role='combobox'
+          aria-label={label}
+          autoComplete='off'
+          aria-expanded={listOpen}
+          aria-controls={listId}
+          aria-autocomplete='list'
+          aria-activedescendant={active < 0 ? undefined : `${listId}-${String(active)}`}
+          value={value}
+          onChange={(event) => { onChange(event.target.value); setOpen(true) }}
+          onFocus={() => { setOpen(true) }}
+          onBlur={() => { setOpen(false) }}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') { event.preventDefault(); move(1) }
+            if (event.key === 'ArrowUp') { event.preventDefault(); move(-1) }
 
-          if (event.key === 'Escape' && listOpen) {
-            event.stopPropagation()
-            setOpen(false)
-          }
+            if (event.key === 'Escape' && listOpen) {
+              event.stopPropagation()
+              setOpen(false)
+            }
 
-          if (event.key === 'Enter' && listOpen && active >= 0) {
-            event.preventDefault()
-            pick(suggestions[active])
-          }
-        }}
-      />
+            if (event.key === 'Enter' && listOpen && active >= 0) {
+              event.preventDefault()
+              pick(suggestions[active])
+            }
+          }}
+        />
 
-      {listOpen && (
-        <ul className='combobox-list' id={listId} role='listbox'>
-          {suggestions.map((store, index) => (
-            <li
-              key={store.name}
-              id={`${listId}-${String(index)}`}
-              role='option'
-              aria-selected={index === active}
-              className={index === active ? 'combobox-option combobox-option-active' : 'combobox-option'}
-              onMouseDown={(event) => { event.preventDefault(); pick(store) }}
-            >
-              {store.name}
-            </li>
-          ))}
-        </ul>
-      )}
+        {listOpen && (
+          <ul className='combobox-list' id={listId} role='listbox'>
+            {suggestions.map((store, index) => (
+              <li
+                key={store.name}
+                id={`${listId}-${String(index)}`}
+                role='option'
+                aria-selected={index === active}
+                className={index === active ? 'combobox-option combobox-option-active' : 'combobox-option'}
+                onMouseDown={(event) => { event.preventDefault(); pick(store) }}
+              >
+                {store.name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <button
+        type='button'
+        className='icon-btn icon-btn-add'
+        aria-label={t('Add a store')}
+        title={t('Add a store')}
+        onClick={onAdd}
+      >
+        +
+      </button>
     </div>
   )
 }
