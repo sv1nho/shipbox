@@ -327,8 +327,8 @@ export const FRENCH: Record<string, string> = {
     'Les dates doivent suivre l’ordre demande, dépôt, réception puis décision.',
   'A date already recorded cannot be removed here. Undo the step instead.':
     'Une date déjà enregistrée ne peut pas être retirée ici. Annulez plutôt l’étape.',
-  'Edit the dates': 'Modifier les dates',
-  'Save the dates': 'Enregistrer les dates',
+  Edit: 'Modifier',
+  Save: 'Enregistrer',
 
   // ── Deleting a shipment ──
   'Delete this shipment for good?': 'Supprimer définitivement ce suivi ?',

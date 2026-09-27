@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ShipmentDetails } from '../../shipments/ShipmentDetails.js'
+import { ShipmentDetails, draftOf, patchOf } from '../../shipments/ShipmentDetails.js'
 import { makeShipment } from '../fixtures.js'
 import { today } from '../../../shared/time.js'
-import type { ShipmentDto } from '../../../shared/shipment.js'
+import type { ShipmentDto, UpdateShipmentInput } from '../../../shared/shipment.js'
 
 const renderDetails = (overrides: Partial<ShipmentDto> = {}, busy = false, error: string | null = null) => {
   const shipment = makeShipment(overrides)
   const onClose = vi.fn()
-  const onSave = vi.fn()
+  const onSave = vi.fn<(patch: UpdateShipmentInput) => void>()
 
   render(
     <ShipmentDetails
@@ -25,7 +25,7 @@ const renderDetails = (overrides: Partial<ShipmentDto> = {}, busy = false, error
 }
 
 const startEditing = async () => {
-  await userEvent.click(screen.getByRole('button', { name: /edit the dates/i }))
+  await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
 }
 
 const valueOf = (label: string) =>
@@ -302,7 +302,7 @@ describe('correcting the dates', () => {
     await startEditing()
 
     await userEvent.type(screen.getByLabelText('Received'), '2026-06-05')
-    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     expect(onSave).toHaveBeenCalledWith({
       requestedDate: '2026-06-01',
@@ -315,7 +315,7 @@ describe('correcting the dates', () => {
     const { onSave } = renderDetails({ status: 'pending', requestedDate: '2026-06-01' })
     await startEditing()
 
-    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     expect(onSave).toHaveBeenCalledWith({ requestedDate: '2026-06-01' })
   })
@@ -327,7 +327,7 @@ describe('correcting the dates', () => {
     await userEvent.clear(screen.getByLabelText('Dropped off'))
 
     expect(screen.getByText(/cannot be removed here. Undo the step instead/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /save the dates/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
     expect(onSave).not.toHaveBeenCalled()
   })
 
@@ -342,7 +342,7 @@ describe('correcting the dates', () => {
     await userEvent.type(screen.getByLabelText('Received'), '2026-06-01')
 
     expect(screen.getByText(/drop-off, reception then decision order/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /save the dates/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
     expect(onSave).not.toHaveBeenCalled()
   })
 
@@ -368,6 +368,131 @@ describe('correcting the dates', () => {
     renderDetails({}, false, 'receivedDate cannot be earlier than dropoffDate.')
 
     expect(screen.getByText('receivedDate cannot be earlier than dropoffDate.')).toBeInTheDocument()
+  })
+})
+
+describe('correcting what was typed', () => {
+  it('shows the bookkeeping fields as inputs, filled with what is recorded', async () => {
+    renderDetails({ store: 'Nike', orderNumber: 'CMD-99', amountCents: 12550, recipientPostalCode: '4000' })
+    await startEditing()
+
+    expect(screen.getByLabelText('Store')).toHaveValue('Nike')
+    expect(screen.getByLabelText('Order number')).toHaveValue('CMD-99')
+    expect(screen.getByLabelText('Amount')).toHaveValue('125.50')
+    expect(screen.getByLabelText('Postal code')).toHaveValue('4000')
+    expect(screen.getByLabelText('Country')).toHaveValue('BE')
+  })
+
+  it('sends only what changed, leaving the rest untouched', async () => {
+    const { onSave } = renderDetails({ amountCents: 4999, store: 'Zalando' })
+    await startEditing()
+
+    await userEvent.clear(screen.getByLabelText('Amount'))
+    await userEvent.type(screen.getByLabelText('Amount'), '39.90')
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+
+    expect(onSave).toHaveBeenCalledOnce()
+    const patch = onSave.mock.calls[0][0]
+
+    expect(patch.amountCents).toBe(3990)
+    expect(patch.store).toBeUndefined()
+    expect(patch.orderNumber).toBeUndefined()
+  })
+
+  it('writes a note where there was none, and clears one that is emptied', async () => {
+    const added = renderDetails({ note: null })
+    await startEditing()
+
+    await userEvent.type(screen.getByLabelText('Note'), 'Bought on sale')
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+
+    expect(added.onSave.mock.calls[0][0].note).toBe('Bought on sale')
+
+    cleanup()
+
+    const cleared = renderDetails({ note: 'Bought on sale' })
+    await startEditing()
+
+    await userEvent.clear(screen.getByLabelText('Note'))
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+
+    expect(cleared.onSave.mock.calls[0][0].note).toBeNull()
+  })
+
+  it('corrects where the parcel was sent, postal code and country', async () => {
+    const { onSave } = renderDetails({ recipientPostalCode: '2000', recipientCountry: 'BE' })
+    await startEditing()
+
+    await userEvent.clear(screen.getByLabelText('Postal code'))
+    await userEvent.type(screen.getByLabelText('Postal code'), '4000')
+    await userEvent.selectOptions(screen.getByLabelText('Country'), 'NL')
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+
+    const patch = onSave.mock.calls[0][0]
+
+    expect(patch.recipientPostalCode).toBe('4000')
+    expect(patch.recipientCountry).toBe('NL')
+  })
+
+  it('refuses an amount that is not one, before asking the api', async () => {
+    const { onSave } = renderDetails()
+    await startEditing()
+
+    await userEvent.clear(screen.getByLabelText('Amount'))
+    await userEvent.type(screen.getByLabelText('Amount'), 'free')
+
+    expect(screen.getByText('An amount like 49.99 is required.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('refuses to empty the store or the order number', async () => {
+    renderDetails()
+    await startEditing()
+
+    await userEvent.clear(screen.getByLabelText('Store'))
+    await userEvent.clear(screen.getByLabelText('Order number'))
+
+    expect(screen.getByText('Say which store the parcel goes back to.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
+  })
+
+  it('keeps the label out of it, since the parcel is already on its way', async () => {
+    renderDetails()
+    await startEditing()
+
+    expect(screen.queryByLabelText('Tracking number')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Carrier')).not.toBeInTheDocument()
+  })
+})
+
+describe('what the patch carries', () => {
+  it('leaves the amount out when what was typed is not one', () => {
+    const shipment = makeShipment({ amountCents: 4999 })
+
+    const patch = patchOf(shipment, { ...draftOf(shipment), amount: 'free' })
+
+    expect(patch.amountCents).toBeUndefined()
+  })
+
+  it('carries a corrected store and order number, trimmed', () => {
+    const shipment = makeShipment({ store: 'Zalando', orderNumber: 'ZAL-1' })
+
+    const patch = patchOf(shipment, { ...draftOf(shipment), store: ' Nike ', orderNumber: ' CMD-9 ' })
+
+    expect(patch.store).toBe('Nike')
+    expect(patch.orderNumber).toBe('CMD-9')
+  })
+
+  it('refuses an amount larger than the api would take', async () => {
+    renderDetails()
+    await startEditing()
+
+    await userEvent.clear(screen.getByLabelText('Amount'))
+    await userEvent.type(screen.getByLabelText('Amount'), '2000000')
+
+    expect(screen.getByText('An amount cannot be more than 1,000,000.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
   })
 })
 

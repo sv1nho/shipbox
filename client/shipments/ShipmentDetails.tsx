@@ -2,10 +2,15 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { IsoDate, ShipmentDto, UpdateShipmentInput } from '../../shared/shipment.js'
 import { CARRIERS } from '../../shared/carriers.js'
+import { COUNTRIES } from '../../shared/label-payload.js'
+import type { Country } from '../../shared/label-payload.js'
+import { parseAmount } from '../../shared/normalize.js'
+import { MAX_AMOUNT_CENTS } from '../../shared/shipment.js'
 import { ORDERED_DATED_FIELDS, findOrderBreak } from '../../shared/transitions.js'
 import type { DatedField } from '../../shared/transitions.js'
 import { today } from '../../shared/time.js'
 import { useT } from '../i18n/context.js'
+import type { Translate } from '../i18n/context.js'
 import { alertMessage, days, formatAmount, formatDate, zonedDate } from './format.js'
 import { CopyIcon } from '../components/CopyIcon.js'
 import { copyText } from '../utils/clipboard.js'
@@ -29,14 +34,45 @@ const DATE_LABELS: Record<DatedField, string> = {
   decisionDate: 'Decided',
 }
 
-type Draft = Record<DatedField, string>
+export type Draft = Record<DatedField, string> & {
+  store: string
+  orderNumber: string
+  amount: string
+  recipientPostalCode: string
+  recipientCountry: Country
+  note: string
+}
 
-const draftOf = (shipment: ShipmentDto): Draft => ({
+export const draftOf = (shipment: ShipmentDto): Draft => ({
   requestedDate: shipment.requestedDate,
   dropoffDate: shipment.dropoffDate ?? '',
   receivedDate: shipment.receivedDate ?? '',
   decisionDate: shipment.decisionDate ?? '',
+  store: shipment.store,
+  orderNumber: shipment.orderNumber,
+  amount: (shipment.amountCents / 100).toFixed(2),
+  recipientPostalCode: shipment.recipientPostalCode,
+  recipientCountry: shipment.recipientCountry as Country,
+  note: shipment.note ?? '',
 })
+
+const wrongIn = (t: Translate, draft: Draft): Partial<Record<keyof Draft, string>> => {
+  const amountCents = parseAmount(draft.amount)
+
+  return {
+    ...(draft.store.trim() === '' ? { store: t('Say which store the parcel goes back to.') } : {}),
+    ...(draft.orderNumber.trim() === ''
+      ? { orderNumber: t('The store searches by its own order number, not by the tracking number.') }
+      : {}),
+    ...(amountCents === null ? { amount: t('An amount like 49.99 is required.') } : {}),
+    ...(amountCents !== null && amountCents > MAX_AMOUNT_CENTS
+      ? { amount: t('An amount cannot be more than 1,000,000.') }
+      : {}),
+    ...(draft.recipientPostalCode.trim() === ''
+      ? { recipientPostalCode: t('A postal code is required.') }
+      : {}),
+  }
+}
 
 const boundsOf = (draft: Draft, field: DatedField): { min?: IsoDate; max: IsoDate } => {
   const index = ORDERED_DATED_FIELDS.indexOf(field)
@@ -49,13 +85,43 @@ const boundsOf = (draft: Draft, field: DatedField): { min?: IsoDate; max: IsoDat
   }
 }
 
-function Field ({ label, children }: { label: string; children: ReactNode }) {
+function Field ({ label, problem, children }: {
+  label: string
+  problem?: string
+  children: ReactNode
+}) {
   return (
     <div className='detail-row'>
       <dt className='detail-label'>{label}</dt>
-      <dd className='detail-value'>{children}</dd>
+      <dd className='detail-value'>
+        {children}
+        {problem !== undefined && <p className='field-error'>{problem}</p>}
+      </dd>
     </div>
   )
+}
+
+export const patchOf = (shipment: ShipmentDto, draft: Draft): UpdateShipmentInput => {
+  const amountCents = parseAmount(draft.amount) ?? shipment.amountCents
+  const note = draft.note.trim()
+
+  return {
+    ...Object.fromEntries(
+      ORDERED_DATED_FIELDS
+        .filter((field) => draft[field] !== '')
+        .map((field) => [field, draft[field]])
+    ),
+    ...(draft.store === shipment.store ? {} : { store: draft.store.trim() }),
+    ...(draft.orderNumber === shipment.orderNumber ? {} : { orderNumber: draft.orderNumber.trim() }),
+    ...(amountCents === shipment.amountCents ? {} : { amountCents }),
+    ...(draft.recipientPostalCode === shipment.recipientPostalCode
+      ? {}
+      : { recipientPostalCode: draft.recipientPostalCode.trim() }),
+    ...(draft.recipientCountry === shipment.recipientCountry
+      ? {}
+      : { recipientCountry: draft.recipientCountry }),
+    ...(note === (shipment.note ?? '') ? {} : { note: note === '' ? null : note }),
+  }
 }
 
 export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: DetailsProps) {
@@ -65,8 +131,10 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
 
   const stored = draftOf(shipment)
   const alert = alertMessage(t, shipment)
+  const wrong = draft === null ? {} : wrongIn(t, draft)
   const broken = draft !== null && findOrderBreak(draft) !== null
   const erased = draft !== null && ORDERED_DATED_FIELDS.some((f) => draft[f] === '' && stored[f] !== '')
+  const incomplete = Object.keys(wrong).length > 0
   const addedApart = zonedDate(shipment.createdAt) !== shipment.requestedDate
 
   const steps: Step[] = ORDERED_DATED_FIELDS.map((field) => ({
@@ -120,7 +188,18 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             </span>
           </Field>
           <Field label={t('Carrier')}>{CARRIERS[shipment.carrier].label}</Field>
-          <Field label={t('Store')}>{shipment.store}</Field>
+          <Field label={t('Store')} problem={wrong.store}>
+            {draft === null
+              ? shipment.store
+              : (
+                <input
+                  className='form-input'
+                  aria-label={t('Store')}
+                  value={draft.store}
+                  onChange={(event) => { setDraft({ ...draft, store: event.target.value }) }}
+                />
+                )}
+          </Field>
           {shipment.storeSupportEmail !== null && (
             <Field label={t('Customer service')}>
               <a className='link' href={`mailto:${shipment.storeSupportEmail}`}>
@@ -128,10 +207,56 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               </a>
             </Field>
           )}
-          <Field label={t('Order number')}>{shipment.orderNumber}</Field>
-          <Field label={t('Amount')}>{formatAmount(shipment.amountCents, shipment.currency)}</Field>
-          <Field label={t('Sent to')}>
-            {shipment.recipientPostalCode} {shipment.recipientCountry}
+          <Field label={t('Order number')} problem={wrong.orderNumber}>
+            {draft === null
+              ? shipment.orderNumber
+              : (
+                <input
+                  className='form-input'
+                  aria-label={t('Order number')}
+                  value={draft.orderNumber}
+                  onChange={(event) => { setDraft({ ...draft, orderNumber: event.target.value }) }}
+                />
+                )}
+          </Field>
+          <Field label={t('Amount')} problem={wrong.amount}>
+            {draft === null
+              ? formatAmount(shipment.amountCents, shipment.currency)
+              : (
+                <input
+                  className='form-input'
+                  inputMode='decimal'
+                  aria-label={t('Amount')}
+                  value={draft.amount}
+                  onChange={(event) => { setDraft({ ...draft, amount: event.target.value }) }}
+                />
+                )}
+          </Field>
+          <Field label={t('Sent to')} problem={wrong.recipientPostalCode}>
+            {draft === null
+              ? `${shipment.recipientPostalCode} ${shipment.recipientCountry}`
+              : (
+                <div className='detail-pair'>
+                  <input
+                    className='form-input'
+                    aria-label={t('Postal code')}
+                    value={draft.recipientPostalCode}
+                    onChange={(event) => {
+                      setDraft({ ...draft, recipientPostalCode: event.target.value })
+                    }}
+                  />
+                  <select
+                    className='form-select'
+                    aria-label={t('Country')}
+                    value={draft.recipientCountry}
+                    onChange={(event) => {
+                      setDraft({ ...draft, recipientCountry: event.target.value as Country })
+                    }}
+                  >
+                    {COUNTRIES.map((code) => <option key={code} value={code}>{code}</option>)}
+                  </select>
+                </div>
+                )}
           </Field>
 
           {shipment.lastChasedAt !== null && (
@@ -165,7 +290,18 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
           {shipment.rejectionReason !== null && (
             <Field label={t('Refused because')}>{shipment.rejectionReason}</Field>
           )}
-          {shipment.note !== null && <Field label={t('Note')}>{shipment.note}</Field>}
+          {draft === null
+            ? shipment.note !== null && <Field label={t('Note')}>{shipment.note}</Field>
+            : (
+              <Field label={t('Note')}>
+                <input
+                  className='form-input'
+                  aria-label={t('Note')}
+                  value={draft.note}
+                  onChange={(event) => { setDraft({ ...draft, note: event.target.value }) }}
+                />
+              </Field>
+              )}
           <Field label={t('Stored label')}>
             {shipment.hasLabel ? t('Yes, the PDF can be rebuilt') : t('No, added by hand')}
           </Field>
@@ -199,7 +335,7 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               className='btn btn-primary'
               onClick={() => { setDraft(stored) }}
             >
-              {t('Edit the dates')}
+              {t('Edit')}
             </button>
           </>
         ) : (
@@ -215,18 +351,10 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             <button
               type='button'
               className='btn btn-primary'
-              disabled={busy || broken || erased}
-              onClick={() => {
-                onSave(
-                  Object.fromEntries(
-                    ORDERED_DATED_FIELDS
-                      .filter((field) => draft[field] !== '')
-                      .map((field) => [field, draft[field]])
-                  )
-                )
-              }}
+              disabled={busy || broken || erased || incomplete}
+              onClick={() => { onSave(patchOf(shipment, draft)) }}
             >
-              {busy ? t('Saving…') : t('Save the dates')}
+              {busy ? t('Saving…') : t('Save')}
             </button>
           </>
         )}

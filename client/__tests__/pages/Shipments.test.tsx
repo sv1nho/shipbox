@@ -899,9 +899,9 @@ describe('the details panel', () => {
     renderPage()
     await screen.findByText('Zalando')
     await userEvent.click(screen.getByRole('button', { name: /details for/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit the dates/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
     await userEvent.type(screen.getByLabelText('Received'), '2026-06-05')
-    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => {
       expect(updateShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', {
@@ -923,8 +923,8 @@ describe('the details panel', () => {
     renderPage()
     await screen.findByText('Zalando')
     await userEvent.click(screen.getByRole('button', { name: /details for/i }))
-    await userEvent.click(screen.getByRole('button', { name: /edit the dates/i }))
-    await userEvent.click(screen.getByRole('button', { name: /save the dates/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     expect(await screen.findByText('receivedDate cannot be earlier than dropoffDate.')).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
