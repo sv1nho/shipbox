@@ -19,7 +19,6 @@ import { storeIdFor } from './stores.js'
 import { toShipmentDto, toShipmentState } from './mapper.js'
 import type { ShipmentRow } from './mapper.js'
 import type {
-  CorrectIdentityInput,
   CreateShipmentInput,
   ExistsResult,
   ListParams,
@@ -320,25 +319,6 @@ export async function update (
     },
     now
   )
-}
-
-export async function correctIdentity (
-  userId: string,
-  id: string,
-  input: CorrectIdentityInput
-): Promise<ShipmentDto> {
-  const row = await editableRow(userId, id)
-
-  try {
-    return await writeOwned(
-      row.id,
-      { carrier: input.carrier, trackingNumber: normalizeTrackingNumber(input.trackingNumber) },
-      today()
-    )
-  } catch (cause) {
-    if (isUniqueViolation(cause)) throw alreadyRegistered()
-    throw cause
-  }
 }
 
 type TransitionExtras = {

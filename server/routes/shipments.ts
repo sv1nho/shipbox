@@ -7,7 +7,6 @@ import { toCsv } from '../../shared/csv.js'
 import type { ImportRow } from '../services/shipments/import.js'
 import type { ImportOutcome } from '../../shared/shipment.js'
 import {
-  correctIdentitySchema,
   createShipmentSchema,
   dropOffSchema,
   existsQuerySchema,
@@ -121,14 +120,6 @@ shipmentsRouter.patch(
   handle(async (req, res) => {
     const body = parse(updateShipmentSchema, req.body, 'body')
     res.json(await shipments.update(userIdOf(req), idOf(req), body))
-  })
-)
-
-shipmentsRouter.post(
-  '/:id/correct-identity',
-  handle(async (req, res) => {
-    const body = parse(correctIdentitySchema, req.body, 'body')
-    res.json(await shipments.correctIdentity(userIdOf(req), idOf(req), body))
   })
 )
 

@@ -1,5 +1,4 @@
 export type {
-  CorrectIdentityInput,
   CreateShipmentInput,
   ExistsResult,
   ListParams,

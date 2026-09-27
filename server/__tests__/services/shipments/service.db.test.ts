@@ -8,7 +8,6 @@ import { AppError } from '../../../errors.js'
 import type { CreateShipmentInput } from '../../../services/shipments/types.js'
 import { SORT_KEYS } from '../../../../shared/shipment.js'
 import type { LabelPayload } from '../../../../shared/label-payload.js'
-import type { CarrierId } from '../../../../shared/carriers.js'
 
 const OWNER = 'service-tests-owner'
 const OTHER = 'service-tests-other'
@@ -278,7 +277,6 @@ describe('user isolation', () => {
   it.each([
     ['getById', (id: string) => shipments.getById(OTHER, id)],
     ['update', (id: string) => shipments.update(OTHER, id, { amountCents: 1 })],
-    ['correctIdentity', (id: string) => shipments.correctIdentity(OTHER, id, { carrier: 'bpost', trackingNumber: '323200000000000000000777' })],
     ['transition', (id: string) => shipments.transition(OTHER, id, 'drop_off', today())],
     ['revert', (id: string) => shipments.revert(OTHER, id)],
     ['archive', (id: string) => shipments.archive(OTHER, id)],
@@ -613,39 +611,6 @@ describe('update', () => {
   })
 })
 
-describe('correctIdentity', () => {
-  it('fixes a typo in the tracking number', async () => {
-    const created = await shipments.create(OWNER, input())
-    const fixed = uniqueTracking()
-
-    expect((await shipments.correctIdentity(OWNER, created.id, { carrier: 'bpost', trackingNumber: fixed })).trackingNumber)
-      .toBe(fixed)
-  })
-
-  it('refuses to take a number that is already registered', async () => {
-    const taken = uniqueTracking()
-    await shipments.create(OWNER, input({ trackingNumber: taken }))
-    const other = await shipments.create(OWNER, input())
-
-    expect(await codeOf(() => shipments.correctIdentity(OWNER, other.id, { carrier: 'bpost', trackingNumber: taken })))
-      .toBe('CONFLICT')
-  })
-
-  it('does not disguise an unrelated database refusal as a conflict', async () => {
-    const created = await shipments.create(OWNER, input())
-
-    const code = await codeOf(() =>
-      shipments.correctIdentity(OWNER, created.id, {
-        carrier: 'dhl' as CarrierId,
-        trackingNumber: uniqueTracking(),
-      })
-    )
-
-    expect(code).not.toBe('CONFLICT')
-    expect(code).toBe('NOT_AN_APP_ERROR')
-  })
-})
-
 describe('an archived shipment is left alone', () => {
   const archived = async () => {
     const created = await shipments.create(OWNER, input())
@@ -657,8 +622,6 @@ describe('an archived shipment is left alone', () => {
     ['transition', (id: string) => shipments.transition(OWNER, id, 'drop_off', today())],
     ['revert', (id: string) => shipments.revert(OWNER, id)],
     ['update', (id: string) => shipments.update(OWNER, id, { store: 'Nike' })],
-    ['correctIdentity', (id: string) =>
-      shipments.correctIdentity(OWNER, id, { carrier: 'bpost', trackingNumber: uniqueTracking() })],
   ])('refuses %s until it is put back in the list', async (_name, run) => {
     const created = await archived()
 

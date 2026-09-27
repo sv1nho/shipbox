@@ -94,11 +94,6 @@ export type UpdateShipmentInput = {
   decisionDate?: IsoDate
 }
 
-export type CorrectIdentityInput = {
-  carrier: CarrierId
-  trackingNumber: string
-}
-
 export type ArchivedFilter = 'exclude' | 'only' | 'include'
 
 export const SORT_KEYS = [

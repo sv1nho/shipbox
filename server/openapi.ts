@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { ERROR_CODES } from './errors.js'
 import {
-  correctIdentitySchema,
   createShipmentSchema,
   dropOffSchema,
   existsQuerySchema,
@@ -183,15 +182,6 @@ export const openApiDocument = {
           200: { description: '{ payload, payloadVersion }' },
           ...errorResponses,
         },
-      },
-    },
-    '/api/shipments/{id}/correct-identity': {
-      post: {
-        tags: ['shipments'],
-        summary: 'Fix a typo in the carrier or tracking number of a printed label.',
-        parameters: [ID_PARAMETER],
-        requestBody: jsonBody(correctIdentitySchema),
-        responses: { 200: shipmentResponse, ...errorResponses },
       },
     },
     '/api/shipments/{id}/drop-off': transitionPath('Record the drop-off.', dropOffSchema),

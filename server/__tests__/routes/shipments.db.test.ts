@@ -374,7 +374,7 @@ describe('the transitions', () => {
   })
 })
 
-describe('PATCH and correct-identity', () => {
+describe('PATCH /api/shipments/:id', () => {
   it('edits the fields it accepts', async () => {
     const created = await createShipment()
 
@@ -417,26 +417,6 @@ describe('PATCH and correct-identity', () => {
     expect(bodyOf(response).carrier).toBe('bpost')
   })
 
-  it('changes the identity through its own route', async () => {
-    const created = await createShipment()
-    const corrected = uniqueTracking()
-
-    const response = await request(app)
-      .post(`/api/shipments/${created.id}/correct-identity`)
-      .send({ carrier: 'bpost', trackingNumber: corrected })
-      .expect(200)
-
-    expect(bodyOf(response).trackingNumber).toBe(corrected)
-  })
-
-  it('answers 422 when the corrected number does not match the carrier', async () => {
-    const created = await createShipment()
-
-    await request(app)
-      .post(`/api/shipments/${created.id}/correct-identity`)
-      .send({ carrier: 'postnl', trackingNumber: '323200000000000000000001' })
-      .expect(422)
-  })
 })
 
 describe('POST /api/shipments/:id/chase', () => {

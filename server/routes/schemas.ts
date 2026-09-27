@@ -158,13 +158,6 @@ export const updateShipmentSchema = z
   })
   .refine((value) => Object.keys(value).length > 0, 'at least one field must be given')
 
-export const correctIdentitySchema = z
-  .object({
-    carrier: carrierSchema,
-    trackingNumber: trackingNumberSchema,
-  })
-  .superRefine(matchesCarrierPattern)
-
 export const dropOffSchema = z.object({ dropoffDate: isoDateSchema })
 
 export const receiveSchema = z.object({ receivedDate: isoDateSchema })
