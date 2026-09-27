@@ -15,6 +15,7 @@ import { alertMessage, days, formatAmount, formatDate, zonedDate } from './forma
 import { CopyIcon } from '../components/CopyIcon.js'
 import { copyText } from '../utils/clipboard.js'
 import { StatusPill } from './StatusPill.js'
+import { StoreCombobox } from './StoreCombobox.js'
 import { Modal } from './Modal.js'
 import { Timeline } from './Timeline.js'
 import type { Step } from './Timeline.js'
@@ -192,11 +193,13 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
             {draft === null
               ? shipment.store
               : (
-                <input
-                  className='form-input'
-                  aria-label={t('Store')}
+                <StoreCombobox
+                  id='details-store'
+                  label={t('Store')}
                   value={draft.store}
-                  onChange={(event) => { setDraft({ ...draft, store: event.target.value }) }}
+                  problem={wrong.store}
+                  onChange={(store) => { setDraft({ ...draft, store }) }}
+                  onPick={(store) => { setDraft({ ...draft, store: store.name }) }}
                 />
                 )}
           </Field>

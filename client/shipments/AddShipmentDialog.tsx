@@ -264,6 +264,8 @@ export function AddShipmentDialog (
         >
           <div className='combobox-row'>
             <StoreCombobox
+              id='shipment-store'
+              label={t('Store')}
               value={draft.store}
               problem={trouble.store}
               onChange={(store) => { set('store', store) }}

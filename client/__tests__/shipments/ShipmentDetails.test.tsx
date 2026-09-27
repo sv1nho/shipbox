@@ -1,8 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, within, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+vi.mock('../../api/shipments.js', () => ({ searchStores: vi.fn().mockResolvedValue([]), addStore: vi.fn() }))
+
 import { ShipmentDetails, draftOf, patchOf } from '../../shipments/ShipmentDetails.js'
 import { makeShipment } from '../fixtures.js'
+import { searchStores } from '../../api/shipments.js'
 import { today } from '../../../shared/time.js'
 import type { ShipmentDto, UpdateShipmentInput } from '../../../shared/shipment.js'
 
@@ -473,6 +476,21 @@ describe('what the patch carries', () => {
     const patch = patchOf(shipment, { ...draftOf(shipment), amount: 'free' })
 
     expect(patch.amountCents).toBeUndefined()
+  })
+
+  it('suggests the stores already tracked, so a typo makes no second one', async () => {
+    vi.mocked(searchStores).mockResolvedValue([{ name: 'Zalando', supportEmail: null }])
+
+    renderDetails({ store: 'Zalando' })
+    await startEditing()
+
+    expect(screen.getByLabelText('Store')).toHaveAttribute('role', 'combobox')
+
+    await userEvent.type(screen.getByLabelText('Store'), 'n')
+
+    await userEvent.click(await screen.findByRole('option', { name: 'Zalando' }))
+
+    expect(screen.getByLabelText('Store')).toHaveValue('Zalando')
   })
 
   it('carries a corrected store and order number, trimmed', () => {

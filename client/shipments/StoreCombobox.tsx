@@ -6,13 +6,15 @@ import type { StoreDto } from '../../shared/store.js'
 const DEBOUNCE_MS = 250
 
 type StoreComboboxProps = {
+  id: string
+  label: string
   value: string
   problem: string | undefined
   onChange: (value: string) => void
   onPick: (store: StoreDto) => void
 }
 
-export function StoreCombobox ({ value, problem, onChange, onPick }: StoreComboboxProps) {
+export function StoreCombobox ({ id, label, value, problem, onChange, onPick }: StoreComboboxProps) {
   const listId = useId()
   const [suggestions, setSuggestions] = useState<StoreDto[]>([])
   const [open, setOpen] = useState(false)
@@ -62,9 +64,10 @@ export function StoreCombobox ({ value, problem, onChange, onPick }: StoreCombob
   return (
     <div className='combobox'>
       <input
-        id='shipment-store'
-        {...fieldMarks('shipment-store', problem)}
+        id={id}
+        {...fieldMarks(id, problem)}
         role='combobox'
+        aria-label={label}
         autoComplete='off'
         aria-expanded={listOpen}
         aria-controls={listId}
