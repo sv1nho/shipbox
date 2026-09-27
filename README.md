@@ -29,7 +29,7 @@ to refund. React + Vite on the front, Express + Prisma + PostgreSQL on the back.
 
 ## Local setup
 
-Requires Node 20.19+, 22.13+ or 24+, and Docker.
+Requires Node 24 or newer, and Docker.
 
 ```bash
 cp .env.example .env      # then fill it in
