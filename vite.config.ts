@@ -53,6 +53,12 @@ export default defineConfig(({ mode }) => {
       ],
       coverage: {
         reportsDirectory: 'coverage',
+        thresholds: {
+          statements: 100,
+          branches: 100,
+          functions: 100,
+          lines: 100,
+        },
         include: [
           'client/**/*.{ts,tsx}',
           'server/**/*.ts',
