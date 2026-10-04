@@ -95,7 +95,7 @@ type Checked = {
   input: CreateShipmentInput | null
 }
 
-export function check (t: Translate, draft: Draft, label?: LabelInput): Checked {
+function check (t: Translate, draft: Draft, label?: LabelInput): Checked {
   const tracking = normalizeTrackingNumber(draft.trackingNumber)
   const amountCents = parseAmount(draft.amount)
   const { patternHint, pattern } = CARRIERS[draft.carrier]

@@ -1,6 +1,6 @@
 import { FRENCH } from './fr.js'
 
-export const LOCALES = ['en', 'fr'] as const
+const LOCALES = ['en', 'fr'] as const
 
 export type Locale = typeof LOCALES[number]
 

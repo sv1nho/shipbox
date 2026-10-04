@@ -2,7 +2,7 @@ import { createContext, use, useCallback, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { askInLocale } from '../api/client.js'
 import { FRENCH } from './fr.js'
-import { STORAGE_KEY, isLocale, preferredLocale } from './locale.js'
+import { STORAGE_KEY, preferredLocale } from './locale.js'
 import type { Locale } from './locale.js'
 
 export type Vars = Record<string, string | number>
@@ -75,4 +75,3 @@ export function useT (): Translate {
   return useLocale().t
 }
 
-export { isLocale }
