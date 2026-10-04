@@ -27,7 +27,7 @@ const remember = (locale: Locale): void => {
   try {
     globalThis.localStorage.setItem(STORAGE_KEY, locale)
   } catch {
-    // A browser that refuses storage still gets the language it was asked for.
+    return
   }
 }
 
