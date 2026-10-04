@@ -49,8 +49,9 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run dev:web` / `dev:api` | either one on its own |
 | `npm run start:api` | the API without file watching |
 | `npm run build` / `preview` | production build of the frontend, and a local preview of it |
-| `npm run lint` / `typecheck` / `test` | the same checks CI runs |
+| `npm run lint` / `typecheck` / `test` | three of the checks CI runs |
 | `npm run lint:fix` | lint and fix what can be fixed automatically |
+| `npm run knip` | reports unused files, exports and dependencies |
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:deploy` | applies existing migrations without creating new ones |
@@ -66,8 +67,9 @@ API, which avoids CORS and cross-origin cookies during development.
 checks the constraints against a real PostgreSQL. That one creates and migrates
 `<your database>_test` on its own, so the development data is never touched.
 
-It also prints a coverage report. The project keeps all four figures at 100%,
-but that is a habit rather than a threshold: nothing fails below it.
+It also prints a coverage report, and fails below 100% on any of the four
+figures. Keeping it there is the point: it is what makes the suite worth
+trusting when it stays green.
 
 In development the API prints every refused request, with the route, the code
 and the field at fault, for example
