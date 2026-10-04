@@ -915,6 +915,22 @@ describe('the details panel', () => {
     expect(listShipments).toHaveBeenCalledTimes(2)
   })
 
+  it('says the change was saved and leaves the editing behind', async () => {
+    vi.mocked(updateShipment).mockResolvedValue(makeShipment({ orderNumber: 'ZAL-2026-9999' }))
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await userEvent.click(screen.getByRole('button', { name: /details for/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.clear(screen.getByLabelText('Order number'))
+    await userEvent.type(screen.getByLabelText('Order number'), 'ZAL-2026-9999')
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+
+    expect(await screen.findByText('Changes saved.')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Edit' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeInTheDocument()
+  })
+
   it('keeps the panel open and explains when the api refuses the dates', async () => {
     vi.mocked(updateShipment).mockRejectedValue(
       new ApiError(422, 'VALIDATION_ERROR', 'receivedDate cannot be earlier than dropoffDate.', null)

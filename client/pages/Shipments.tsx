@@ -67,7 +67,7 @@ export function Shipments () {
   const [refused, setRefused] = useState<ApiError | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<{ message: string; undo: () => void } | null>(null)
+  const [notice, setNotice] = useState<{ message: string; undo?: () => void } | null>(null)
 
   const forget = useCallback(() => { setNotice(null) }, [])
   const t = useT()
@@ -162,12 +162,17 @@ export function Shipments () {
     if (await run(() => chaseShipment(shipment.id))) setChasing(null)
   }
 
-  const saveDates = async (shipment: ShipmentDto, patch: UpdateShipmentInput) => {
+  const saveDetails = async (shipment: ShipmentDto, patch: UpdateShipmentInput): Promise<boolean> => {
     let saved: ShipmentDto | null = null
 
     const done = await run(async () => { saved = await updateShipment(shipment.id, patch) })
 
-    if (done && saved !== null) setDetails(saved)
+    if (done && saved !== null) {
+      setDetails(saved)
+      setNotice({ message: t('Changes saved.') })
+    }
+
+    return done
   }
 
   const confirmDelete = async (shipment: ShipmentDto) => {
@@ -395,7 +400,9 @@ export function Shipments () {
       {notice !== null && (
         <Toast
           message={notice.message}
-          onUndo={() => { const undo = notice.undo; setNotice(null); undo() }}
+          {...(notice.undo === undefined
+            ? {}
+            : { onUndo: () => { const undo = notice.undo; setNotice(null); undo?.() } })}
           onDismiss={forget}
         />
       )}
@@ -415,7 +422,7 @@ export function Shipments () {
           busy={busy}
           error={actionError}
           onClose={() => { setDetails(null); setActionError(null) }}
-          onSave={(patch) => { void saveDates(details, patch) }}
+          onSave={(patch) => saveDetails(details, patch)}
         />
       )}
 

@@ -12,7 +12,7 @@ import type { ShipmentDto, UpdateShipmentInput } from '../../../shared/shipment.
 const renderDetails = (overrides: Partial<ShipmentDto> = {}, busy = false, error: string | null = null) => {
   const shipment = makeShipment(overrides)
   const onClose = vi.fn()
-  const onSave = vi.fn<(patch: UpdateShipmentInput) => void>()
+  const onSave = vi.fn<(patch: UpdateShipmentInput) => Promise<boolean>>().mockResolvedValue(true)
 
   render(
     <ShipmentDetails

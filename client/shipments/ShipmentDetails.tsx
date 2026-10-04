@@ -26,7 +26,7 @@ type DetailsProps = {
   busy: boolean
   error: string | null
   onClose: () => void
-  onSave: (patch: UpdateShipmentInput) => void
+  onSave: (patch: UpdateShipmentInput) => Promise<boolean>
 }
 
 const DATE_LABELS: Record<DatedField, string> = {
@@ -371,7 +371,11 @@ export function ShipmentDetails ({ shipment, busy, error, onClose, onSave }: Det
               type='button'
               className='btn btn-primary'
               disabled={busy || broken || erased || incomplete}
-              onClick={() => { onSave(patchOf(shipment, draft)) }}
+              onClick={() => {
+                void onSave(patchOf(shipment, draft)).then((saved) => {
+                  if (saved) setDraft(null)
+                })
+              }}
             >
               {busy ? t('Saving…') : t('Save')}
             </button>

@@ -144,6 +144,7 @@ export const FRENCH: Record<string, string> = {
     'Suivez un colis déjà renvoyé, ou créez d’abord son étiquette.',
   'Make a label': 'Créer une étiquette',
   'Recorded: {step}': 'Enregistré : {step}',
+  'Changes saved.': 'Modifications enregistrées.',
   'Shipment archived.': 'Suivi archivé.',
   'Shipment put back in the list.': 'Suivi remis dans la liste.',
   Undo: 'Annuler',
