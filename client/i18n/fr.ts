@@ -237,6 +237,8 @@ export const FRENCH: Record<string, string> = {
   'An amount like 49.99 is required.': 'Un montant comme 49,99 est obligatoire.',
   'An amount cannot be more than 1,000,000.': 'Un montant ne peut pas dépasser 1 000 000.',
   'A postal code is required.': 'Un code postal est obligatoire.',
+  'The carrier asks for this code to open the tracking. It can differ from the one printed on the label.':
+    'Le transporteur demande ce code pour ouvrir le suivi. Il peut différer de celui imprimé sur l’étiquette.',
   Country: 'Pays',
   'Return requested on': 'Retour demandé le',
   'Pick the day you asked for the return.': 'Choisissez le jour où vous avez demandé le retour.',

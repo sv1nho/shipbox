@@ -225,6 +225,24 @@ describe('what it refuses', () => {
   })
 })
 
+describe('the postal code the carrier asks for', () => {
+  it('warns that it can differ from the one printed on the label', () => {
+    renderDialog()
+
+    expect(screen.getByLabelText('Postal code'))
+      .toHaveAccessibleDescription(/can differ from the one printed on the label/i)
+  })
+
+  it('still names the refusal when the field is left empty', async () => {
+    renderDialog()
+
+    await submit()
+
+    expect(screen.getByLabelText('Postal code'))
+      .toHaveAccessibleDescription(/A postal code is required\./)
+  })
+})
+
 describe('how a refusal shows', () => {
   it('outlines every field it refused, not just the store', async () => {
     renderDialog()

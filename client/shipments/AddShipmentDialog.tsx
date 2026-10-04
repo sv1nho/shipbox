@@ -188,6 +188,8 @@ export function AddShipmentDialog (
   const problem = (key: keyof Draft): string | undefined =>
     attempted ? problems[key] : undefined
 
+  const trackingHint = t('The carrier asks for this code to open the tracking. It can differ from the one printed on the label.')
+
   const trouble = {
     trackingNumber: problem('trackingNumber') ?? fieldError('trackingNumber'),
     store: problem('store') ?? fieldError('store'),
@@ -293,10 +295,11 @@ export function AddShipmentDialog (
             label={t('Postal code')}
             htmlFor='shipment-postal'
             problem={trouble.recipientPostalCode}
+            hint={trackingHint}
           >
             <input
               id='shipment-postal'
-              {...fieldMarks('shipment-postal', trouble.recipientPostalCode)}
+              {...fieldMarks('shipment-postal', trouble.recipientPostalCode, trackingHint)}
               autoComplete='off'
               value={draft.recipientPostalCode}
               onChange={(event) => { set('recipientPostalCode', event.target.value) }}
