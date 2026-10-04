@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { recallDraft, rememberDraft } from '../../utils/label-draft.js'
+import { forgetDraft, recallDraft, rememberDraft } from '../../utils/label-draft.js'
 
 afterEach(() => {
   globalThis.localStorage.clear()
@@ -39,5 +39,21 @@ describe('the draft of the label form', () => {
     vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => { throw new Error('denied') })
 
     expect(() => { rememberDraft({ sender_city: 'Liège' }) }).not.toThrow()
+  })
+})
+
+describe('emptying the draft', () => {
+  it('leaves nothing behind', () => {
+    rememberDraft({ sender_firstname: 'Marie' })
+
+    forgetDraft()
+
+    expect(recallDraft()).toEqual({})
+  })
+
+  it('says nothing when the browser refuses storage', () => {
+    vi.spyOn(globalThis.localStorage, 'removeItem').mockImplementation(() => { throw new Error('denied') })
+
+    expect(() => { forgetDraft() }).not.toThrow()
   })
 })

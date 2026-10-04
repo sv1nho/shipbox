@@ -103,6 +103,7 @@ export const FRENCH: Record<string, string> = {
   English: 'Anglais',
   Carrier: 'Transporteur',
   'Tracking Number': 'Numéro de suivi',
+  'Empty the form': 'Vider le formulaire',
   'Generate Label': 'Générer l’étiquette',
   'Unknown error': 'Erreur inconnue',
 

@@ -15,7 +15,7 @@ import { loadSvgTemplate } from '../utils/svg-loader.js'
 import { svgToPdf, downloadPdf } from '../utils/pdf-generator.js'
 import { labelFileName } from '../utils/label-file-name.js'
 import { Field, fieldMarks } from '../components/Field.js'
-import { recallDraft, rememberDraft } from '../utils/label-draft.js'
+import { forgetDraft, recallDraft, rememberDraft } from '../utils/label-draft.js'
 import { Spinner } from '../components/Spinner.js'
 import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
@@ -31,6 +31,28 @@ type Preview = {
 }
 
 const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
+
+const EMPTY_FORM: LabelPayload = {
+  sender_firstname: '',
+  sender_lastname: '',
+  sender_company: '',
+  sender_address: '',
+  sender_postal: '',
+  sender_city: '',
+  sender_country: 'BE',
+  sender_isCompany: false,
+  recipient_firstname: '',
+  recipient_lastname: '',
+  recipient_company: '',
+  recipient_address: '',
+  recipient_postal: '',
+  recipient_city: '',
+  recipient_country: 'BE',
+  recipient_isCompany: false,
+  label_language: 'fr',
+  carrier: 'bpost',
+  tracking_number: '',
+}
 
 const READING_ORDER = (['sender', 'recipient'] as const).flatMap((party) =>
   ['company', 'firstname', 'lastname', 'address', 'postal', 'city']
@@ -225,18 +247,11 @@ export function Form () {
     setValue,
     setFocus,
     getValues,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<LabelPayload>({
     shouldFocusError: false,
-    defaultValues: {
-      sender_country: 'BE',
-      recipient_country: 'BE',
-      label_language: 'fr',
-      carrier: 'bpost',
-      sender_isCompany: false,
-      recipient_isCompany: false,
-      ...recallDraft(),
-    },
+    defaultValues: { ...EMPTY_FORM, ...recallDraft() },
   })
 
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -360,7 +375,18 @@ export function Form () {
           </SectionCard>
         </div>
 
-        <div className='flex justify-end'>
+        <div className='form-actions'>
+          <button
+            type='button'
+            className='btn btn-ghost'
+            disabled={isSubmitting}
+            onClick={() => {
+              forgetDraft()
+              reset(EMPTY_FORM)
+            }}
+          >
+            {t('Empty the form')}
+          </button>
           <button
             type='submit'
             disabled={isSubmitting}

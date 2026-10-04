@@ -744,6 +744,12 @@ h1, h2, h3 { font-family: var(--font-display); }
 
   .form-row-three { grid-template-columns: 1fr 1fr 4.5rem; }
 
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
   .form-field {
     display: grid;
     gap: 0.25rem;

@@ -14,10 +14,18 @@ export const recallDraft = (): Partial<LabelPayload> => {
   }
 }
 
+export const forgetDraft = (): void => {
+  try {
+    globalThis.localStorage.removeItem(KEY)
+  } catch {
+    return
+  }
+}
+
 export const rememberDraft = (draft: Partial<LabelPayload>): void => {
   try {
     globalThis.localStorage.setItem(KEY, JSON.stringify(draft))
   } catch {
-    // A browser that refuses storage still lets the form be filled and sent.
+    return
   }
 }

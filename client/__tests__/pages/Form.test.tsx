@@ -70,6 +70,21 @@ describe('the draft it keeps', () => {
     expect(section('Carrier').getByRole('combobox')).toHaveValue('postnl')
   })
 
+  it('empties what was kept, since a refresh no longer does it', async () => {
+    globalThis.localStorage.setItem(
+      'shipbox.label-draft',
+      JSON.stringify({ sender_city: 'Liège', carrier: 'postnl' })
+    )
+
+    renderForm()
+
+    await userEvent.click(screen.getByRole('button', { name: /empty the form/i }))
+
+    expect(section('Sender').getByLabelText('City')).toHaveValue('')
+    expect(section('Carrier').getByRole('combobox')).toHaveValue('bpost')
+    expect(globalThis.localStorage.getItem('shipbox.label-draft')).toBeNull()
+  })
+
   it('writes down a field as soon as it is left, so a refresh costs nothing', async () => {
     renderForm()
 
