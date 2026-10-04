@@ -1,11 +1,9 @@
 export const FRENCH: Record<string, string> = {
-  // ── What a refused request says as a whole ──
   'Some details were refused. Check the fields marked below.':
     'Certaines informations ont été refusées. Regardez les champs signalés ci-dessous.',
   'This search could not be understood.': 'Cette recherche n’a pas pu être comprise.',
   'This address could not be understood.': 'Cette adresse n’a pas pu être comprise.',
 
-  // ── Fields a person fills in ──
   'A tracking number is required.': 'Un numéro de suivi est obligatoire.',
   'A tracking number cannot be longer than 64 characters.':
     'Un numéro de suivi ne peut pas dépasser 64 caractères.',
@@ -31,20 +29,17 @@ export const FRENCH: Record<string, string> = {
   'must be a YYYY-MM-DD date': 'doit être une date AAAA-MM-JJ',
   'Pick a carrier ShipBox knows.': 'Choisissez un transporteur que ShipBox connaît.',
 
-  // ── A label needs a name for each party ──
   'A name cannot be longer than 120 characters.':
     'Un nom ne peut pas dépasser 120 caractères.',
   'A company name is required.': 'Un nom d’entreprise est obligatoire.',
   'A first name is required.': 'Un prénom est obligatoire.',
   'A last name is required.': 'Un nom est obligatoire.',
 
-  // ── The carrier a number must belong to ──
   'must match the {carrier} format: {hint}': 'doit suivre le format {carrier} : {hint}',
   '24 digits starting with 3232 or 3299': '24 chiffres commençant par 3232 ou 3299',
   '2S or 3S followed by 1-4 letters and 6-9 digits':
     '2S ou 3S suivi de 1 à 4 lettres et de 6 à 9 chiffres',
 
-  // ── Dates, and the order they must follow ──
   'The return date': 'La date de retour',
   'The drop-off date': 'La date de dépôt',
   'The reception date': 'La date de réception',
@@ -58,7 +53,6 @@ export const FRENCH: Record<string, string> = {
   '{date} cannot be earlier than {previous}.':
     '{date} ne peut pas être antérieure à {previous}.',
 
-  // ── Steps that cannot be taken ──
   'Shipment not found.': 'Suivi introuvable.',
   'Authentication required.': 'Connexion requise.',
   'This tracking number is already registered.': 'Ce numéro de suivi est déjà enregistré.',

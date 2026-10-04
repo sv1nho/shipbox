@@ -41,7 +41,6 @@ const SHIPPING_LATE =
   'Time to contact them.'
 
 export const FRENCH: Record<string, string> = {
-  // ── The frame ──
   'Read this site in {language}': 'Lire ce site en {language}',
   Form: 'Formulaire',
   Shipments: 'Suivis',
@@ -51,7 +50,6 @@ export const FRENCH: Record<string, string> = {
   '— Bpost & PostNL shipping labels, 100% free': '— Étiquettes Bpost et PostNL, 100% gratuit',
   '© 2026 ShipBox — All rights reserved': '© 2026 ShipBox — Tous droits réservés',
 
-  // ── Home ──
   [HOME_LEAD]:
     'Créez et téléchargez des étiquettes PDF pour Bpost et PostNL en quelques secondes. ' +
     'Remplissez le formulaire, choisissez votre transporteur et votre langue, ' +
@@ -60,7 +58,6 @@ export const FRENCH: Record<string, string> = {
   '100% free': '100% gratuit',
   'Go to the form': 'Aller au formulaire',
 
-  // ── Signing in ──
   'Checking your session…': 'Vérification de votre session…',
   'Loading sign-in options…': 'Chargement des options de connexion…',
   [SIGN_IN_LEAD]:
@@ -78,7 +75,6 @@ export const FRENCH: Record<string, string> = {
     'Aucun mot de passe n’est conservé. La connexion ne partage que votre nom, ' +
     'votre adresse e-mail et votre photo de profil avec ShipBox.',
 
-  // ── The label form ──
   Sender: 'Expéditeur',
   Recipient: 'Destinataire',
   Individual: 'Particulier',
@@ -107,14 +103,12 @@ export const FRENCH: Record<string, string> = {
   'Generate Label': 'Générer l’étiquette',
   'Unknown error': 'Erreur inconnue',
 
-  // ── The label preview ──
   'Label Preview': 'Aperçu de l’étiquette',
   'Tracking:': 'Suivi :',
   Close: 'Fermer',
   'Add to tracking': 'Ajouter au suivi',
   'Download PDF': 'Télécharger le PDF',
 
-  // ── Offering to track a label ──
   'Keep an eye on this return': 'Gardez un œil sur ce retour',
   'to follow this parcel from the drop-off to the refund.':
     'pour suivre ce colis du dépôt au remboursement.',
@@ -131,7 +125,6 @@ export const FRENCH: Record<string, string> = {
   'Not now': 'Pas maintenant',
   'Open my shipments': 'Ouvrir mes suivis',
 
-  // ── The shipment list ──
   '1 shipment': '1 suivi',
   '{count} shipments': '{count} suivis',
   'Updating the list': 'Mise à jour de la liste',
@@ -154,7 +147,6 @@ export const FRENCH: Record<string, string> = {
   'Previous page': 'Page précédente',
   'Next page': 'Page suivante',
 
-  // ── Filters ──
   Active: 'Actifs',
   Archived: 'Archivés',
   All: 'Tous',
@@ -183,7 +175,6 @@ export const FRENCH: Record<string, string> = {
   'Export CSV': 'Exporter en CSV',
   'Export JSON': 'Exporter en JSON',
 
-  // ── A row ──
   Pending: 'En attente',
   'Dropped off': 'Déposé',
   Received: 'Reçu',
@@ -217,7 +208,6 @@ export const FRENCH: Record<string, string> = {
   'Put back in the list': 'Remettre dans la liste',
   'Delete for good': 'Supprimer définitivement',
 
-  // ── Alerts on a row ──
   'The store has had this parcel for {span} without deciding. Time to chase them.':
     'Le magasin a ce colis depuis {span} sans décider. Il est temps de le relancer.',
   [SHIPPING_LATE]:
@@ -230,7 +220,6 @@ export const FRENCH: Record<string, string> = {
   'The label expires in {span}. Drop the parcel off now.':
     'L’étiquette expire dans {span}. Déposez le colis maintenant.',
 
-  // ── Adding a return ──
   'Tracking number': 'Numéro de suivi',
   'A tracking number is required.': 'Un numéro de suivi est obligatoire.',
   'This is not a {carrier} number: {hint}.': 'Ce n’est pas un numéro {carrier} : {hint}.',
@@ -263,7 +252,6 @@ export const FRENCH: Record<string, string> = {
   'Adding…': 'Ajout…',
   'Track it': 'Le suivre',
 
-  // ── A new store ──
   Name: 'Nom',
   'A name is required.': 'Un nom est obligatoire.',
   'Customer service email': 'E-mail du service client',
@@ -273,7 +261,6 @@ export const FRENCH: Record<string, string> = {
   'An email address is required.': 'Une adresse e-mail est obligatoire.',
   'Add the store': 'Ajouter le magasin',
 
-  // ── Recording a step ──
   'When did the store receive it?': 'Quand le magasin l’a-t-il reçu ?',
   'Without it the waiting time of this store cannot be measured.':
     'Sans elle, le temps d’attente de ce magasin ne peut pas être mesuré.',
@@ -289,7 +276,6 @@ export const FRENCH: Record<string, string> = {
   'Saving…': 'Enregistrement…',
   Confirm: 'Confirmer',
 
-  // ── Chasing a store ──
   'Chase {store}': 'Relancer {store}',
   [NO_ADDRESS]:
     'Aucune adresse enregistrée pour {store}. Copiez le message dans leur formulaire ' +
@@ -307,7 +293,6 @@ export const FRENCH: Record<string, string> = {
   'I sent it': 'Je l’ai envoyé',
   'Open in my mail app': 'Ouvrir dans ma messagerie',
 
-  // ── Details of a return ──
   'Shipment details': 'Détails du suivi',
   'Customer service': 'Service client',
   'Sent to': 'Envoyé à',
@@ -334,7 +319,6 @@ export const FRENCH: Record<string, string> = {
   Edit: 'Modifier',
   Save: 'Enregistrer',
 
-  // ── Deleting a shipment ──
   'Delete this shipment for good?': 'Supprimer définitivement ce suivi ?',
   'This cannot be undone. You will lose:': 'C’est irréversible. Vous perdrez :',
   'the shipment and everything you recorded about it':
@@ -347,7 +331,6 @@ export const FRENCH: Record<string, string> = {
     'Pour le retirer de votre liste sans rien perdre de tout cela, archivez-le plutôt.',
   'Deleting…': 'Suppression…',
 
-  // ── Importing ──
   'Import returns': 'Importer des retours',
   'A CSV or JSON file, laid out like the export. Each row needs at least {fields}.':
     'Un fichier CSV ou JSON, présenté comme l’export. Chaque ligne demande au moins {fields}.',
@@ -362,7 +345,6 @@ export const FRENCH: Record<string, string> = {
   'The columns an export writes': 'Les colonnes que l’export écrit',
   'Importing…': 'Import…',
 
-  // ── The dashboard ──
   'Counting your returns…': 'Comptage de vos retours…',
   'Returns refunded': 'Retours remboursés',
   'No decision recorded yet.': 'Aucune décision enregistrée pour l’instant.',

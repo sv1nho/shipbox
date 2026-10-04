@@ -20,8 +20,6 @@ afterEach(() => {
 
 const SVG_TEMPLATE = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
 
-// ── wrapText ─────────────────────────────────────────────────────────────────
-
 describe('wrapText', () => {
   it('returns a single element when text fits within maxLength', () => {
     expect(wrapText('hello world', 20)).toEqual(['hello world'])
@@ -58,8 +56,6 @@ describe('wrapText', () => {
   })
 })
 
-// ── escapeXml ─────────────────────────────────────────────────────────────────
-
 describe('escapeXml', () => {
   it('escapes &', () => expect(escapeXml('a & b')).toBe('a &amp; b'))
   it('escapes <', () => expect(escapeXml('<tag>')).toBe('&lt;tag&gt;'))
@@ -76,8 +72,6 @@ describe('escapeXml', () => {
     )
   })
 })
-
-// ── zoneFromPostal ────────────────────────────────────────────────────────────
 
 describe('zoneFromPostal', () => {
   it.each([
@@ -112,8 +106,6 @@ describe('zoneFromPostal', () => {
     expect(zoneFromPostal('')).toBe('')
   })
 })
-
-// ── obfuscateTracking ─────────────────────────────────────────────────────────
 
 describe('obfuscateTracking', () => {
   it('preserves the original string length', () => {
@@ -160,8 +152,6 @@ describe('obfuscateTracking', () => {
     expect(() => obfuscateTracking('12345678', 4)).not.toThrow()
   })
 })
-
-// ── buildLabelSvg ─────────────────────────────────────────────────────────────
 
 describe('buildLabelSvg', () => {
   beforeEach(() => {

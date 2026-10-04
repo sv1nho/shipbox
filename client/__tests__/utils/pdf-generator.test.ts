@@ -20,8 +20,6 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-// ── svgToPdf ──────────────────────────────────────────────────────────────────
-
 describe('svgToPdf', () => {
   const VALID_SVG = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
 
@@ -64,8 +62,6 @@ describe('svgToPdf', () => {
     )
   })
 })
-
-// ── downloadPdf ───────────────────────────────────────────────────────────────
 
 describe('downloadPdf', () => {
   it('creates a temporary anchor, clicks it, then removes it and revokes the URL', () => {
