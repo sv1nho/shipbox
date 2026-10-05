@@ -61,8 +61,10 @@ export default [
       "server/**/*.ts",
       "prisma/**/*.ts",
       "scripts/**/*.ts",
+      "e2e/**/*.ts",
       "prisma.config.ts",
       "vite.config.ts",
+      "playwright.config.ts",
     ],
     languageOptions: {
       globals: {

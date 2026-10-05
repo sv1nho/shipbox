@@ -53,6 +53,7 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run lint:fix` | lint and fix what can be fixed automatically |
 | `npm run knip` | reports unused files, exports and dependencies |
 | `npm run size` | weighs what the first page load downloads, against a budget |
+| `npm run e2e` | drives a real browser through two journeys, against a real database |
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:deploy` | applies existing migrations without creating new ones |
@@ -72,6 +73,11 @@ policy, and the API documentation is not served at all.
 Every `/api` route is rate limited per caller, 120 requests a minute by default,
 answering 429 with the same error shape as any other refusal. Behind a proxy that
 terminates TLS, set `TRUSTED_PROXY_HOPS`, or every visitor is counted as one.
+
+`npm run e2e` builds the app, serves it on port 3100 against a `<your database>_e2e`
+database it creates and empties, signs an account in once, then drives Chromium
+through it. That sign-in needs `E2E_AUTH=true`, which the API refuses to start
+with in production.
 
 `npm test` runs three suites: `client` and `server` need nothing, while `db`
 checks the constraints against a real PostgreSQL. That one creates and migrates

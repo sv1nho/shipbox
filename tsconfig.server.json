@@ -17,5 +17,14 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true
   },
-  "include": ["server", "shared", "prisma", "scripts", "prisma.config.ts", "vite.config.ts"]
+  "include": [
+    "server",
+    "shared",
+    "prisma",
+    "scripts",
+    "e2e",
+    "prisma.config.ts",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ]
 }

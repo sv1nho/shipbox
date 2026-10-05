@@ -2,7 +2,7 @@ import { rateLimit } from 'express-rate-limit'
 import type { RequestHandler } from 'express'
 import { localeOf, translate } from '../i18n/translate.js'
 
-export const WINDOW_SECONDS = 60
+const WINDOW_SECONDS = 60
 
 const TOO_MANY = 'Too many requests. Wait a moment before trying again.'
 

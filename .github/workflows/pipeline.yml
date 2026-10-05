@@ -91,6 +91,60 @@ jobs:
       - name: Test, with the coverage thresholds
         run: npm test
 
+  e2e:
+    name: Browser journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ship_box
+          POSTGRES_PASSWORD: ship_box
+          POSTGRES_DB: ship_box
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://ship_box:ship_box@127.0.0.1:5432/ship_box
+      WEB_ORIGIN: http://127.0.0.1:3100
+      BETTER_AUTH_URL: http://127.0.0.1:3100
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-for-any-session
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install the dependencies
+        run: npm ci
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the journeys
+        run: npm run e2e
+
+      - name: Keep what failed
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-results
+          path: e2e/.results
+          retention-days: 7
+
   security:
     name: Dependencies and secrets
     runs-on: ubuntu-latest
