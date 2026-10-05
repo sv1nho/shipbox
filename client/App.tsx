@@ -2,12 +2,7 @@ import { RouterProvider } from 'react-router/dom'
 import { createBrowserRouter } from 'react-router'
 import type { RouteObject } from 'react-router'
 
-import { Dashboard } from './pages/Dashboard'
-import { Form } from './pages/Form'
 import { Layout } from './components/Layout'
-import { Home } from './pages/Home'
-import { Login } from './pages/Login'
-import { Shipments } from './pages/Shipments'
 import { RequireAuth } from './auth/RequireAuth'
 import { LocaleProvider } from './i18n/context.js'
 
@@ -17,26 +12,26 @@ export const routes: RouteObject[] = [
     children: [
       {
         path: '/',
-        element: <Home />,
+        lazy: async () => ({ Component: (await import('./pages/Home.js')).Home }),
       },
       {
         path: '/form',
-        element: <Form />,
+        lazy: async () => ({ Component: (await import('./pages/Form.js')).Form }),
       },
       {
         path: '/login',
-        element: <Login />,
+        lazy: async () => ({ Component: (await import('./pages/Login.js')).Login }),
       },
       {
         element: <RequireAuth />,
         children: [
           {
             path: '/shipments',
-            element: <Shipments />,
+            lazy: async () => ({ Component: (await import('./pages/Shipments.js')).Shipments }),
           },
           {
             path: '/dashboard',
-            element: <Dashboard />,
+            lazy: async () => ({ Component: (await import('./pages/Dashboard.js')).Dashboard }),
           },
         ],
       },

@@ -1,7 +1,6 @@
-import { jsPDF } from 'jspdf'
-import { svg2pdf } from 'svg2pdf.js'
-
 export const svgToPdf = async (svgString: string): Promise<Blob> => {
+  const [{ jsPDF }, { svg2pdf }] = await Promise.all([import('jspdf'), import('svg2pdf.js')])
+
   const cleanSvg = svgString.replace(/<\?xml[^>]*\?>/g, '').trim()
 
   if (!cleanSvg.includes('<svg')) {

@@ -21,7 +21,6 @@ import { LabelPreviewModal } from '../components/LabelPreviewModal.js'
 import { TrackOffer } from '../shipments/TrackOffer.js'
 import { useT } from '../i18n/context.js'
 import type { Translate } from '../i18n/context.js'
-import { fakerFR_BE, fakerNL_BE, fakerNL } from '@faker-js/faker'
 
 type Preview = {
   blob: Blob
@@ -29,8 +28,6 @@ type Preview = {
   maskedTracking: string
   carrier: CarrierId
 }
-
-const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
 
 const EMPTY_FORM: LabelPayload = {
   sender_firstname: '',
@@ -58,7 +55,12 @@ const READING_ORDER = (['sender', 'recipient'] as const).flatMap((party) =>
   ['company', 'firstname', 'lastname', 'address', 'postal', 'city']
     .map((field) => `${party}_${field}` as Path<LabelPayload>)
 ).concat('tracking_number')
-const randomFaker = () => fakers[Math.floor(Math.random() * fakers.length)]
+const randomFaker = async () => {
+  const { fakerFR_BE, fakerNL_BE, fakerNL } = await import('@faker-js/faker')
+  const fakers = [fakerFR_BE, fakerNL_BE, fakerNL]
+
+  return fakers[Math.floor(Math.random() * fakers.length)]
+}
 
 const SectionCard = ({
   title,
@@ -137,13 +139,14 @@ const PartyFieldset = ({
       aria-label={fillLabel}
       title={fillLabel}
       onClick={() => {
-        const faker = randomFaker()
-        if (isCompany) {
-          setValue(name('company'), faker.company.name())
-        } else {
-          setValue(name('firstname'), faker.person.firstName())
-          setValue(name('lastname'), faker.person.lastName())
-        }
+        void randomFaker().then((faker) => {
+          if (isCompany) {
+            setValue(name('company'), faker.company.name())
+          } else {
+            setValue(name('firstname'), faker.person.firstName())
+            setValue(name('lastname'), faker.person.lastName())
+          }
+        })
       }}
     >
       <svg viewBox='0 0 16 16' width='14' height='14' aria-hidden='true'>
