@@ -44,7 +44,8 @@
     "clear": "rimraf node_modules dist coverage server/generated package-lock.json",
     "postinstall": "npm run db:generate",
     "e2e:hostile": "playwright test hostile-input",
-    "measure": "tsx scripts/measure-list.ts"
+    "measure": "tsx scripts/measure-list.ts",
+    "measure:api": "tsx scripts/measure-api.ts"
   },
   "license": "ISC",
   "engines": {
