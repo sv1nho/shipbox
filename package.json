@@ -26,6 +26,7 @@
     "size": "tsx scripts/check-bundle.ts",
     "e2e": "playwright test",
     "e2e:db": "tsx e2e/prepare-database.ts",
+    "e2e:shots": "playwright test screens",
     "typecheck": "npm run typecheck:web && npm run typecheck:api",
     "typecheck:web": "tsc -p tsconfig.json --noEmit",
     "typecheck:api": "tsc -p tsconfig.server.json --noEmit",
@@ -68,6 +69,7 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint-react/eslint-plugin": "5.18.0",
     "@eslint/js": "10.0.1",
     "@playwright/test": "^1.63.0",
