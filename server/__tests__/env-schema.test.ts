@@ -152,6 +152,32 @@ describe('envSchema', () => {
       expect(inProduction({ GITHUB_CLIENT_ID: 'id', GITHUB_CLIENT_SECRET: 'secret' }).success).toBe(true)
     })
 
+    it('refuses the browser-test sign-in, which would open a password door', () => {
+      const paths = pathsOf(inProduction({
+        GITHUB_CLIENT_ID: 'id',
+        GITHUB_CLIENT_SECRET: 'secret',
+        E2E_AUTH: 'true',
+      }))
+
+      expect(paths).toContain('E2E_AUTH')
+    })
+
+    it('leaves that sign-in available to the browser tests outside production', () => {
+      const result = parse({ E2E_AUTH: 'true' })
+
+      expect(result.success).toBe(true)
+      if (!result.success) return
+      expect(result.data.E2E_AUTH).toBe(true)
+    })
+
+    it('keeps it shut when nothing says otherwise', () => {
+      const result = parse()
+
+      expect(result.success).toBe(true)
+      if (!result.success) return
+      expect(result.data.E2E_AUTH).toBe(false)
+    })
+
     it('does not require a provider outside production', () => {
       expect(parse({ NODE_ENV: 'development' }).success).toBe(true)
       expect(parse({ NODE_ENV: 'test' }).success).toBe(true)

@@ -37,6 +37,8 @@ export const envSchema = z
 
     RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(120),
 
+    E2E_AUTH: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+
     BETTER_AUTH_URL: httpUrl,
     BETTER_AUTH_SECRET: z
       .string()
@@ -75,6 +77,14 @@ export const envSchema = z
     }
 
     if (value.NODE_ENV !== 'production') return
+
+    if (value.E2E_AUTH) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['E2E_AUTH'],
+        message: 'cannot be true in production, it opens a password sign-in meant for the browser tests',
+      })
+    }
 
     if (configured === 0) {
       ctx.addIssue({
