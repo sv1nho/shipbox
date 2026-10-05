@@ -1,5 +1,6 @@
 type ErrorCode =
   | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
   | 'VALIDATION_ERROR'
@@ -9,6 +10,7 @@ type ErrorCode =
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
   UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
   VALIDATION_ERROR: 422,

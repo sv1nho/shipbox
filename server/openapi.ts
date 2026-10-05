@@ -53,6 +53,11 @@ const ERROR_BODY = {
 
 const errorResponses = {
   401: { description: 'No session.', ...ERROR_BODY },
+  403: {
+    description:
+      'A write whose Origin header is not the app. Reads are never refused for this reason.',
+    ...ERROR_BODY,
+  },
   404: { description: 'Unknown shipment, or one that belongs to another user.', ...ERROR_BODY },
   409: {
     description:

@@ -56,6 +56,8 @@ export const FRENCH: Record<string, string> = {
   'Shipment not found.': 'Suivi introuvable.',
   'Too many requests. Wait a moment before trying again.':
     'Trop de requêtes. Patientez un instant avant de réessayer.',
+  'This request did not come from ShipBox.':
+    'Cette requête ne vient pas de ShipBox.',
   'Authentication required.': 'Connexion requise.',
   'This tracking number is already registered.': 'Ce numéro de suivi est déjà enregistré.',
   'Tracking number already used.': 'Numéro de suivi déjà utilisé.',

@@ -7,6 +7,7 @@ import { toNodeHandler } from 'better-auth/node'
 import { auth, enabledProviders } from './auth/auth.js'
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
 import { createApiLimiter } from './middleware/rate-limit.js'
+import { createOriginGuard } from './middleware/same-origin.js'
 import { cacheBuiltFiles, createSecurityHeaders, createWebAppFallback } from './middleware/web-app.js'
 import { shipmentsRouter } from './routes/shipments.js'
 import { storesRouter } from './routes/stores.js'
@@ -54,6 +55,7 @@ export function createApp (): Express {
   app.use(express.static(WEB_APP_ROOT, { index: false, setHeaders: cacheBuiltFiles }))
 
   app.use('/api', createApiLimiter(env.RATE_LIMIT_PER_MINUTE))
+  app.use('/api', createOriginGuard(env.WEB_ORIGIN))
 
   app.use('/api/shipments', shipmentsRouter)
   app.use('/api/stores', storesRouter)
