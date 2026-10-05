@@ -64,6 +64,50 @@ jobs:
           path: e2e/.shots
           retention-days: 14
 
+  fuzzing:
+    name: Hostile input against the api
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ship_box
+          POSTGRES_PASSWORD: ship_box
+          POSTGRES_DB: ship_box
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://ship_box:ship_box@127.0.0.1:5432/ship_box
+      WEB_ORIGIN: http://localhost:5173
+      BETTER_AUTH_URL: http://localhost:5173
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-for-any-session
+      FUZZ_RUNS: '600'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install the dependencies
+        run: npm ci
+
+      - name: Throw anything at every route
+        run: npm run fuzz
+
   advisories:
     name: Advisories published since the last push
     runs-on: ubuntu-latest

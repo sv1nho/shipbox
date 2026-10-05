@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
             environment: 'node',
             env: { RATE_LIMIT_PER_MINUTE: '100000' },
             include: ['server/**/*.{test,spec}.ts', 'shared/**/*.{test,spec}.ts'],
-            exclude: ['**/*.db.{test,spec}.ts'],
+            exclude: ['**/*.db.{test,spec}.ts', '**/*.fuzz.{test,spec}.ts'],
           },
         },
         {
@@ -47,6 +47,18 @@ export default defineConfig(({ mode }) => {
             environment: 'node',
             env: { RATE_LIMIT_PER_MINUTE: '100000' },
             include: ['prisma/**/*.{test,spec}.ts', 'server/**/*.db.{test,spec}.ts'],
+            globalSetup: ['prisma/__tests__/global-setup.ts'],
+            setupFiles: ['prisma/__tests__/setup-test-database.ts'],
+            fileParallelism: false,
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'fuzz',
+            environment: 'node',
+            env: { RATE_LIMIT_PER_MINUTE: '100000' },
+            include: ['server/**/*.fuzz.{test,spec}.ts'],
             globalSetup: ['prisma/__tests__/global-setup.ts'],
             setupFiles: ['prisma/__tests__/setup-test-database.ts'],
             fileParallelism: false,

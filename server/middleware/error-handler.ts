@@ -22,27 +22,51 @@ export const notFoundHandler: RequestHandler = (req, _res, next) => {
   next(new AppError('NOT_FOUND', `Unknown route: ${req.method} ${req.path}`))
 }
 
+const UNREADABLE_BODY = {
+  'entity.parse.failed': 'The request body is not valid JSON.',
+  'entity.too.large': 'The request body is larger than this API accepts.',
+} as const
+
+const refusalOf = (err: unknown): AppError | null => {
+  if (err instanceof AppError) return err
+  if (typeof err !== 'object' || err === null) return null
+
+  const type = (err as { type?: unknown }).type
+
+  if (type === 'entity.parse.failed') {
+    return new AppError('BAD_REQUEST', UNREADABLE_BODY['entity.parse.failed'])
+  }
+
+  if (type === 'entity.too.large') {
+    return new AppError('PAYLOAD_TOO_LARGE', UNREADABLE_BODY['entity.too.large'])
+  }
+
+  return null
+}
+
 type HandlerOptions = { exposeDetails: boolean; logRefusals: boolean }
 
 export function createErrorHandler ({ exposeDetails, logRefusals }: HandlerOptions): ErrorRequestHandler {
   return (err, req, res, _next) => {
-    if (err instanceof AppError) {
-      const english = translate('en', err.message, err.vars)
+    const refusal = refusalOf(err)
+
+    if (refusal !== null) {
+      const english = translate('en', refusal.message, refusal.vars)
 
       if (logRefusals) {
         console.warn(
-          `${req.method} ${req.path} -> ${String(err.status)} ${err.code}: ${english}`,
-          err.details ?? ''
+          `${req.method} ${req.path} -> ${String(refusal.status)} ${refusal.code}: ${english}`,
+          refusal.details ?? ''
         )
       }
 
       const locale = localeOf(req.get('accept-language'))
 
-      res.status(err.status).json({
+      res.status(refusal.status).json({
         error: {
-          code: err.code,
-          message: translate(locale, err.message, err.vars),
-          details: said(locale, err.details) ?? null,
+          code: refusal.code,
+          message: translate(locale, refusal.message, refusal.vars),
+          details: said(locale, refusal.details) ?? null,
         },
       })
       return

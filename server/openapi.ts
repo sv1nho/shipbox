@@ -52,6 +52,7 @@ const ERROR_BODY = {
 }
 
 const errorResponses = {
+  400: { description: 'A body this API could not read as JSON.', ...ERROR_BODY },
   401: { description: 'No session.', ...ERROR_BODY },
   403: {
     description:
@@ -66,6 +67,7 @@ const errorResponses = {
       'store name too close to one that exists.',
     ...ERROR_BODY,
   },
+  413: { description: 'A body larger than 256 kB.', ...ERROR_BODY },
   422: {
     description:
       'The request was refused. Each entry of details names the field at fault in path, so a form ' +

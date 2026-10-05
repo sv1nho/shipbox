@@ -56,6 +56,47 @@ describe('notFoundHandler', () => {
   })
 })
 
+describe('a body express itself could not read', () => {
+  const bodyFailure = (type: string): Error => Object.assign(new SyntaxError('bad body'), { type })
+
+  it('calls unreadable json a bad request, not a server fault', () => {
+    const captured = run(bodyFailure('entity.parse.failed'), false)
+
+    expect(captured.status).toBe(400)
+    expect(captured.body).toMatchObject({
+      error: { code: 'BAD_REQUEST', message: 'The request body is not valid JSON.' },
+    })
+  })
+
+  it('says a body is too large rather than failing on it', () => {
+    const captured = run(bodyFailure('entity.too.large'), false)
+
+    expect(captured.status).toBe(413)
+    expect(captured.body).toMatchObject({ error: { code: 'PAYLOAD_TOO_LARGE' } })
+  })
+
+  it('says both in the language the caller reads', () => {
+    expect(run(bodyFailure('entity.parse.failed'), false, 'fr-BE').body)
+      .toMatchObject({ error: { message: 'Le corps de la requête n’est pas du JSON valide.' } })
+    expect(run(bodyFailure('entity.too.large'), false, 'fr-BE').body)
+      .toMatchObject({ error: { message: 'Le corps de la requête dépasse ce que cette API accepte.' } })
+  })
+
+  it('survives a thrown value that is not even an object', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    expect(run('a bare string', false).status).toBe(500)
+  })
+
+  it('still treats an error it does not know as a server fault', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const captured = run(Object.assign(new Error('boom'), { type: 'something.else' }), false)
+
+    expect(captured.status).toBe(500)
+  })
+})
+
 describe('createErrorHandler', () => {
   it('answers an AppError with its own status and code', () => {
     const captured = run(new AppError('CONFLICT', 'Already tracked.'), true)

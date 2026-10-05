@@ -55,6 +55,7 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run size` | weighs what the first page load downloads, against a budget |
 | `npm run e2e` | drives a real browser through the journeys, against a real database |
 | `npm run e2e:shots` | with `SHOTS=true`, photographs every page at four widths |
+| `npm run fuzz` | throws generated hostile bodies and queries at every route |
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:deploy` | applies existing migrations without creating new ones |
