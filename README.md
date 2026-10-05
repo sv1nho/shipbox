@@ -63,6 +63,11 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:restore` | restores a dump, see below |
 | `npm run clear` | deletes `node_modules`, the builds, the Prisma client **and `package-lock.json`** |
 
+In production the API also serves the built frontend from `dist/`, so both live on
+one origin and no CORS is needed. Hashed assets are cached for a year, `index.html`
+never. Security headers are set on every response, including a content security
+policy, and the API documentation is not served at all.
+
 Every `/api` route is rate limited per caller, 120 requests a minute by default,
 answering 429 with the same error shape as any other refusal. Behind a proxy that
 terminates TLS, set `TRUSTED_PROXY_HOPS`, or every visitor is counted as one.
