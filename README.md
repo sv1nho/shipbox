@@ -63,6 +63,10 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:restore` | restores a dump, see below |
 | `npm run clear` | deletes `node_modules`, the builds, the Prisma client **and `package-lock.json`** |
 
+Every `/api` route is rate limited per caller, 120 requests a minute by default,
+answering 429 with the same error shape as any other refusal. Behind a proxy that
+terminates TLS, set `TRUSTED_PROXY_HOPS`, or every visitor is counted as one.
+
 `npm test` runs three suites: `client` and `server` need nothing, while `db`
 checks the constraints against a real PostgreSQL. That one creates and migrates
 `<your database>_test` on its own, so the development data is never touched.

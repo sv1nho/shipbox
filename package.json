@@ -50,6 +50,7 @@
     "@tailwindcss/vite": "4.3.0",
     "better-auth": "1.7.3",
     "express": "5.2.1",
+    "express-rate-limit": "^8.7.0",
     "jsbarcode": "3.12.3",
     "jspdf": "4.2.1",
     "react": "19.2.7",

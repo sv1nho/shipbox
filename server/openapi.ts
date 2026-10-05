@@ -67,6 +67,11 @@ const errorResponses = {
       'can show the message beside it.',
     ...ERROR_BODY,
   },
+  429: {
+    description:
+      'Too many requests from the same caller. The RateLimit headers say when to come back.',
+    ...ERROR_BODY,
+  },
 }
 
 const transitionPath = (summary: string, schema: z.ZodType) => ({

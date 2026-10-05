@@ -33,6 +33,10 @@ export const envSchema = z
 
     WEB_ORIGIN: httpUrl,
 
+    TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
+
+    RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(120),
+
     BETTER_AUTH_URL: httpUrl,
     BETTER_AUTH_SECRET: z
       .string()

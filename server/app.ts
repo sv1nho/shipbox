@@ -4,17 +4,20 @@ import swaggerUi from 'swagger-ui-express'
 import { toNodeHandler } from 'better-auth/node'
 import { auth, enabledProviders } from './auth/auth.js'
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
+import { createApiLimiter } from './middleware/rate-limit.js'
 import { shipmentsRouter } from './routes/shipments.js'
 import { storesRouter } from './routes/stores.js'
 import { dashboardRouter } from './routes/dashboard.js'
 import { openApiDocument } from './openapi.js'
 import { prisma } from './prisma.js'
-import { isDevelopment, isProduction } from './env.js'
+import { env, isDevelopment, isProduction } from './env.js'
 
 export function createApp (): Express {
   const app = express()
 
   app.disable('x-powered-by')
+
+  if (env.TRUSTED_PROXY_HOPS > 0) app.set('trust proxy', env.TRUSTED_PROXY_HOPS)
 
   app.all('/api/auth/{*any}', toNodeHandler(auth))
 
@@ -37,6 +40,8 @@ export function createApp (): Express {
   })
 
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument))
+
+  app.use('/api', createApiLimiter(env.RATE_LIMIT_PER_MINUTE))
 
   app.use('/api/shipments', shipmentsRouter)
   app.use('/api/stores', storesRouter)

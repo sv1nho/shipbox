@@ -4,6 +4,7 @@ type ErrorCode =
   | 'CONFLICT'
   | 'VALIDATION_ERROR'
   | 'ILLEGAL_TRANSITION'
+  | 'TOO_MANY_REQUESTS'
   | 'INTERNAL_ERROR'
 
 const STATUS_BY_CODE: Record<ErrorCode, number> = {
@@ -12,6 +13,7 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   CONFLICT: 409,
   VALIDATION_ERROR: 422,
   ILLEGAL_TRANSITION: 409,
+  TOO_MANY_REQUESTS: 429,
   INTERNAL_ERROR: 500,
 }
 

@@ -54,6 +54,8 @@ export const FRENCH: Record<string, string> = {
     '{date} ne peut pas être antérieure à {previous}.',
 
   'Shipment not found.': 'Suivi introuvable.',
+  'Too many requests. Wait a moment before trying again.':
+    'Trop de requêtes. Patientez un instant avant de réessayer.',
   'Authentication required.': 'Connexion requise.',
   'This tracking number is already registered.': 'Ce numéro de suivi est déjà enregistré.',
   'Tracking number already used.': 'Numéro de suivi déjà utilisé.',
