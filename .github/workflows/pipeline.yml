@@ -161,8 +161,12 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Audit the dependencies
+      - name: Audit what production ships
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit the tooling, without blocking on it
         run: npm audit --audit-level=high
+        continue-on-error: true
 
       - name: Scan the history for secrets
         uses: gitleaks/gitleaks-action@v2
