@@ -6,18 +6,18 @@ import { LabelPreviewModal } from '../../components/LabelPreviewModal.js'
 const renderModal = () => {
   const handlers = { onClose: vi.fn(), onDownload: vi.fn(), onTrack: vi.fn() }
 
-  const { container } = render(
+  render(
     <LabelPreviewModal pdfUrl='about:blank#label' maskedTracking='3232 **** 4050' {...handlers} />
   )
 
-  return { ...handlers, container }
+  return handlers
 }
 
 describe('what it shows', () => {
   it('embeds the pdf it was handed', () => {
-    const { container } = renderModal()
+    renderModal()
 
-    expect(container.querySelector('iframe')).toHaveAttribute('src', 'about:blank#label')
+    expect(document.body.querySelector('iframe')).toHaveAttribute('src', 'about:blank#label')
   })
 
   it('shows the tracking number masked, never in full', () => {
@@ -58,9 +58,9 @@ describe('what each button does', () => {
 
 describe('the backdrop', () => {
   it('closes on a click beside the window', async () => {
-    const { onClose, container } = renderModal()
+    const { onClose } = renderModal()
 
-    await userEvent.click(container.querySelector('.modal-backdrop') as HTMLElement)
+    await userEvent.click(document.body.querySelector('.modal-backdrop') as HTMLElement)
 
     expect(onClose).toHaveBeenCalledOnce()
   })
