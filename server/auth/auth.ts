@@ -59,6 +59,9 @@ export const auth = betterAuth({
     enabled: true,
     window: 60,
     max: 30,
+    customRules: {
+      '/get-session': { window: 60, max: 300 },
+    },
   },
 })
 

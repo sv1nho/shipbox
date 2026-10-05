@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   screens:
-    name: How every page looks
+    name: How every page looks, and what the forms take
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -35,6 +35,7 @@ jobs:
       BETTER_AUTH_URL: http://127.0.0.1:3100
       BETTER_AUTH_SECRET: ci-only-secret-not-used-for-any-session
       SHOTS: 'true'
+      FUZZ_UI: 'true'
 
     steps:
       - name: Checkout
@@ -53,7 +54,7 @@ jobs:
       - name: Install the browser
         run: npx playwright install --with-deps chromium
 
-      - name: Walk every page at every width
+      - name: Walk every page, at every width, and throw text at the forms
         run: npm run e2e
 
       - name: Keep the screenshots
