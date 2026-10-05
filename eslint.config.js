@@ -3,6 +3,7 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import reactPlugin from "@eslint-react/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
+import security from "eslint-plugin-security";
 
 const reactRecommended = reactPlugin.configs["recommended-typescript"];
 
@@ -81,7 +82,24 @@ export default [
         clearInterval: "readonly",
       },
     },
+    plugins: { security },
     rules: {
+      ...security.configs.recommended.rules,
+      "security/detect-object-injection": "off",
+      "security/detect-non-literal-fs-filename": "off",
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "prisma",
+          property: "$queryRawUnsafe",
+          message: "Build the query with the tagged template, so the values stay parameters.",
+        },
+        {
+          object: "prisma",
+          property: "$executeRawUnsafe",
+          message: "Build the query with the tagged template, so the values stay parameters.",
+        },
+      ],
       "no-console": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -94,6 +112,11 @@ export default [
     },
   },
   
+  {
+    files: ["prisma/__tests__/schema.test.ts"],
+    rules: { "no-restricted-properties": "off" },
+  },
+
   {
     files: ["**/*.tsx"],
     plugins: {
