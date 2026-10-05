@@ -23,6 +23,7 @@
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "knip": "knip --no-progress",
+    "size": "tsx scripts/check-bundle.ts",
     "typecheck": "npm run typecheck:web && npm run typecheck:api",
     "typecheck:web": "tsc -p tsconfig.json --noEmit",
     "typecheck:api": "tsc -p tsconfig.server.json --noEmit",

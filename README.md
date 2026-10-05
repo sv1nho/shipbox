@@ -52,6 +52,7 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run lint` / `typecheck` / `test` | three of the checks CI runs |
 | `npm run lint:fix` | lint and fix what can be fixed automatically |
 | `npm run knip` | reports unused files, exports and dependencies |
+| `npm run size` | weighs what the first page load downloads, against a budget |
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:deploy` | applies existing migrations without creating new ones |
