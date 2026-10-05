@@ -58,10 +58,44 @@ describe('toCsv', () => {
     expect(row).toContain('"Zalando, Belgium"')
   })
 
+  it('stops a value a spreadsheet would run as a formula', () => {
+    const [, row] = toCsv([shipment({ store: '=1+1' })]).split('\r\n')
+
+    expect(row).toContain("'=1+1")
+  })
+
+  it.each(['=', '+', '-', '@'])('defuses a value starting with %s', (lead) => {
+    const rows = toCsv([shipment({ orderNumber: lead + 'HYPERLINK' })]).split('\r\n')
+
+    expect(rows[1]).toContain("'" + lead + 'HYPERLINK')
+  })
+
+  it('leaves a number alone, since a formula needs text', () => {
+    const [, row] = toCsv([shipment({ amountCents: 4999 })]).split('\r\n')
+
+    expect(row).toContain(',4999,')
+  })
+
   it('doubles a quote inside a value, the csv way of escaping it', () => {
     const [, row] = toCsv([shipment({ store: 'The "Shop"' })]).split('\r\n')
 
     expect(row).toContain('"The ""Shop"""')
+  })
+})
+
+describe('a formula defused on the way out', () => {
+  it('comes back as it was typed on the way in', () => {
+    const exported = toCsv([shipment({ store: '=1+1', orderNumber: '-5' })])
+    const [read] = parseCsv(exported)
+
+    expect(read.store).toBe('=1+1')
+    expect(read.orderNumber).toBe('-5')
+  })
+
+  it('keeps an apostrophe that was really part of the text', () => {
+    const [read] = parseCsv(`store\r\n"L'Occitane"`)
+
+    expect(read.store).toBe("L'Occitane")
   })
 })
 

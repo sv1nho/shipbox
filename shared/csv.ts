@@ -21,10 +21,13 @@ export const CSV_COLUMNS = [
   'trackingUrl',
 ] as const satisfies readonly (keyof ShipmentDto)[]
 
+const FORMULA_START = /^[=+\-@\t\r]/
+
 const escape = (value: string | number | boolean | null): string => {
   if (value === null) return ''
 
-  const text = String(value)
+  const text = typeof value === 'string' && FORMULA_START.test(value) ? `'${value}` : String(value)
+
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 
@@ -73,6 +76,9 @@ function splitRecords (text: string): string[][] {
   return records.filter((record) => record.some((value) => value.trim() !== ''))
 }
 
+const plainAgain = (value: string): string =>
+  value.startsWith("'") && FORMULA_START.test(value.slice(1)) ? value.slice(1) : value
+
 export function parseCsv (text: string): Record<string, string>[] {
   const [header, ...rows] = splitRecords(text)
 
@@ -81,6 +87,6 @@ export function parseCsv (text: string): Record<string, string>[] {
   const names = header.map((name) => name.trim())
 
   return rows.map((cells) =>
-    Object.fromEntries(names.map((name, index) => [name, (cells[index] ?? '').trim()]))
+    Object.fromEntries(names.map((name, index) => [name, plainAgain((cells[index] ?? '').trim())]))
   )
 }
