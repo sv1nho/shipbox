@@ -116,6 +116,8 @@ const shipment = (store: string, note: string | null): ShipmentDto => ({
   needsAction: false,
   shippingLate: false,
   labelExpiring: false,
+  daysLeft: null,
+  awaitingReply: false,
   daysSinceRequested: 0,
   daysSinceDropoff: null,
   daysSinceReceived: null,
