@@ -110,6 +110,7 @@ model Shipment {
 
   @@index([userId, status])
   @@index([userId, archivedAt])
+  @@index([userId, requestedDate(sort: Desc)])
   @@index([storeId])
   @@map("shipments")
 }

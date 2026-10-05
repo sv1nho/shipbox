@@ -43,7 +43,8 @@
     "db:restore": "tsx scripts/db-restore.ts",
     "clear": "rimraf node_modules dist coverage server/generated package-lock.json",
     "postinstall": "npm run db:generate",
-    "e2e:hostile": "playwright test hostile-input"
+    "e2e:hostile": "playwright test hostile-input",
+    "measure": "tsx scripts/measure-list.ts"
   },
   "license": "ISC",
   "engines": {
