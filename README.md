@@ -88,6 +88,18 @@ only one the API serves. The compiled server lands in `dist/api`, out of reach o
 production carries no transpiler. CI installs exactly this way, boots the result
 and calls `/api/health`, so the path cannot rot unnoticed.
 
+### Container
+
+`docker build -t shipbox .` then `docker run -p 3000:3000 --env-file .env shipbox`.
+The first stage installs everything and builds; the runtime stage keeps only the
+production tree and `dist`, runs as the unprivileged `node` user, and binds
+`0.0.0.0` because `127.0.0.1` would be unreachable from outside the container.
+
+Migrations are not in the image. `prisma migrate deploy` needs the Prisma CLI and
+`prisma.config.ts`, both of which belong to the toolchain, so run `npm run db:deploy`
+from a context that has the dev dependencies — a release step or a one-off task —
+before rolling the new image out.
+
 In production the API also serves the built frontend from `dist/`, so both live on
 one origin and no CORS is needed. Hashed assets are cached for a year, `index.html`
 never. Security headers are set on every response, including a content security
