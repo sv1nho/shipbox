@@ -112,8 +112,7 @@
     "vitest": "4.1.11"
   },
   "overrides": {
-    "deepmerge-ts": "^8.0.2",
-    "mysql2": "^3.24.4"
+    "cross-spawn": "7.0.3"
   },
   "allowScripts": {
     "@prisma/engines@7.10.0": true,
