@@ -177,8 +177,10 @@ describe('filling with random data', () => {
 
     await userEvent.click(sender.getByRole('button', { name: /random data/i }))
 
-    expect(sender.getByLabelText('First name')).not.toHaveValue('')
-    expect(sender.getByLabelText('Last name')).not.toHaveValue('')
+    await waitFor(() => {
+      expect(sender.getByLabelText('First name')).not.toHaveValue('')
+      expect(sender.getByLabelText('Last name')).not.toHaveValue('')
+    })
   })
 
   it('invents a company name for a company', async () => {
@@ -188,7 +190,9 @@ describe('filling with random data', () => {
     await userEvent.click(recipient.getByRole('button', { name: 'Company' }))
     await userEvent.click(recipient.getByRole('button', { name: /random data/i }))
 
-    expect(recipient.getByLabelText('Company name')).not.toHaveValue('')
+    await waitFor(() => {
+      expect(recipient.getByLabelText('Company name')).not.toHaveValue('')
+    })
   })
 })
 
