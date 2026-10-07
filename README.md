@@ -69,6 +69,11 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:restore` | restores a dump, see below |
 | `npm run clear` | deletes `node_modules`, the builds, the Prisma client **and `package-lock.json`** |
 
+A production install is `npm ci --omit=dev --omit=optional`. The second flag
+matters: Better Auth declares vitest, vite and typescript as optional peers, and
+without it npm installs the whole test toolchain beside the server — 435 MB
+instead of 122 MB, with advisories that belong to tooling.
+
 In production the API also serves the built frontend from `dist/`, so both live on
 one origin and no CORS is needed. Hashed assets are cached for a year, `index.html`
 never. Security headers are set on every response, including a content security

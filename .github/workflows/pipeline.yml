@@ -162,7 +162,7 @@ jobs:
           node-version: '24'
 
       - name: Audit what production ships
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev --omit=optional --audit-level=high
 
       - name: Audit the tooling, without blocking on it
         run: npm audit --audit-level=high
