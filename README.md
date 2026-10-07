@@ -48,7 +48,10 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run dev` | frontend and API together |
 | `npm run dev:web` / `dev:api` | either one on its own |
 | `npm run start:api` | the API without file watching |
-| `npm run build` / `preview` | production build of the frontend, and a local preview of it |
+| `npm run build` | the frontend into `dist/web`, then the server into `dist/api` |
+| `npm run build:web` / `build:api` | either half on its own |
+| `npm start` | the compiled server, the way production runs it |
+| `npm run preview` | a local preview of the built frontend |
 | `npm run lint` / `typecheck` / `test` | three of the checks CI runs |
 | `npm run lint:fix` | lint and fix what can be fixed automatically |
 | `npm run knip` | reports unused files, exports and dependencies |
@@ -70,10 +73,20 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:restore` | restores a dump, see below |
 | `npm run clear` | deletes `node_modules`, the builds, the Prisma client **and `package-lock.json`** |
 
-A production install is `npm ci --omit=dev --omit=optional`. The second flag
-matters: Better Auth declares vitest, vite and typescript as optional peers, and
-without it npm installs the whole test toolchain beside the server — 435 MB
-instead of 122 MB, with advisories that belong to tooling.
+A production install is `npm ci --omit=dev --omit=optional --ignore-scripts`,
+and `npm run build` then `npm start` on top of it. The flags each earn their
+place. `--omit=optional` matters because Better Auth declares vitest, vite and
+typescript as optional peers, and without it npm installs the whole test
+toolchain beside the server — 435 MB instead of 122 MB, with advisories that
+belong to tooling. `--ignore-scripts` matters because `postinstall` generates the
+Prisma client through a CLI that lives in devDependencies; the build does that
+step instead, and no dependency gets to run code on the server during install.
+
+`npm run build` writes two trees. The frontend lands in `dist/web`, which is the
+only one the API serves. The compiled server lands in `dist/api`, out of reach of
+`express.static`, and `npm start` runs `dist/api/server/index.js` with plain Node —
+production carries no transpiler. CI installs exactly this way, boots the result
+and calls `/api/health`, so the path cannot rot unnoticed.
 
 In production the API also serves the built frontend from `dist/`, so both live on
 one origin and no CORS is needed. Hashed assets are cached for a year, `index.html`

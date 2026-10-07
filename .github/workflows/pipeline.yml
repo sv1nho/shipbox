@@ -39,7 +39,22 @@ jobs:
     name: Build
     needs: quality-code
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ship_box
+          POSTGRES_PASSWORD: ship_box
+          POSTGRES_DB: ship_box
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout
@@ -53,6 +68,36 @@ jobs:
 
       - name: First load budget
         run: npm run size
+
+      - name: Boot what production would install, and call it
+        env:
+          NODE_ENV: production
+          DATABASE_URL: postgresql://ship_box:ship_box@127.0.0.1:5432/ship_box
+          API_HOST: 127.0.0.1
+          API_PORT: '3400'
+          WEB_ORIGIN: https://shipbox.example
+          BETTER_AUTH_URL: https://shipbox.example
+          BETTER_AUTH_SECRET: ci-only-secret-not-used-for-any-session
+          GOOGLE_CLIENT_ID: ci-only-not-a-real-client
+          GOOGLE_CLIENT_SECRET: ci-only-not-a-real-secret
+        run: |
+          npm ci --omit=dev --omit=optional --ignore-scripts
+
+          node dist/api/server/index.js &
+          booted=$!
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3400/api/health -o health.json; then break; fi
+            sleep 1
+          done
+
+          echo "health: $(cat health.json)"
+          grep -q '"database":"up"' health.json
+
+          test "$(curl -fsS -o /dev/null -w '%{http_code}' http://127.0.0.1:3400/)" = 200
+          curl -fsS http://127.0.0.1:3400/server/index.js | grep -q '<!doctype html>'
+
+          kill "$booted" || true
 
   unit-test:
     name: Unit test
