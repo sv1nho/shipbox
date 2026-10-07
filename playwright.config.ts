@@ -32,7 +32,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm run e2e:db && npm run build && npm run start:api',
+    command: 'npm run e2e:db && npm run build:web && npm run start:api',
     url: `${BASE_URL}/api/health`,
     reuseExistingServer: false,
     timeout: 180_000,

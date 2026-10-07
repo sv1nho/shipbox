@@ -16,10 +16,13 @@
     "dev": "concurrently -k -n web,api -c cyan,magenta \"npm:dev:web\" \"npm:dev:api\"",
     "dev:web": "vite --host",
     "dev:api": "tsx watch server/index.ts",
+    "start": "node dist/api/server/index.js",
     "start:api": "tsx server/index.ts",
     "test": "vitest run --coverage --project client --project server --project db",
     "fuzz": "vitest run --project fuzz",
-    "build": "vite build",
+    "build": "npm run build:web && npm run build:api",
+    "build:web": "vite build",
+    "build:api": "npm run db:generate && tsc -p tsconfig.build.json",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
@@ -42,11 +45,11 @@
     "db:backup": "tsx scripts/db-backup.ts",
     "db:restore": "tsx scripts/db-restore.ts",
     "clear": "rimraf node_modules dist coverage server/generated package-lock.json",
-    "postinstall": "npm run db:generate",
     "e2e:hostile": "playwright test hostile-input",
     "measure": "tsx scripts/measure-list.ts",
     "measure:api": "tsx scripts/measure-api.ts",
-    "advisories": "tsx scripts/advisories.ts"
+    "advisories": "tsx scripts/advisories.ts",
+    "postinstall": "npm run db:generate"
   },
   "license": "ISC",
   "engines": {

@@ -16,7 +16,7 @@ import { openApiDocument } from './openapi.js'
 import { prisma } from './prisma.js'
 import { env, isDevelopment, isProduction } from './env.js'
 
-const WEB_APP_ROOT = resolve('dist')
+const WEB_APP_ROOT = resolve('dist', 'web')
 
 export function createApp (): Express {
   const app = express()

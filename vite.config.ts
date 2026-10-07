@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      outDir: 'dist/web',
+    },
     server: {
       port: 5173,
       open: true,

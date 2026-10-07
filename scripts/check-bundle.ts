@@ -3,14 +3,14 @@ import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 
 const BUDGET_KB = 185
-const BUILD = 'dist'
+const BUILD = join('dist', 'web')
 
 const html = readFileSync(join(BUILD, 'index.html'), 'utf8')
 
 const firstLoad = [...html.matchAll(/(?:src|href)="\/([^"]+\.js)"/g)].map((match) => match[1])
 
 if (firstLoad.length === 0) {
-  console.error('No script found in dist/index.html. Run `npm run build` first.')
+  console.error('No script found in the built index.html. Run `npm run build` first.')
   process.exit(1)
 }
 
