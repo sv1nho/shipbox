@@ -16,3 +16,6 @@ backups
 e2e/.auth
 e2e/.results
 e2e/.shots
+
+# Report written by `npm run advisories`, carried into the pull request body
+advisories.md
