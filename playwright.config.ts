@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 import { e2eDatabaseUrl } from './e2e/database.js'
 
+const databaseUrl = (): string =>
+  process.env.DATABASE_URL === undefined ? '' : e2eDatabaseUrl()
+
 const PORT = 3100
 const BASE_URL = `http://127.0.0.1:${String(PORT)}`
 
@@ -42,7 +45,7 @@ export default defineConfig({
       API_HOST: '127.0.0.1',
       WEB_ORIGIN: BASE_URL,
       BETTER_AUTH_URL: BASE_URL,
-      DATABASE_URL: e2eDatabaseUrl(),
+      DATABASE_URL: databaseUrl(),
       RATE_LIMIT_PER_MINUTE: '100000',
     },
   },
