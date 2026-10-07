@@ -128,20 +128,23 @@ const installedVersion = (name: string): string | null => {
   return nested?.[1].version ?? null
 }
 
-const safeVersion = async (name: string, vulnerable: string): Promise<string | null> => {
+const safeVersions = async (name: string, vulnerable: string): Promise<string[]> => {
   const packument = await packumentOf(name)
 
-  if (packument === null) return null
+  if (packument === null) return []
 
-  const safe = Object.keys(packument.versions)
+  return Object.keys(packument.versions)
     .filter((version) => semver.valid(version) !== null && semver.prerelease(version) === null)
     .filter((version) => !semver.satisfies(version, vulnerable))
     .sort(semver.compare)
+}
 
-  const installed = installedVersion(name)
-  const forward = installed === null ? safe : safe.filter((version) => semver.gte(version, installed))
+const nearest = (versions: string[], installed: string | null): string | null => {
+  const forward = installed === null
+    ? versions
+    : versions.filter((version) => semver.gte(version, installed))
 
-  return forward.at(0) ?? safe.at(-1) ?? null
+  return forward.at(0) ?? versions.at(-1) ?? null
 }
 
 const parentsOf = (name: string): { name: string; wants: string; direct: boolean }[] => {
@@ -163,6 +166,18 @@ const parentsOf = (name: string): { name: string; wants: string; direct: boolean
   }
 
   return [...found.values()]
+}
+
+const safeVersion = async (
+  name: string,
+  vulnerable: string,
+  parents: { wants: string }[]
+): Promise<string | null> => {
+  const safe = await safeVersions(name, vulnerable)
+  const agreed = safe.filter((version) => parents.every((one) => semver.satisfies(version, one.wants)))
+  const installed = installedVersion(name)
+
+  return nearest(agreed, installed) ?? nearest(safe, installed)
 }
 
 const smallestAccepting = async (
@@ -205,10 +220,16 @@ const addOverride = (name: string, version: string): void => {
   writeManifest(whole)
 }
 
-const dropStaleOverrides = (): { name: string; forced: string }[] => {
-  const overrides = Object.entries(manifest().overrides ?? {})
+const removeOverrides = (names: string[]): void => {
+  const stays = Object.entries(manifest().overrides ?? {}).filter(([name]) => !names.includes(name))
+  const whole = wholeManifest()
 
-  const stale = overrides.filter(([name, forced]) => {
+  whole.overrides = stays.length === 0 ? undefined : Object.fromEntries(stays)
+  writeManifest(whole)
+}
+
+const dropStaleOverrides = (): { name: string; forced: string }[] => {
+  const stale = Object.entries(manifest().overrides ?? {}).filter(([name, forced]) => {
     const parents = parentsOf(name)
 
     return parents.length > 0 && parents.every((parent) => semver.satisfies(forced, parent.wants))
@@ -216,13 +237,30 @@ const dropStaleOverrides = (): { name: string; forced: string }[] => {
 
   if (stale.length === 0) return []
 
-  const stays = overrides.filter(([name]) => !stale.some(([gone]) => gone === name))
-  const whole = wholeManifest()
-
-  whole.overrides = stays.length === 0 ? undefined : Object.fromEntries(stays)
-  writeManifest(whole)
+  removeOverrides(stale.map(([name]) => name))
 
   return stale.map(([name, forced]) => ({ name, forced }))
+}
+
+const reconsiderOverride = (
+  advisory: Advisory,
+  wanted: string,
+  parents: { wants: string }[],
+  forced: string
+): Omit<Outcome, 'fixed'> => {
+  if (parents.every((parent) => semver.satisfies(wanted, parent.wants))) {
+    removeOverrides([advisory.name])
+
+    return {
+      advisory,
+      done: 'override dropped',
+      detail: `it pinned ${forced}, which carries the advisory, and every parent takes ${wanted} on its own`,
+    }
+  }
+
+  addOverride(advisory.name, wanted)
+
+  return { advisory, done: 'override raised', detail: `from ${forced} to ${wanted}` }
 }
 
 const treatDirect = (advisory: Advisory, wanted: string): Omit<Outcome, 'fixed'> => {
@@ -245,17 +283,21 @@ const treatDirect = (advisory: Advisory, wanted: string): Omit<Outcome, 'fixed'>
 }
 
 const treat = async (advisory: Advisory): Promise<Omit<Outcome, 'fixed'>> => {
-  const wanted = await safeVersion(advisory.name, advisory.vulnerable)
+  const parents = parentsOf(advisory.name)
+  const wanted = await safeVersion(advisory.name, advisory.vulnerable, parents)
 
   if (wanted === null) {
     return { advisory, done: 'left alone', detail: 'no published version of it is free of the advisory' }
   }
 
+  const forced = manifest().overrides?.[advisory.name]
+
+  if (forced !== undefined) return reconsiderOverride(advisory, wanted, parents, forced)
+
   const declared = { ...manifest().dependencies, ...manifest().devDependencies }
 
   if (advisory.name in declared) return treatDirect(advisory, wanted)
 
-  const parents = parentsOf(advisory.name)
   const refusing = parents.filter((parent) => !semver.satisfies(wanted, parent.wants))
 
   if (refusing.length === 0) {
@@ -395,10 +437,13 @@ const left = listAdvisories()
 const forcedAgain = manifest().overrides ?? {}
 const dropped = letGo.filter(({ name }) => !(name in forcedAgain))
 
-const outcomes: Outcome[] = acted.map((outcome) => ({
-  ...outcome,
-  fixed: !left.some((one) => one.name === outcome.advisory.name),
-}))
+const outcomes: Outcome[] = acted.map((outcome) => {
+  const fixed = !left.some((one) => one.name === outcome.advisory.name)
+
+  return fixed && outcome.done === 'left alone'
+    ? { ...outcome, done: 'fixed', detail: 'another change in this run took it along', fixed }
+    : { ...outcome, fixed }
+})
 
 const written = report(outcomes, dropped, opened.length, left)
 
