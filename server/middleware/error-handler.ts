@@ -10,6 +10,8 @@ const isDetail = (value: unknown): value is Detail =>
   typeof value === 'object' && value !== null &&
   typeof (value as Detail).path === 'string' && typeof (value as Detail).message === 'string'
 
+const oneLine = (value: string): string => value.replaceAll(/[\r\n]/g, ' ')
+
 const said = (locale: Locale, details: unknown): unknown =>
   Array.isArray(details) && details.every(isDetail)
     ? details.map((detail: Detail) => ({
@@ -55,7 +57,12 @@ export function createErrorHandler ({ exposeDetails, logRefusals }: HandlerOptio
 
       if (logRefusals) {
         console.warn(
-          `${req.method} ${req.path} -> ${String(refusal.status)} ${refusal.code}: ${english}`,
+          '%s %s -> %s %s: %s',
+          req.method,
+          oneLine(req.path),
+          refusal.status,
+          refusal.code,
+          oneLine(english),
           refusal.details ?? ''
         )
       }

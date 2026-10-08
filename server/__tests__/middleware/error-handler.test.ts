@@ -162,7 +162,12 @@ describe('createErrorHandler', () => {
     run(new AppError('VALIDATION_ERROR', 'Some details were refused.', details), true, undefined, true)
 
     expect(console.warn).toHaveBeenCalledWith(
-      'GET /api/unknown -> 422 VALIDATION_ERROR: Some details were refused.',
+      '%s %s -> %s %s: %s',
+      'GET',
+      '/api/unknown',
+      422,
+      'VALIDATION_ERROR',
+      'Some details were refused.',
       details
     )
   })
@@ -170,7 +175,37 @@ describe('createErrorHandler', () => {
   it('logs a refusal that names no field without printing undefined after it', () => {
     run(new AppError('NOT_FOUND', 'Shipment not found.'), true, undefined, true)
 
-    expect(console.warn).toHaveBeenCalledWith('GET /api/unknown -> 404 NOT_FOUND: Shipment not found.', '')
+    expect(console.warn).toHaveBeenCalledWith(
+      '%s %s -> %s %s: %s',
+      'GET',
+      '/api/unknown',
+      404,
+      'NOT_FOUND',
+      'Shipment not found.',
+      ''
+    )
+  })
+
+  it('cannot be made to swallow the details by a path that reads as a format token', () => {
+    const { res } = fakeResponse()
+    const details = [{ path: 'store', message: 'Say which store the parcel goes back to.' }]
+
+    createErrorHandler({ exposeDetails: true, logRefusals: true })(
+      new AppError('VALIDATION_ERROR', 'Some details were refused.', details),
+      fakeRequest('GET', '/%s'),
+      res,
+      (() => {}) as NextFunction
+    )
+
+    expect(console.warn).toHaveBeenCalledWith(
+      '%s %s -> %s %s: %s',
+      'GET',
+      '/%s',
+      422,
+      'VALIDATION_ERROR',
+      'Some details were refused.',
+      details
+    )
   })
 
   it('keeps refusals out of the log outside development, even where details are exposed', () => {
