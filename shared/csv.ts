@@ -3,6 +3,8 @@ import type { ShipmentDto } from './shipment.js'
 export const CSV_COLUMNS = [
   'trackingNumber',
   'carrier',
+  'recipientPostalCode',
+  'recipientCountry',
   'status',
   'store',
   'storeSupportEmail',
