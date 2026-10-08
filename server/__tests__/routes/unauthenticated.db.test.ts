@@ -4,7 +4,7 @@ import { createApp } from '../../app.js'
 import { prisma } from '../../prisma.js'
 import { bodyOf } from './http.js'
 import type { ApiError } from './http.js'
-import { REGISTERED } from '../registered-routes.js'
+import { REGISTERED, ROUTERS } from '../registered-routes.js'
 
 const app = createApp()
 
@@ -19,6 +19,14 @@ describe('every private route without a session', () => {
     method,
     path: path.replace(/\{\w+\}/g, SOME_ID),
   }))
+
+  it('knows every router the app mounts, so a new one cannot escape this check', () => {
+    const stack = (app as unknown as {
+      router: { stack: { handle?: { stack?: unknown[] } }[] }
+    }).router.stack
+
+    expect(stack.filter((layer) => Array.isArray(layer.handle?.stack))).toHaveLength(ROUTERS.length)
+  })
 
   it('reaches every router mounted, not only the shipments', () => {
     expect(PRIVATE.map(({ path }) => path)).toEqual(
@@ -57,12 +65,6 @@ describe('routes that stay public', () => {
 
   it('serves the provider list', async () => {
     await request(app).get('/api/config').expect(200)
-  })
-
-  it('serves the openapi document', async () => {
-    const response = await request(app).get('/api/openapi.json').expect(200)
-
-    expect(bodyOf(response).openapi).toBe('3.1.0')
   })
 })
 

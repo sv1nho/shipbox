@@ -135,20 +135,16 @@ stale: run `npm run db:generate` and reload the TypeScript server.
 The PostgreSQL host port is **5433** rather than 5432, so the container can live
 alongside a native Postgres install.
 
-## API documentation
+## The API
 
-With the API running outside production, the full document is served as JSON at
-<http://localhost:5173/api/openapi.json>. It answers without a session, and
-describes the shape of the API, never any data. Production closes the route, so
-the document never ships. Point any OpenAPI viewer at that URL to browse it; the
-server carries no viewer of its own, because 12 MB of browser assets have no
-business in a server image.
+The routes live in `server/routes`, and the shapes they accept are the Zod
+schemas in `shared/`, which the client imports as types. Those schemas are the
+contract: the server validates every body and query against them, so a route
+cannot drift from what the client sends.
 
-The request bodies are generated from the same Zod schemas the routes validate
-with, so they cannot drift. The rest is kept honest by `server/__tests__/openapi.test.ts`,
-which fails when a route is added without being documented, when the document
-lists one that does not exist, or when the dashboard figures and error codes it
-describes stop matching what the server sends.
+`server/__tests__/routes/unauthenticated.db.test.ts` walks every mounted route
+and fails unless it refuses an anonymous caller, so a new route cannot ship
+without authentication by accident.
 
 Every refusal comes back in the same shape:
 

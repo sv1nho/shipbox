@@ -11,7 +11,6 @@ import { cacheBuiltFiles, createSecurityHeaders, createWebAppFallback } from './
 import { shipmentsRouter } from './routes/shipments.js'
 import { storesRouter } from './routes/stores.js'
 import { dashboardRouter } from './routes/dashboard.js'
-import { openApiDocument } from './openapi.js'
 import { prisma } from './prisma.js'
 import { env, isDevelopment, isProduction } from './env.js'
 
@@ -42,12 +41,6 @@ export function createApp (): Express {
   app.get('/api/config', (_req, res) => {
     res.json({ providers: enabledProviders })
   })
-
-  if (!isProduction) {
-    app.get('/api/openapi.json', (_req, res) => {
-      res.json(openApiDocument)
-    })
-  }
 
   app.use(express.static(WEB_APP_ROOT, { index: false, setHeaders: cacheBuiltFiles }))
 
