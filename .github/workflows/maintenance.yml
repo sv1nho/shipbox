@@ -56,6 +56,7 @@ jobs:
         with:
           name: screens
           path: e2e/.shots
+          include-hidden-files: true
           retention-days: 14
 
   fuzzing:
