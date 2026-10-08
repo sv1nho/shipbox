@@ -30,7 +30,6 @@
     "size": "tsx scripts/check-bundle.ts",
     "e2e": "playwright test",
     "e2e:db": "tsx e2e/prepare-database.ts",
-    "e2e:shots": "playwright test screens",
     "typecheck": "npm run typecheck:web && npm run typecheck:api",
     "typecheck:web": "tsc -p tsconfig.json --noEmit",
     "typecheck:api": "tsc -p tsconfig.server.json --noEmit",

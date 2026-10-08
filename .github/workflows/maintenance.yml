@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  screens:
-    name: How every page looks, and what the forms take
+  ui-fuzzing:
+    name: Hostile input against the forms
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -34,7 +34,6 @@ jobs:
       WEB_ORIGIN: http://127.0.0.1:3100
       BETTER_AUTH_URL: http://127.0.0.1:3100
       BETTER_AUTH_SECRET: ci-only-secret-not-used-for-any-session
-      SHOTS: 'true'
       FUZZ_UI: 'true'
 
     steps:
@@ -47,17 +46,8 @@ jobs:
       - name: Install the browser
         run: npx playwright install --with-deps chromium
 
-      - name: Walk every page, at every width, and throw text at the forms
+      - name: Throw generated text at every form
         run: npm run e2e
-
-      - name: Keep the screenshots
-        if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
-        with:
-          name: screens
-          path: e2e/.shots
-          include-hidden-files: true
-          retention-days: 14
 
   fuzzing:
     name: Hostile input against the api
