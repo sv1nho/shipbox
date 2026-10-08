@@ -7,6 +7,7 @@ import { auth, enabledProviders } from './auth/auth.js'
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
 import { createApiLimiter } from './middleware/rate-limit.js'
 import { createOriginGuard } from './middleware/same-origin.js'
+import { requestLog } from './middleware/request-log.js'
 import { cacheBuiltFiles, createSecurityHeaders, createWebAppFallback } from './middleware/web-app.js'
 import { shipmentsRouter } from './routes/shipments.js'
 import { storesRouter } from './routes/stores.js'
@@ -22,6 +23,8 @@ export function createApp (): Express {
   app.disable('x-powered-by')
 
   if (env.TRUSTED_PROXY_HOPS > 0) app.set('trust proxy', env.TRUSTED_PROXY_HOPS)
+
+  app.use('/api', requestLog)
 
   app.use(createSecurityHeaders(isProduction))
   app.use(compression())

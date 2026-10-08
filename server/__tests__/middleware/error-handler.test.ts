@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { NextFunction, Request, Response } from 'express'
+
+vi.mock('../../log.js', () => ({ log: vi.fn() }))
+
+import { log } from '../../log.js'
 import { createErrorHandler, notFoundHandler } from '../../middleware/error-handler.js'
 import { AppError } from '../../errors.js'
 
@@ -35,7 +39,7 @@ const run = (err: unknown, exposeDetails: boolean, language?: string, logRefusal
 }
 
 beforeEach(() => {
-  vi.spyOn(console, 'warn').mockImplementation(() => {})
+  vi.mocked(log).mockClear()
 })
 
 afterEach(() => {
@@ -83,13 +87,11 @@ describe('a body express itself could not read', () => {
   })
 
   it('survives a thrown value that is not even an object', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     expect(run('a bare string', false).status).toBe(500)
   })
 
   it('still treats an error it does not know as a server fault', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const captured = run(Object.assign(new Error('boom'), { type: 'something.else' }), false)
 
@@ -161,29 +163,27 @@ describe('createErrorHandler', () => {
 
     run(new AppError('VALIDATION_ERROR', 'Some details were refused.', details), true, undefined, true)
 
-    expect(console.warn).toHaveBeenCalledWith(
-      '%s %s -> %s %s: %s',
-      'GET',
-      '/api/unknown',
-      422,
-      'VALIDATION_ERROR',
-      'Some details were refused.',
-      details
-    )
+    expect(log).toHaveBeenCalledWith('warn', 'refused', {
+      request: undefined,
+      method: 'GET',
+      path: '/api/unknown',
+      status: 422,
+      code: 'VALIDATION_ERROR',
+      reason: 'Some details were refused.',
+    })
   })
 
   it('logs a refusal that names no field without printing undefined after it', () => {
     run(new AppError('NOT_FOUND', 'Shipment not found.'), true, undefined, true)
 
-    expect(console.warn).toHaveBeenCalledWith(
-      '%s %s -> %s %s: %s',
-      'GET',
-      '/api/unknown',
-      404,
-      'NOT_FOUND',
-      'Shipment not found.',
-      ''
-    )
+    expect(log).toHaveBeenCalledWith('warn', 'refused', {
+      request: undefined,
+      method: 'GET',
+      path: '/api/unknown',
+      status: 404,
+      code: 'NOT_FOUND',
+      reason: 'Shipment not found.',
+    })
   })
 
   it('cannot be made to swallow the details by a path that reads as a format token', () => {
@@ -197,25 +197,16 @@ describe('createErrorHandler', () => {
       (() => {}) as NextFunction
     )
 
-    expect(console.warn).toHaveBeenCalledWith(
-      '%s %s -> %s %s: %s',
-      'GET',
-      '/%s',
-      422,
-      'VALIDATION_ERROR',
-      'Some details were refused.',
-      details
-    )
+    expect(log).toHaveBeenCalledWith('warn', 'refused', expect.objectContaining({ path: '/%s' }))
   })
 
   it('keeps refusals out of the log outside development, even where details are exposed', () => {
     run(new AppError('CONFLICT', 'Already tracked.'), true)
 
-    expect(console.warn).not.toHaveBeenCalled()
+    expect(log).not.toHaveBeenCalledWith('warn', 'refused', expect.anything())
   })
 
   it('turns an unexpected error into a 500 that reveals nothing by itself', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const captured = run(new Error('connect ECONNREFUSED 127.0.0.1:5433'), false)
 
@@ -226,7 +217,6 @@ describe('createErrorHandler', () => {
   })
 
   it('reveals the cause only when details are allowed', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const captured = run(new Error('connect ECONNREFUSED 127.0.0.1:5433'), true)
 
@@ -240,12 +230,13 @@ describe('createErrorHandler', () => {
   })
 
   it('logs the unexpected error rather than swallowing it', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const thrown = new Error('boom')
+    run(new Error('boom'), false)
 
-    run(thrown, false)
+    const [level, message, fields] = vi.mocked(log).mock.calls[0]
 
-    expect(spy).toHaveBeenCalledWith(thrown)
+    expect([level, message]).toEqual(['error', 'failed'])
+    expect(fields?.cause).toBe('boom')
+    expect(String(fields?.stack)).toContain('Error: boom')
   })
 
   it.each([
@@ -253,7 +244,6 @@ describe('createErrorHandler', () => {
     ['null', null],
     ['an object', { message: 'not an Error' }],
   ])('never exposes details for %s, even when details are allowed', (_label, thrown) => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const captured = run(thrown, true)
 

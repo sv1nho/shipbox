@@ -94,6 +94,19 @@ The first stage installs everything and builds; the runtime stage keeps only the
 production tree and `dist`, runs as the unprivileged `node` user, and binds
 `0.0.0.0` because `127.0.0.1` would be unreachable from outside the container.
 
+### Logs
+
+Everything the server has to say goes through `server/log.ts`, never `console`.
+In production it writes one JSON object per line on stdout, which a hosting
+platform indexes as it stands; in development it writes a short readable line.
+Errors go to stderr so a host can alert on them separately.
+
+Every request under `/api` is given an identifier, returned as `x-request-id`.
+An identifier a proxy already set is kept, so one trace spans the whole hop, and
+a header that does not look like an identifier is replaced rather than logged.
+A refusal, a failure and the access line for the same request all carry it, so
+one grep gathers everything that happened to a caller.
+
 Migrations are not in the image. `prisma migrate deploy` needs the Prisma CLI and
 `prisma.config.ts`, both of which belong to the toolchain, so run `npm run db:deploy`
 from a context that has the dev dependencies — a release step or a one-off task —
