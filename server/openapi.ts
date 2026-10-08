@@ -102,7 +102,7 @@ export const openApiDocument = {
       '\n\nError messages are written in the language the Accept-Language header asks for, French or ' +
       'English, and fall back to English. Field names, codes and every other value stay the same.' +
       '\n\nOutside this document, /api/health and /api/config answer without a session, and the ' +
-      'document itself is served at /api/openapi.json and browsable at /api/docs.',
+      'document itself is served at /api/openapi.json, outside production.',
   },
   tags: [{ name: 'shipments' }, { name: 'stores' }, { name: 'dashboard' }],
   paths: {

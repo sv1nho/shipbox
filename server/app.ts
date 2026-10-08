@@ -2,7 +2,6 @@ import { resolve } from 'node:path'
 import express from 'express'
 import type { Express } from 'express'
 import compression from 'compression'
-import swaggerUi from 'swagger-ui-express'
 import { toNodeHandler } from 'better-auth/node'
 import { auth, enabledProviders } from './auth/auth.js'
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js'
@@ -24,8 +23,6 @@ export function createApp (): Express {
   app.disable('x-powered-by')
 
   if (env.TRUSTED_PROXY_HOPS > 0) app.set('trust proxy', env.TRUSTED_PROXY_HOPS)
-
-  if (!isProduction) app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument))
 
   app.use(createSecurityHeaders(isProduction))
   app.use(compression())

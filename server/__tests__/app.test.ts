@@ -46,8 +46,4 @@ describe('what production does not serve', () => {
   it('keeps the api document to itself', async () => {
     await request(await productionApp()).get('/api/openapi.json').expect(404)
   })
-
-  it('closes the browsable documentation', async () => {
-    await request(await productionApp()).get('/api/docs/').expect(404)
-  })
 })

@@ -137,10 +137,12 @@ alongside a native Postgres install.
 
 ## API documentation
 
-With the API running, the full document is browsable at
-<http://localhost:5173/api/docs> and served as JSON at `/api/openapi.json`. Both
-answer without a session, so they are public once the app is deployed; they
-describe the shape of the API, never any data.
+With the API running outside production, the full document is served as JSON at
+<http://localhost:5173/api/openapi.json>. It answers without a session, and
+describes the shape of the API, never any data. Production closes the route, so
+the document never ships. Point any OpenAPI viewer at that URL to browse it; the
+server carries no viewer of its own, because 12 MB of browser assets have no
+business in a server image.
 
 The request bodies are generated from the same Zod schemas the routes validate
 with, so they cannot drift. The rest is kept honest by `server/__tests__/openapi.test.ts`,
