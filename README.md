@@ -270,3 +270,8 @@ on the same account, rather than failing or creating a duplicate.
 
 When the app is deployed, register the production URLs the same way and update
 `BETTER_AUTH_URL` and `WEB_ORIGIN`.
+
+## License
+
+ISC, see [LICENSE](LICENSE). You may use, change and redistribute this, with or
+without charge, as long as the copyright notice travels with it.
