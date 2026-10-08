@@ -133,6 +133,9 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
+      - name: Check the migrations still describe the schema
+        run: npm run db:check
+
       - name: Test, with the coverage thresholds
         run: npm test
 

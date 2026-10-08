@@ -38,6 +38,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev && npm run db:generate",
     "db:deploy": "prisma migrate deploy && npm run db:generate",
+    "db:check": "prisma migrate deploy && prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code",
     "db:reset": "prisma migrate reset && npm run db:generate",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",

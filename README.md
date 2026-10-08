@@ -64,6 +64,7 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:deploy` | applies existing migrations without creating new ones |
+| `npm run db:check` | applies them, then fails if the schema has drifted away from them |
 | `npm run db:reset` | **drops the development database** and replays every migration |
 | `npm run db:generate` | regenerates the Prisma client |
 | `npm run db:studio` | Prisma database browser |
@@ -106,6 +107,10 @@ An identifier a proxy already set is kept, so one trace spans the whole hop, and
 a header that does not look like an identifier is replaced rather than logged.
 A refusal, a failure and the access line for the same request all carry it, so
 one grep gathers everything that happened to a caller.
+
+CI runs `npm run db:check` on every push: it applies the migrations to a fresh
+database and then compares it with `schema.prisma`, so a model edited without a
+migration fails there rather than on a deploy that silently changes nothing.
 
 Migrations are not in the image. `prisma migrate deploy` needs the Prisma CLI and
 `prisma.config.ts`, both of which belong to the toolchain, so run `npm run db:deploy`
