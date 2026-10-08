@@ -10,7 +10,7 @@ const isDetail = (value: unknown): value is Detail =>
   typeof value === 'object' && value !== null &&
   typeof (value as Detail).path === 'string' && typeof (value as Detail).message === 'string'
 
-const oneLine = (value: string): string => value.replaceAll(/[\r\n]/g, ' ')
+const oneLine = (value: string): string => value.replace(/[\r\n]/g, ' ')
 
 const said = (locale: Locale, details: unknown): unknown =>
   Array.isArray(details) && details.every(isDetail)
