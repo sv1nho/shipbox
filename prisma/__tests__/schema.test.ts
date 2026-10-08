@@ -412,3 +412,56 @@ describe('store search', () => {
     expect(rows).toHaveLength(1)
   })
 })
+
+describe('deleting a user', () => {
+  const LEAVING = 'constraint-tests-leaving'
+
+  const anAccount = async (): Promise<string> => {
+    await prisma.user.create({
+      data: { id: LEAVING, name: 'Leaving', email: `${LEAVING}@example.test` },
+    })
+
+    const store = await prisma.store.create({ data: { userId: LEAVING, name: 'Zalando' } })
+    const shipment = await prisma.shipment.create({
+      data: {
+        userId: LEAVING,
+        trackingNumber: `TRK-${String(Math.random()).slice(2)}`,
+        carrier: 'bpost',
+        recipientPostalCode: '2000',
+        recipientCountry: 'BE',
+        amountCents: 1000,
+        orderNumber: 'ZAL-2026-0001',
+        requestedDate: new Date('2026-04-01'),
+        storeId: store.id,
+      },
+    })
+
+    await prisma.label.create({ data: { shipmentId: shipment.id, payload: {} } })
+
+    return shipment.id
+  }
+
+  afterEach(async () => {
+    await prisma.shipment.deleteMany({ where: { userId: LEAVING } })
+    await prisma.store.deleteMany({ where: { userId: LEAVING } })
+    await prisma.user.deleteMany({ where: { id: LEAVING } })
+  })
+
+  it('takes every row the account owned with it, labels included', async () => {
+    const shipmentId = await anAccount()
+
+    await prisma.user.delete({ where: { id: LEAVING } })
+
+    expect(await prisma.shipment.count({ where: { userId: LEAVING } })).toBe(0)
+    expect(await prisma.store.count({ where: { userId: LEAVING } })).toBe(0)
+    expect(await prisma.label.count({ where: { shipmentId } })).toBe(0)
+  })
+
+  it('keeps a store a parcel still points at, so nothing is orphaned by accident', async () => {
+    await anAccount()
+
+    const store = await prisma.store.findFirstOrThrow({ where: { userId: LEAVING } })
+
+    await expect(prisma.store.delete({ where: { id: store.id } })).rejects.toThrow()
+  })
+})
