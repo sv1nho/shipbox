@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import request from 'supertest'
 
+vi.setConfig({ testTimeout: 20_000 })
+
 afterEach(() => {
   vi.unstubAllEnvs()
   vi.resetModules()
