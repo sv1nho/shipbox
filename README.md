@@ -167,6 +167,19 @@ Every refusal comes back in the same shape:
 `details` names the field at fault, so a form can put each message beside it.
 Send `Accept-Language: fr` to get the messages in French.
 
+## Leaving
+
+A signed-in person can delete their account from `/account`, reached from their
+name in the navigation bar. The confirmation names what disappears rather than
+asking whether they are sure, and points at the CSV export for anyone who wants
+to keep their returns.
+
+Deletion is immediate and total: the database cascades from the user row to
+their stores, returns and stored labels, which `prisma/__tests__/schema.test.ts`
+proves, and `e2e/deleting-an-account.spec.ts` walks the whole path in a browser.
+Better Auth only allows it from a recent sign-in, so an old session is asked to
+sign in again first.
+
 ## Languages
 
 English is the source language: every string in the code is written in English

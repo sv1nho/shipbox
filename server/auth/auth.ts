@@ -33,6 +33,10 @@ export const auth = betterAuth({
 
   emailAndPassword: { enabled: env.E2E_AUTH },
 
+  user: {
+    deleteUser: { enabled: true },
+  },
+
   socialProviders,
 
   account: {
