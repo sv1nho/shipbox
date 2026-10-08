@@ -37,6 +37,8 @@ export const envSchema = z
 
     RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(120),
 
+    DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
+
     E2E_AUTH: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
 
     BETTER_AUTH_URL: httpUrl,

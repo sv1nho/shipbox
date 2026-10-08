@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { signOut, useSession } from '../auth/client.js'
 import { LanguageToggle } from '../i18n/LanguageToggle.js'
 import { useT } from '../i18n/context.js'
@@ -85,12 +85,14 @@ export function Layout () {
           </div>
           {!isPending && session !== null && (
             <div className='navbar-user'>
-              <span className='navbar-avatar' aria-hidden='true'>
-                {initialOf(session.user.name, session.user.email)}
-              </span>
-              <span className='navbar-user-name' title={session.user.email}>
-                {session.user.name}
-              </span>
+              <Link className='navbar-identity' to='/account' aria-label={t('Your account')}>
+                <span className='navbar-avatar' aria-hidden='true'>
+                  {initialOf(session.user.name, session.user.email)}
+                </span>
+                <span className='navbar-user-name' title={session.user.email}>
+                  {session.user.name}
+                </span>
+              </Link>
               <button
                 type='button'
                 className='btn btn-ghost text-xs px-2.5 py-1'

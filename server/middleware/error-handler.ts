@@ -2,6 +2,7 @@ import type { ErrorRequestHandler, RequestHandler } from 'express'
 import { AppError } from '../errors.js'
 import type { Vars } from '../errors.js'
 import { localeOf, translate } from '../i18n/translate.js'
+import { log } from '../log.js'
 import type { Locale } from '../i18n/translate.js'
 
 type Detail = { path: string; message: string; vars?: Vars }
@@ -56,15 +57,14 @@ export function createErrorHandler ({ exposeDetails, logRefusals }: HandlerOptio
       const english = translate('en', refusal.message, refusal.vars)
 
       if (logRefusals) {
-        console.warn(
-          '%s %s -> %s %s: %s',
-          req.method,
-          oneLine(req.path),
-          refusal.status,
-          refusal.code,
-          oneLine(english),
-          refusal.details ?? ''
-        )
+        log('warn', 'refused', {
+          request: req.requestId,
+          method: req.method,
+          path: oneLine(req.path),
+          status: refusal.status,
+          code: refusal.code,
+          reason: oneLine(english),
+        })
       }
 
       const locale = localeOf(req.get('accept-language'))
@@ -79,7 +79,13 @@ export function createErrorHandler ({ exposeDetails, logRefusals }: HandlerOptio
       return
     }
 
-    console.error(err)
+    log('error', 'failed', {
+      request: req.requestId,
+      method: req.method,
+      path: oneLine(req.path),
+      cause: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    })
 
     res.status(500).json({
       error: {

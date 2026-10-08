@@ -2,23 +2,32 @@ import { createApp } from './app.js'
 import { env } from './env.js'
 import { enabledProviders } from './auth/auth.js'
 import { prisma } from './prisma.js'
+import { log } from './log.js'
 
 const app = createApp()
 
 if (enabledProviders.length === 0) {
-  console.warn('Sign-in is disabled: no OAuth provider is configured')
+  log('warn', 'sign-in is disabled, no OAuth provider is configured')
 } else {
-  console.log(`OAuth providers enabled: ${enabledProviders.join(', ')}`)
+  log('info', 'sign-in is ready', { providers: enabledProviders.join(',') })
 }
 
 const server = app.listen(env.API_PORT, env.API_HOST, () => {
-  console.log(
-    `API listening on http://${env.API_HOST}:${env.API_PORT} (${env.NODE_ENV})`
-  )
+  log('info', 'listening', { host: env.API_HOST, port: env.API_PORT, mode: env.NODE_ENV })
 })
 
+const GIVE_UP_AFTER = 10_000
+
 const shutdown = (signal: string): void => {
-  console.log(`\n${signal} received, shutting down`)
+  log('info', 'shutting down', { signal })
+
+  const giveUp = setTimeout(() => {
+    log('warn', 'a connection would not close in time, leaving anyway')
+    process.exit(1)
+  }, GIVE_UP_AFTER)
+
+  giveUp.unref()
+
   server.close(() => {
     void prisma.$disconnect().finally(() => {
       process.exit(0)

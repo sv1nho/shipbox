@@ -623,6 +623,18 @@ h1, h2, h3 { font-family: var(--font-display); }
     border-left: 1px solid var(--color-border);
   }
 
+  .navbar-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    border-radius: var(--radius-full);
+  }
+
+  .navbar-identity:hover .navbar-user-name {
+    color: var(--color-primary);
+  }
+
   .navbar-avatar {
     display: grid;
     place-items: center;
@@ -825,6 +837,24 @@ h1, h2, h3 { font-family: var(--font-display); }
   .card-busy {
     display: inline-flex;
     color: var(--color-text-subtle);
+  }
+
+  .account-identity {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  .account-identity dt {
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .account-identity dd {
+    margin: 0;
+    overflow-wrap: anywhere;
   }
 
   .consequence-list {

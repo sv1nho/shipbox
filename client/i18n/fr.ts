@@ -365,6 +365,27 @@ export const FRENCH: Record<string, string> = {
   [STORE_SPEED]: '{store} met {days} jours en moyenne, sur {measured} retours chronométrés',
   '{store} refunded {refunded} of {decided} decided returns':
     '{store} a remboursé {refunded} des {decided} retours tranchés',
+  'Your account': 'Votre compte',
+  'Email address': 'Adresse e-mail',
+  'Leaving ShipBox': 'Quitter ShipBox',
+  'Deleting the account removes everything it holds, on the spot and for good.':
+    'Supprimer le compte efface tout ce qu’il contient, immédiatement et définitivement.',
+  'Delete my account': 'Supprimer mon compte',
+  'Delete the account of {email}?': 'Supprimer le compte de {email} ?',
+  'every return you track, with all the dates you recorded':
+    'chaque retour que vous suivez, avec toutes les dates saisies',
+  'every store you added, and what each one owes you':
+    'chaque magasin ajouté, et ce que chacun vous doit',
+  'every stored label, so no PDF can be downloaded again':
+    'chaque étiquette conservée, donc plus aucun PDF à retélécharger',
+  'the way back in, since signing in again creates an empty account':
+    'le chemin du retour : se reconnecter crée un compte vide',
+  'Export your returns from the shipments page first if you want to keep them.':
+    'Exportez vos retours depuis la page des expéditions si vous voulez les garder.',
+  'Sign in again, then delete the account. This is only allowed from a fresh sign-in.':
+    'Reconnectez-vous, puis supprimez le compte. Ce n’est permis que depuis une connexion récente.',
+  'The account was not deleted. Try again in a moment.':
+    'Le compte n’a pas été supprimé. Réessayez dans un instant.',
   [STORE_NOTE]:
     'Les jours sont comptés depuis la réception du colis par le magasin, ou depuis le dépôt ' +
     'quand il n’est jamais arrivé, en moyenne sur {measured} retours tranchés. ' +

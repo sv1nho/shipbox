@@ -6,6 +6,7 @@ vi.mock('../auth/client.js', () => ({
   useSession: vi.fn(),
   signIn: { social: vi.fn() },
   signOut: vi.fn(),
+  deleteUser: vi.fn(),
 }))
 
 vi.mock('../api/shipments.js', () => ({
@@ -42,6 +43,7 @@ const PAGES = [
   ['/login', 'Sign in'],
   ['/shipments', 'Shipments'],
   ['/dashboard', 'Dashboard'],
+  ['/account', 'Your account'],
 ] as const
 
 beforeEach(() => {

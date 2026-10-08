@@ -57,7 +57,6 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run knip` | reports unused files, exports and dependencies |
 | `npm run size` | weighs what the first page load downloads, against a budget |
 | `npm run e2e` | drives a real browser through the journeys, against a real database |
-| `npm run e2e:shots` | with `SHOTS=true`, photographs every page at four widths |
 | `npm run fuzz` | throws generated hostile bodies and queries at every route |
 | `npm run advisories` | takes the smallest bump that closes each npm advisory, and writes `advisories.md` |
 | `npm run measure` | fills `<your database>_perf` and times the list query on it |
@@ -65,6 +64,7 @@ API, which avoids CORS and cross-origin cookies during development.
 | `npm run db:up` / `db:down` | PostgreSQL container |
 | `npm run db:migrate` | creates and applies migrations |
 | `npm run db:deploy` | applies existing migrations without creating new ones |
+| `npm run db:check` | applies them, then fails if the schema has drifted away from them |
 | `npm run db:reset` | **drops the development database** and replays every migration |
 | `npm run db:generate` | regenerates the Prisma client |
 | `npm run db:studio` | Prisma database browser |
@@ -94,6 +94,23 @@ and calls `/api/health`, so the path cannot rot unnoticed.
 The first stage installs everything and builds; the runtime stage keeps only the
 production tree and `dist`, runs as the unprivileged `node` user, and binds
 `0.0.0.0` because `127.0.0.1` would be unreachable from outside the container.
+
+### Logs
+
+Everything the server has to say goes through `server/log.ts`, never `console`.
+In production it writes one JSON object per line on stdout, which a hosting
+platform indexes as it stands; in development it writes a short readable line.
+Errors go to stderr so a host can alert on them separately.
+
+Every request under `/api` is given an identifier, returned as `x-request-id`.
+An identifier a proxy already set is kept, so one trace spans the whole hop, and
+a header that does not look like an identifier is replaced rather than logged.
+A refusal, a failure and the access line for the same request all carry it, so
+one grep gathers everything that happened to a caller.
+
+CI runs `npm run db:check` on every push: it applies the migrations to a fresh
+database and then compares it with `schema.prisma`, so a model edited without a
+migration fails there rather than on a deploy that silently changes nothing.
 
 Migrations are not in the image. `prisma migrate deploy` needs the Prisma CLI and
 `prisma.config.ts`, both of which belong to the toolchain, so run `npm run db:deploy`
@@ -154,6 +171,19 @@ Every refusal comes back in the same shape:
 
 `details` names the field at fault, so a form can put each message beside it.
 Send `Accept-Language: fr` to get the messages in French.
+
+## Leaving
+
+A signed-in person can delete their account from `/account`, reached from their
+name in the navigation bar. The confirmation names what disappears rather than
+asking whether they are sure, and points at the CSV export for anyone who wants
+to keep their returns.
+
+Deletion is immediate and total: the database cascades from the user row to
+their stores, returns and stored labels, which `prisma/__tests__/schema.test.ts`
+proves, and `e2e/deleting-an-account.spec.ts` walks the whole path in a browser.
+Better Auth only allows it from a recent sign-in, so an old session is asked to
+sign in again first.
 
 ## Languages
 
