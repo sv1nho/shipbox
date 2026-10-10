@@ -108,7 +108,7 @@ export function Layout () {
         <Outlet />
       </main>
       <div className='site-footer'>
-        <strong>ShipBox</strong> {t('— Bpost & PostNL shipping labels, 100% free')}
+        <strong>ShipBox</strong> {t('— Bpost & PostNL shipping labels')}
         <br />
         {t('© 2026 ShipBox — All rights reserved')}
       </div>

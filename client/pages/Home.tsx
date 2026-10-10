@@ -15,8 +15,6 @@ export const Home = () => {
 
       <div className='hero-badges'>
         <span className='badge-pill'>{t('Belgium · Netherlands · Germany')}</span>
-        <span className='badge-pill'>FR · NL · EN</span>
-        <span className='badge-pill'>{t('100% free')}</span>
       </div>
 
       <button

@@ -3,8 +3,7 @@ const HOME_LEAD =
   'Fill in the form, choose your carrier and language, and your label is ready.'
 
 const SIGN_IN_LEAD =
-  'Sign in to track your returns from drop-off to refund. ' +
-  'Generating labels stays free and needs no account.'
+  'Sign in to track your returns from drop-off to refund. '
 
 const SIGN_IN_NOTE =
   'No password is ever stored. Signing in only shares your name, ' +
@@ -47,7 +46,7 @@ export const FRENCH: Record<string, string> = {
   Dashboard: 'Tableau de bord',
   'Sign in': 'Se connecter',
   'Sign out': 'Se déconnecter',
-  '— Bpost & PostNL shipping labels, 100% free': '— Étiquettes Bpost et PostNL, 100% gratuit',
+  '— Bpost & PostNL shipping labels': '— Étiquettes Bpost et PostNL',
   '© 2026 ShipBox — All rights reserved': '© 2026 ShipBox — Tous droits réservés',
 
   [HOME_LEAD]:
@@ -55,14 +54,12 @@ export const FRENCH: Record<string, string> = {
     'Remplissez le formulaire, choisissez votre transporteur et votre langue, ' +
     'et votre étiquette est prête.',
   'Belgium · Netherlands · Germany': 'Belgique · Pays-Bas · Allemagne',
-  '100% free': '100% gratuit',
   'Go to the form': 'Aller au formulaire',
 
   'Checking your session…': 'Vérification de votre session…',
   'Loading sign-in options…': 'Chargement des options de connexion…',
   [SIGN_IN_LEAD]:
-    'Connectez-vous pour suivre vos retours, du dépôt au remboursement. ' +
-    'La création d’étiquettes reste gratuite et sans compte.',
+    'Connectez-vous pour suivre vos retours, du dépôt au remboursement. ',
   'Sign-in was cancelled or refused. You can try again.':
     'La connexion a été annulée ou refusée. Vous pouvez réessayer.',
   'No sign-in provider is configured on this server.':
