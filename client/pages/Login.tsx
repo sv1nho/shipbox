@@ -66,8 +66,7 @@ export function Login () {
       <div className='auth-card'>
         <h1 className='auth-title'>{t('Sign in')}</h1>
         <p className='auth-text'>
-          {t('Sign in to track your returns from drop-off to refund. ' +
-            'Generating labels stays free and needs no account.')}
+          {t('Sign in to track your returns from drop-off to refund.')}
         </p>
 
         {searchParams.get('error') === 'oauth' && (

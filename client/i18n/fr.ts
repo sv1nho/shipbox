@@ -2,9 +2,6 @@ const HOME_LEAD =
   'Create and download PDF shipping labels for Bpost and PostNL in seconds. ' +
   'Fill in the form, choose your carrier and language, and your label is ready.'
 
-const SIGN_IN_LEAD =
-  'Sign in to track your returns from drop-off to refund. '
-
 const SIGN_IN_NOTE =
   'No password is ever stored. Signing in only shares your name, ' +
   'email address and profile picture with ShipBox.'
@@ -58,8 +55,8 @@ export const FRENCH: Record<string, string> = {
 
   'Checking your session…': 'Vérification de votre session…',
   'Loading sign-in options…': 'Chargement des options de connexion…',
-  [SIGN_IN_LEAD]:
-    'Connectez-vous pour suivre vos retours, du dépôt au remboursement. ',
+  'Sign in to track your returns from drop-off to refund.':
+    'Connectez-vous pour suivre vos retours, du dépôt au remboursement.',
   'Sign-in was cancelled or refused. You can try again.':
     'La connexion a été annulée ou refusée. Vous pouvez réessayer.',
   'No sign-in provider is configured on this server.':
