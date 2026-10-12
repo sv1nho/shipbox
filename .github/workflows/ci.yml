@@ -16,5 +16,5 @@ concurrency:
 
 jobs:
   ci:
-    uses: sv1nho/ci/.github/workflows/pipeline.yml@ba4a51a36d98ace6e55cdb44357c0e37c6bc21f9
+    uses: sv1nho/ci/.github/workflows/pipeline.yml@v1
     secrets: inherit
