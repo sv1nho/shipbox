@@ -10,6 +10,7 @@ import { StatusPill } from './StatusPill.js'
 export type RowHandlers = {
   onTransition: (shipment: ShipmentDto, actions: NextStep['actions']) => void
   onRevert: (shipment: ShipmentDto) => void
+  onUnchase: (shipment: ShipmentDto) => void
   onArchive: (shipment: ShipmentDto) => void
   onUnarchive: (shipment: ShipmentDto) => void
   onDelete: (shipment: ShipmentDto) => void
@@ -176,6 +177,17 @@ export function ShipmentRow ({ shipment, handlers, menuOpen }: RowProps) {
                 onClick={() => { handlers.onRevert(shipment) }}
               >
                 {t(undo)}
+              </button>
+            )}
+
+            {!archived && shipment.lastChasedAt !== null && (
+              <button
+                type='button'
+                role='menuitem'
+                className='row-menu-item'
+                onClick={() => { handlers.onUnchase(shipment) }}
+              >
+                {t('Undo the chase')}
               </button>
             )}
 

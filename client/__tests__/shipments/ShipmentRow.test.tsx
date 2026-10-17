@@ -12,6 +12,7 @@ import type { ShipmentDto } from '../../../shared/shipment.js'
 const handlers = (): RowHandlers => ({
   onTransition: vi.fn(),
   onRevert: vi.fn(),
+  onUnchase: vi.fn(),
   onArchive: vi.fn(),
   onUnarchive: vi.fn(),
   onDelete: vi.fn(),
@@ -273,6 +274,26 @@ describe('the extra menu', () => {
 
     expect(screen.getByRole('menu')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /more actions/i })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('offers to undo a chase, but only once one was recorded', async () => {
+    renderRow({ status: 'dropped_off', dropoffDate: '2026-06-01', lastChasedAt: null })
+    await openMenu()
+
+    expect(screen.queryByRole('menuitem', { name: 'Undo the chase' })).not.toBeInTheDocument()
+  })
+
+  it('calls back with the shipment when the chase is undone', async () => {
+    const { shipment, spies } = renderRow({
+      status: 'dropped_off',
+      dropoffDate: '2026-06-01',
+      lastChasedAt: '2026-06-10',
+    })
+
+    await openMenu()
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Undo the chase' }))
+
+    expect(spies.onUnchase).toHaveBeenCalledWith(shipment)
   })
 
   it('offers the skipped steps, never the one already on the row', async () => {

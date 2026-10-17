@@ -8,6 +8,7 @@ vi.mock('../../api/shipments.js', () => ({
   applyTransition: vi.fn(),
   archiveShipment: vi.fn(),
   chaseShipment: vi.fn(),
+  unchaseShipment: vi.fn(),
   unarchiveShipment: vi.fn(),
   revertShipment: vi.fn(),
   deleteShipment: vi.fn(),
@@ -30,6 +31,7 @@ import {
   applyTransition,
   archiveShipment,
   chaseShipment,
+  unchaseShipment,
   createShipment,
   importShipments,
   searchStores,
@@ -356,6 +358,22 @@ describe('the other row actions', () => {
     await userEvent.click(screen.getByRole('button', { name: /more actions/i }))
     await userEvent.click(screen.getByRole('menuitem', { name }))
   }
+
+  it('undoes a chase recorded by mistake, and refreshes the list', async () => {
+    vi.mocked(listShipments).mockResolvedValue(
+      listed([makeShipment({ status: 'dropped_off', dropoffDate: '2026-06-01', lastChasedAt: '2026-06-10' })])
+    )
+    vi.mocked(unchaseShipment).mockResolvedValue(makeShipment())
+
+    renderPage()
+    await screen.findByText('Zalando')
+    await chooseFromMenu(/^undo the chase$/i)
+
+    await waitFor(() => {
+      expect(unchaseShipment).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111')
+    })
+    expect(listShipments).toHaveBeenCalledTimes(2)
+  })
 
   it('archives without asking, because archiving can be undone', async () => {
     vi.mocked(archiveShipment).mockResolvedValue(makeShipment())

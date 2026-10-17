@@ -442,6 +442,34 @@ describe('POST /api/shipments/:id/chase', () => {
   })
 })
 
+describe('POST /api/shipments/:id/unchase', () => {
+  it('clears a chase recorded by mistake', async () => {
+    const created = await createShipment({ status: 'dropped_off', dropoffDate: '2026-01-05' })
+
+    await request(app).post(`/api/shipments/${created.id}/chase`).send().expect(200)
+
+    const response = await request(app)
+      .post(`/api/shipments/${created.id}/unchase`)
+      .send()
+      .expect(200)
+
+    expect(bodyOf<{ lastChasedAt: string | null }>(response).lastChasedAt).toBeNull()
+  })
+
+  it('answers 409 when there was no chase to undo', async () => {
+    const created = await createShipment({ status: 'dropped_off', dropoffDate: '2026-01-05' })
+
+    await request(app).post(`/api/shipments/${created.id}/unchase`).send().expect(409)
+  })
+
+  it('answers 404 on a shipment owned by someone else', async () => {
+    await request(app)
+      .post('/api/shipments/11111111-1111-4111-8111-111111111111/unchase')
+      .send()
+      .expect(404)
+  })
+})
+
 describe('archive, unarchive and delete', () => {
   it('archives, hides from the list, then puts back', async () => {
     const created = await createShipment()

@@ -5,6 +5,7 @@ import {
   applyTransition,
   archiveShipment,
   chaseShipment,
+  unchaseShipment,
   createShipment,
   deleteShipment,
   getLabelPayload,
@@ -210,6 +211,7 @@ export function Shipments () {
     onDelete: (shipment) => { setOpenMenu(null); setActionError(null); setDeleting(shipment) },
     onShowDetails: (shipment) => { setActionError(null); setDetails(shipment) },
     onWriteToStore: (shipment) => { setActionError(null); setChasing(shipment) },
+    onUnchase: (shipment) => { void run(() => unchaseShipment(shipment.id)) },
     onToggleMenu: (shipment) => { setOpenMenu((open) => (open === shipment.id ? null : shipment.id)) },
     onDownloadLabel: (shipment) => {
       void run(async () => {

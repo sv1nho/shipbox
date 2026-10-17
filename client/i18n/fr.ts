@@ -194,6 +194,7 @@ export const FRENCH: Record<string, string> = {
   'Record the reception directly': 'Enregistrer directement la réception',
   'Undo the drop-off': 'Annuler le dépôt',
   'Undo the reception': 'Annuler la réception',
+  'Undo the chase': 'Annuler la relance',
   'Undo the decision': 'Annuler la décision',
   'Record the decision directly': 'Enregistrer directement la décision',
   'Change the decision to refunded': 'Changer la décision en remboursé',

@@ -375,6 +375,16 @@ export async function chase (userId: string, id: string): Promise<ShipmentDto> {
   return writeOwned(row.id, { lastChasedAt: toUtcDate(now) }, now)
 }
 
+export async function unchase (userId: string, id: string): Promise<ShipmentDto> {
+  const row = await editableRow(userId, id)
+
+  if (row.lastChasedAt === null) {
+    throw new AppError('CONFLICT', 'This parcel has not been chased, there is nothing to undo.')
+  }
+
+  return writeOwned(row.id, { lastChasedAt: null }, today())
+}
+
 export async function unarchive (userId: string, id: string): Promise<ShipmentDto> {
   const row = await ownedRow(userId, id)
 

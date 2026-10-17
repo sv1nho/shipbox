@@ -66,6 +66,7 @@ describe('the urls each call builds', () => {
     ['importShipments', () => api.importShipments([{ store: 'Zalando' }]), 'POST', '/api/shipments/import'],
     ['addStore', () => api.addStore('Zalando', 'a@b.test'), 'POST', '/api/stores'],
     ['chaseShipment', () => api.chaseShipment('abc'), 'POST', '/api/shipments/abc/chase'],
+    ['unchaseShipment', () => api.unchaseShipment('abc'), 'POST', '/api/shipments/abc/unchase'],
   ])('%s calls %s %s', async (_name, run, method, url) => {
     const mock = fetchMock()
     await run()
