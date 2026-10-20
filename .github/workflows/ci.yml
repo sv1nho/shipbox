@@ -18,3 +18,7 @@ jobs:
   ci:
     uses: sv1nho/ci/.github/workflows/pipeline.yml@v1
     secrets: inherit
+    with:
+      boot_env: |
+        RESEND_API_KEY=ci-only-not-a-real-key
+        OTP_FROM=CI <ci-only@app.example>
