@@ -4,7 +4,6 @@ import type { ProviderCredentials } from '../../auth/resolve-providers.js'
 
 const credentials = (overrides: Partial<ProviderCredentials> = {}): ProviderCredentials => ({
   google: {},
-  github: {},
   ...overrides,
 })
 
@@ -17,11 +16,6 @@ describe('resolveEnabledProviders', () => {
 
   it('enables a provider whose pair is complete', () => {
     expect(resolveEnabledProviders(credentials({ google: complete }))).toEqual(['google'])
-  })
-
-  it('enables every provider whose pair is complete', () => {
-    expect(resolveEnabledProviders(credentials({ google: complete, github: complete })))
-      .toEqual(['google', 'github'])
   })
 
   it.each([

@@ -98,8 +98,6 @@ describe('envSchema', () => {
       const result = parse({
         GOOGLE_CLIENT_ID: '',
         GOOGLE_CLIENT_SECRET: '   ',
-        GITHUB_CLIENT_ID: '',
-        GITHUB_CLIENT_SECRET: '',
       })
 
       expect(result.success).toBe(true)
@@ -113,18 +111,11 @@ describe('envSchema', () => {
     })
 
     it('rejects a secret without its id', () => {
-      expect(pathsOf(parse({ GITHUB_CLIENT_SECRET: 'secret' }))).toContain('GITHUB_CLIENT_ID')
+      expect(pathsOf(parse({ GOOGLE_CLIENT_SECRET: 'secret' }))).toContain('GOOGLE_CLIENT_ID')
     })
 
     it('accepts a complete pair', () => {
       expect(parse({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' }).success).toBe(true)
-    })
-
-    it('reports each incomplete pair separately', () => {
-      const paths = pathsOf(parse({ GOOGLE_CLIENT_ID: 'id', GITHUB_CLIENT_SECRET: 'secret' }))
-
-      expect(paths).toContain('GOOGLE_CLIENT_SECRET')
-      expect(paths).toContain('GITHUB_CLIENT_ID')
     })
   })
 
@@ -149,13 +140,13 @@ describe('envSchema', () => {
     })
 
     it('accepts a single complete provider', () => {
-      expect(inProduction({ GITHUB_CLIENT_ID: 'id', GITHUB_CLIENT_SECRET: 'secret' }).success).toBe(true)
+      expect(inProduction({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' }).success).toBe(true)
     })
 
     it('refuses the browser-test sign-in, which would open a password door', () => {
       const paths = pathsOf(inProduction({
-        GITHUB_CLIENT_ID: 'id',
-        GITHUB_CLIENT_SECRET: 'secret',
+        GOOGLE_CLIENT_ID: 'id',
+        GOOGLE_CLIENT_SECRET: 'secret',
         E2E_AUTH: 'true',
       }))
 

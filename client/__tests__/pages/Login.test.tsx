@@ -45,7 +45,7 @@ const googleButton = () => screen.findByRole('button', { name: /continue with go
 beforeEach(() => {
   vi.clearAllMocks()
   session({})
-  answerConfig({ providers: ['google', 'github'] })
+  answerConfig({ providers: ['google'] })
   vi.mocked(signIn.social).mockResolvedValue({ data: null, error: null })
 })
 
@@ -91,20 +91,12 @@ describe('someone already signed in', () => {
 })
 
 describe('the providers on offer', () => {
-  it('offers every provider the server has configured', async () => {
+  it('offers what the server configured, asked for by name rather than baked in', async () => {
+    const fetched = answerConfig({ providers: ['google'] })
+
     renderLogin()
 
     expect(await googleButton()).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /continue with github/i })).toBeInTheDocument()
-  })
-
-  it('asks the server which providers exist, not a list baked into the page', async () => {
-    const fetched = answerConfig({ providers: ['github'] })
-
-    renderLogin()
-
-    expect(await screen.findByRole('button', { name: /continue with github/i })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /continue with google/i })).not.toBeInTheDocument()
     expect(fetched.mock.calls[0][0]).toBe('/api/config')
   })
 
@@ -169,7 +161,6 @@ describe('signing in', () => {
     await userEvent.click(await googleButton())
 
     expect(screen.getByRole('button', { name: /redirecting/i })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /continue with github/i })).toBeDisabled()
   })
 
   it('shows why the provider refused, and lets the user try again', async () => {

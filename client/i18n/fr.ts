@@ -62,7 +62,6 @@ export const FRENCH: Record<string, string> = {
   'No sign-in provider is configured on this server.':
     'Aucun fournisseur de connexion n’est configuré sur ce serveur.',
   'Continue with Google': 'Continuer avec Google',
-  'Continue with GitHub': 'Continuer avec GitHub',
   'Redirecting…': 'Redirection…',
   'Sign-in failed, please try again.': 'La connexion a échoué, veuillez réessayer.',
   [SIGN_IN_NOTE]:
