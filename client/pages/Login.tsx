@@ -13,7 +13,7 @@ import { Spinner } from '../components/Spinner.js'
 const DEFAULT_REDIRECT = '/shipments'
 
 export function Login () {
-  const { data: session, isPending } = useSession()
+  const { data: session, isPending, isRefetching } = useSession()
   const [searchParams] = useSearchParams()
   const [providers, setProviders] = useState<SocialProviderId[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -38,7 +38,7 @@ export function Login () {
     return () => { controller.abort() }
   }, [])
 
-  if (isPending) {
+  if (isPending && !isRefetching) {
     return <PendingNote label={t('Checking your session…')} />
   }
 

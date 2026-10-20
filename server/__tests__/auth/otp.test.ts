@@ -6,7 +6,10 @@ import { log } from '../../log.js'
 
 const withEnv = async (keys: Record<string, string>) => {
   vi.resetModules()
-  for (const [name, value] of Object.entries(keys)) vi.stubEnv(name, value)
+
+  const chosen = { RESEND_API_KEY: '', OTP_FROM: '', ...keys }
+
+  for (const [name, value] of Object.entries(chosen)) vi.stubEnv(name, value)
 
   return import('../../auth/otp.js')
 }

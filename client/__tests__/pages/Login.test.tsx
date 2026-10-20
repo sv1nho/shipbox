@@ -13,10 +13,11 @@ import { signIn, useSession } from '../../auth/client.js'
 
 type SessionState = ReturnType<typeof useSession>
 
-const session = (state: { signedIn?: boolean; pending?: boolean }) => {
+const session = (state: { signedIn?: boolean; pending?: boolean; refetching?: boolean }) => {
   vi.mocked(useSession).mockReturnValue({
     data: state.signedIn === true ? { user: { id: 'u1', name: 'Alex' } } : null,
     isPending: state.pending === true,
+    isRefetching: state.refetching === true,
   } as unknown as SessionState)
 }
 
@@ -61,6 +62,15 @@ describe('before anything is known', () => {
 
     expect(screen.getByText(/checking your session/i)).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('keeps the form standing while the session is only rechecked', async () => {
+    session({ pending: true, refetching: true })
+
+    renderLogin()
+
+    expect(await screen.findByLabelText('Email address')).toBeInTheDocument()
+    expect(screen.queryByText(/checking your session/i)).not.toBeInTheDocument()
   })
 
   it('says it is loading the options until the server answers', () => {
