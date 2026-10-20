@@ -107,7 +107,8 @@ describe('the providers on offer', () => {
 
     await googleButton()
 
-    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /myspace/i })).not.toBeInTheDocument()
   })
 
   it.each([

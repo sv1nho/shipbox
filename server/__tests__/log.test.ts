@@ -6,6 +6,8 @@ const stubMode = (mode: string): void => {
   vi.stubEnv('BETTER_AUTH_URL', 'https://shipbox.example')
   vi.stubEnv('GOOGLE_CLIENT_ID', 'id-for-the-test')
   vi.stubEnv('GOOGLE_CLIENT_SECRET', 'secret-for-the-test')
+  vi.stubEnv('RESEND_API_KEY', 'key-for-the-test')
+  vi.stubEnv('OTP_FROM', 'ShipBox <hello@shipbox.example>')
 }
 
 const written = async (mode: string, write: () => Promise<void>): Promise<string[]> => {

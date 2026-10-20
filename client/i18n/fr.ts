@@ -3,8 +3,9 @@ const HOME_LEAD =
   'Fill in the form, choose your carrier and language, and your label is ready.'
 
 const SIGN_IN_NOTE =
-  'No password is ever stored. Signing in only shares your name, ' +
-  'email address and profile picture with ShipBox.'
+  'No password is ever stored. We send a one-time code instead, ' +
+  'and signing in with Google only shares your name, email address ' +
+  'and profile picture with ShipBox.'
 
 const OFFER_PITCH =
   'Add it to your list and ShipBox will keep the label, count the days ' +
@@ -55,6 +56,18 @@ export const FRENCH: Record<string, string> = {
 
   'Checking your session…': 'Vérification de votre session…',
   'Loading sign-in options…': 'Chargement des options de connexion…',
+  or: 'ou',
+  'Send me a code': 'Envoyez-moi un code',
+  'Sending…': 'Envoi…',
+  'Sign-in code': 'Code de connexion',
+  'Signing in…': 'Connexion…',
+  'Use another address': 'Utiliser une autre adresse',
+  'We sent a code to {email}. It is valid for ten minutes.':
+    'Nous avons envoyé un code à {email}. Il est valable dix minutes.',
+  'That code is wrong or expired. Ask for a new one.':
+    'Ce code est incorrect ou expiré. Demandez-en un nouveau.',
+  'We could not send the code. Try again in a moment.':
+    'Nous n’avons pas pu envoyer le code. Réessayez dans un instant.',
   'Sign in to track your returns from drop-off to refund.':
     'Connectez-vous pour suivre vos retours, du dépôt au remboursement.',
   'Sign-in was cancelled or refused. You can try again.':
@@ -65,8 +78,9 @@ export const FRENCH: Record<string, string> = {
   'Redirecting…': 'Redirection…',
   'Sign-in failed, please try again.': 'La connexion a échoué, veuillez réessayer.',
   [SIGN_IN_NOTE]:
-    'Aucun mot de passe n’est conservé. La connexion ne partage que votre nom, ' +
-    'votre adresse e-mail et votre photo de profil avec ShipBox.',
+    'Aucun mot de passe n’est conservé. Nous envoyons un code à usage unique, ' +
+    'et la connexion avec Google ne partage que votre nom, votre adresse e-mail ' +
+    'et votre photo de profil avec ShipBox.',
 
   Sender: 'Expéditeur',
   Recipient: 'Destinataire',

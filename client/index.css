@@ -699,6 +699,35 @@ h1, h2, h3 { font-family: var(--font-display); }
     line-height: 1.6;
   }
 
+  .auth-separator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--color-text-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .auth-separator::before,
+  .auth-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  .auth-code {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .auth-code .link-button {
+    justify-self: center;
+    font-size: 0.8125rem;
+  }
+
   .auth-note {
     font-size: 0.75rem;
     color: var(--color-text-subtle);

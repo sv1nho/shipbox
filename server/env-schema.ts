@@ -48,6 +48,9 @@ export const envSchema = z
 
     GOOGLE_CLIENT_ID: optionalSecret,
     GOOGLE_CLIENT_SECRET: optionalSecret,
+
+    RESEND_API_KEY: optionalSecret,
+    OTP_FROM: optionalSecret,
   })
   .superRefine((value, ctx) => {
     const pairs = [
@@ -74,7 +77,23 @@ export const envSchema = z
       }
     }
 
+    if (value.RESEND_API_KEY !== undefined && value.OTP_FROM === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['OTP_FROM'],
+        message: 'is required alongside RESEND_API_KEY, it is the address the code is sent from',
+      })
+    }
+
     if (value.NODE_ENV !== 'production') return
+
+    if (value.RESEND_API_KEY === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RESEND_API_KEY'],
+        message: 'is required in production, a sign-in code must never be written to the log',
+      })
+    }
 
     if (value.E2E_AUTH) {
       ctx.addIssue({

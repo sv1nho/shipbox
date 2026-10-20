@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from 'react-router'
 import { isAbort } from '../api/client.js'
 import { signIn, useSession } from '../auth/client.js'
 import { SOCIAL_PROVIDERS } from '../auth/providers.js'
+import { CodeSignIn } from '../auth/CodeSignIn.js'
 import { isSocialProviderId } from '../../shared/auth-providers.js'
 import type { SocialProviderId } from '../../shared/auth-providers.js'
 import { PendingNote } from '../components/PendingNote.js'
@@ -109,9 +110,16 @@ export function Login () {
           </button>
         ))}
 
+        {providers !== null && providers.length > 0 && (
+          <p className='auth-separator'>{t('or')}</p>
+        )}
+
+        <CodeSignIn redirectTo={redirectTo} disabled={pendingProvider !== null} />
+
         <p className='auth-note'>
-          {t('No password is ever stored. Signing in only shares your name, ' +
-            'email address and profile picture with ShipBox.')}
+          {t('No password is ever stored. We send a one-time code instead, ' +
+            'and signing in with Google only shares your name, email address ' +
+            'and profile picture with ShipBox.')}
         </p>
       </div>
     </div>

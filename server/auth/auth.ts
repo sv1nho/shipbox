@@ -1,8 +1,10 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { emailOTP } from 'better-auth/plugins'
 import { prisma } from '../prisma.js'
 import { env, isProduction } from '../env.js'
 import { resolveEnabledProviders } from './resolve-providers.js'
+import { deliverCode } from './otp.js'
 import type { ProviderCredentials } from './resolve-providers.js'
 
 const credentials: ProviderCredentials = {
@@ -31,6 +33,15 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
 
   emailAndPassword: { enabled: env.E2E_AUTH },
+
+  plugins: [
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 60 * 10,
+      allowedAttempts: 5,
+      sendVerificationOTP: async ({ email, otp }) => { await deliverCode({ email, otp }) },
+    }),
+  ],
 
   user: {
     deleteUser: { enabled: true },

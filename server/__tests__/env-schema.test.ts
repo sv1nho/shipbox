@@ -125,6 +125,8 @@ describe('envSchema', () => {
         NODE_ENV: 'production',
         WEB_ORIGIN: 'https://shipbox.example',
         BETTER_AUTH_URL: 'https://shipbox.example',
+        RESEND_API_KEY: 'key-for-the-test',
+        OTP_FROM: 'ShipBox <hello@shipbox.example>',
         ...overrides,
       })
 
@@ -137,6 +139,12 @@ describe('envSchema', () => {
 
       expect(paths).toContain('GOOGLE_CLIENT_SECRET')
       expect(paths).toContain('GOOGLE_CLIENT_ID')
+    })
+
+    it('refuses production with no way to send a sign-in code', () => {
+      const paths = pathsOf(inProduction({ RESEND_API_KEY: '', GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' }))
+
+      expect(paths).toContain('RESEND_API_KEY')
     })
 
     it('accepts a single complete provider', () => {
@@ -175,6 +183,18 @@ describe('envSchema', () => {
     })
   })
 
+  describe('the mail provider pair', () => {
+    it('asks for the address a code is sent from whenever a key is given', () => {
+      const paths = pathsOf(parse({ RESEND_API_KEY: 'key' }))
+
+      expect(paths).toContain('OTP_FROM')
+    })
+
+    it('accepts a key with its address', () => {
+      expect(parse({ RESEND_API_KEY: 'key', OTP_FROM: 'a@b.test' }).success).toBe(true)
+    })
+  })
+
   describe('https in production', () => {
     const productionWith = (overrides: Record<string, string>) =>
       parse({
@@ -183,6 +203,8 @@ describe('envSchema', () => {
         GOOGLE_CLIENT_SECRET: 'secret',
         WEB_ORIGIN: 'https://shipbox.example',
         BETTER_AUTH_URL: 'https://shipbox.example',
+        RESEND_API_KEY: 'key-for-the-test',
+        OTP_FROM: 'ShipBox <hello@shipbox.example>',
         ...overrides,
       })
 
