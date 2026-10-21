@@ -3,6 +3,15 @@ import { AxeBuilder } from '@axe-core/playwright'
 
 const STANDARDS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
+type Violations = Awaited<ReturnType<AxeBuilder['analyze']>>['violations']
+
+const named = (violations: Violations): string[] =>
+  violations.flatMap((violation) =>
+    violation.nodes.map((node) =>
+      `${violation.id} at ${node.target.join(', ')} — ${node.failureSummary ?? violation.help}`
+    )
+  )
+
 const PAGES = [
   ['the home page', '/', 'ShipBox'],
   ['the label form', '/form', 'Sender'],
@@ -17,7 +26,7 @@ for (const [what, path, waitFor] of PAGES) {
 
     const { violations } = await new AxeBuilder({ page }).withTags(STANDARDS).analyze()
 
-    expect(violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
+    expect(named(violations)).toEqual([])
   })
 }
 
@@ -28,5 +37,5 @@ test('the add-shipment dialog meets them too, where the focus is trapped', async
 
   const { violations } = await new AxeBuilder({ page }).withTags(STANDARDS).analyze()
 
-  expect(violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
+  expect(named(violations)).toEqual([])
 })
